@@ -31,9 +31,7 @@ function App() {
 
       const number = Number(saved);
 
-      return Number.isFinite(number)
-        ? number
-        : fallback;
+      return Number.isFinite(number) ? number : fallback;
     } catch {
       return fallback;
     }
@@ -59,25 +57,20 @@ function App() {
   // STREAK
   // ==========================================
 
-  const [completionDays, setCompletionDays] =
-    useState(() =>
-      getArray("lockin_completion_days")
-    );
+  const [completionDays, setCompletionDays] = useState(() =>
+    getArray("lockin_completion_days")
+  );
 
   // ==========================================
   // FOCUS MODE
   // ==========================================
 
-  const [focusMode, setFocusMode] =
-    useState(
-      () =>
-        localStorage.getItem(
-          "lockin_focus_mode"
-        ) === "true"
-    );
+  const [focusMode, setFocusMode] = useState(
+    () =>
+      localStorage.getItem("lockin_focus_mode") === "true"
+  );
 
-  const [focusTask, setFocusTask] =
-    useState(null);
+  const [focusTask, setFocusTask] = useState(null);
 
   // ==========================================
   // ENERGY
@@ -99,29 +92,23 @@ function App() {
   // DAILY MISSION
   // ==========================================
 
-  const [missionDate, setMissionDate] =
-    useState(
-      () =>
-        localStorage.getItem(
-          "lockin_mission_date"
-        ) || ""
-    );
+  const [missionDate, setMissionDate] = useState(
+    () =>
+      localStorage.getItem("lockin_mission_date") || ""
+  );
 
-  const [missionCompleted, setMissionCompleted] =
-    useState(
-      () =>
-        localStorage.getItem(
-          "lockin_mission_completed"
-        ) === "true"
-    );
+  const [missionCompleted, setMissionCompleted] = useState(
+    () =>
+      localStorage.getItem("lockin_mission_completed") ===
+      "true"
+  );
 
   // ==========================================
   // THEME
   // ==========================================
 
   const [darkMode, setDarkMode] = useState(() => {
-    const saved =
-      localStorage.getItem("lockin_theme");
+    const saved = localStorage.getItem("lockin_theme");
 
     if (saved === "dark") return true;
 
@@ -136,25 +123,22 @@ function App() {
   // GLOBAL SEARCH
   // ==========================================
 
-  const [globalSearch, setGlobalSearch] =
-    useState("");
+  const [globalSearch, setGlobalSearch] = useState("");
 
   // ==========================================
   // NOTIFICATIONS
   // ==========================================
 
-  const [notificationsList, setNotificationsList] =
-    useState(() =>
-      getArray("lockin_notifications")
-    );
+  const [notificationsList, setNotificationsList] = useState(
+    () => getArray("lockin_notifications")
+  );
 
-  const [notificationsRead, setNotificationsRead] =
-    useState(
-      () =>
-        localStorage.getItem(
-          "lockin_notifications_read"
-        ) === "true"
-    );
+  const [notificationsRead, setNotificationsRead] = useState(
+    () =>
+      localStorage.getItem(
+        "lockin_notifications_read"
+      ) === "true"
+  );
 
   // ==========================================
   // SETTINGS
@@ -166,9 +150,7 @@ function App() {
     ) !== "false";
 
   const notificationSound =
-    localStorage.getItem(
-      "lockin_sound"
-    ) !== "false";
+    localStorage.getItem("lockin_sound") !== "false";
 
   // ==========================================
   // ADD NOTIFICATION
@@ -183,32 +165,19 @@ function App() {
 
     const notification = {
       id: crypto.randomUUID(),
-
       title,
-
       message,
-
       type,
-
-      createdAt:
-        new Date().toISOString(),
-
+      createdAt: new Date().toISOString(),
       read: false,
     };
 
     setNotificationsList((current) => {
-      // Safety check so .map(), .filter()
-      // and spread always work.
+      const safeCurrent = Array.isArray(current)
+        ? current
+        : [];
 
-      const safeCurrent =
-        Array.isArray(current)
-          ? current
-          : [];
-
-      return [
-        notification,
-        ...safeCurrent,
-      ];
+      return [notification, ...safeCurrent];
     });
 
     setNotificationsRead(false);
@@ -222,9 +191,7 @@ function App() {
     localStorage.setItem(
       "lockin_notifications",
       JSON.stringify(
-        Array.isArray(
-          notificationsList
-        )
+        Array.isArray(notificationsList)
           ? notificationsList
           : []
       )
@@ -311,10 +278,7 @@ function App() {
       "lockin_mission_completed",
       String(missionCompleted)
     );
-  }, [
-    missionDate,
-    missionCompleted,
-  ]);
+  }, [missionDate, missionCompleted]);
 
   // ==========================================
   // SAVE THEME
@@ -352,12 +316,8 @@ function App() {
 
     return (
       `${date.getFullYear()}-` +
-      `${String(
-        date.getMonth() + 1
-      ).padStart(2, "0")}-` +
-      `${String(
-        date.getDate()
-      ).padStart(2, "0")}`
+      `${String(date.getMonth() + 1).padStart(2, "0")}-` +
+      `${String(date.getDate()).padStart(2, "0")}`
     );
   };
 
@@ -382,21 +342,15 @@ function App() {
     const today = getToday();
 
     setCompletionDays((current) => {
-      const safeCurrent =
-        Array.isArray(current)
-          ? current
-          : [];
+      const safeCurrent = Array.isArray(current)
+        ? current
+        : [];
 
-      if (
-        safeCurrent.includes(today)
-      ) {
+      if (safeCurrent.includes(today)) {
         return safeCurrent;
       }
 
-      return [
-        ...safeCurrent,
-        today,
-      ];
+      return [...safeCurrent, today];
     });
   };
 
@@ -406,9 +360,7 @@ function App() {
 
   const streak = useMemo(() => {
     if (
-      !Array.isArray(
-        completionDays
-      ) ||
+      !Array.isArray(completionDays) ||
       completionDays.length === 0
     ) {
       return {
@@ -434,24 +386,12 @@ function App() {
     let best = 1;
     let running = 1;
 
-    for (
-      let i = 1;
-      i < days.length;
-      i++
-    ) {
-      const difference =
-        Math.round(
-          (dateNumber(
-            days[i]
-          ) -
-            dateNumber(
-              days[i - 1]
-            )) /
-            (1000 *
-              60 *
-              60 *
-              24)
-        );
+    for (let i = 1; i < days.length; i++) {
+      const difference = Math.round(
+        (dateNumber(days[i]) -
+          dateNumber(days[i - 1])) /
+          (1000 * 60 * 60 * 24)
+      );
 
       if (difference === 1) {
         running += 1;
@@ -467,8 +407,7 @@ function App() {
 
     const today = getToday();
 
-    const yesterdayDate =
-      new Date();
+    const yesterdayDate = new Date();
 
     yesterdayDate.setDate(
       yesterdayDate.getDate() - 1
@@ -493,8 +432,7 @@ function App() {
       };
     }
 
-    const currentDate =
-      new Date();
+    const currentDate = new Date();
 
     if (!days.includes(today)) {
       currentDate.setDate(
@@ -514,11 +452,7 @@ function App() {
           currentDate.getDate()
         ).padStart(2, "0")}`;
 
-      if (
-        !days.includes(
-          formatted
-        )
-      ) {
+      if (!days.includes(formatted)) {
         break;
       }
 
@@ -545,21 +479,16 @@ function App() {
   const XP_PER_LEVEL = 100;
 
   const level =
-    Math.floor(
-      xp / XP_PER_LEVEL
-    ) + 1;
+    Math.floor(xp / XP_PER_LEVEL) + 1;
 
   const xpIntoLevel =
     xp % XP_PER_LEVEL;
 
   const xpNeeded =
-    XP_PER_LEVEL -
-    xpIntoLevel;
+    XP_PER_LEVEL - xpIntoLevel;
 
   const xpProgress =
-    (xpIntoLevel /
-      XP_PER_LEVEL) *
-    100;
+    (xpIntoLevel / XP_PER_LEVEL) * 100;
 
   // ==========================================
   // BADGES
@@ -567,34 +496,20 @@ function App() {
 
   const unlockBadge = (badge) => {
     setBadges((current) => {
-      const safeCurrent =
-        Array.isArray(current)
-          ? current
-          : [];
+      const safeCurrent = Array.isArray(current)
+        ? current
+        : [];
 
-      if (
-        safeCurrent.includes(
-          badge
-        )
-      ) {
+      if (safeCurrent.includes(badge)) {
         return safeCurrent;
       }
 
       const badgeNames = {
-        "first-task":
-          "First Task",
-
-        "first-win":
-          "First Win",
-
-        "three-day":
-          "3 Day Streak",
-
-        "seven-day":
-          "7 Day Streak",
-
-        "xp-500":
-          "500 XP",
+        "first-task": "First Task",
+        "first-win": "First Win",
+        "three-day": "3 Day Streak",
+        "seven-day": "7 Day Streak",
+        "xp-500": "500 XP",
       };
 
       addNotification(
@@ -604,135 +519,102 @@ function App() {
         "badge"
       );
 
-      return [
-        ...safeCurrent,
-        badge,
-      ];
+      return [...safeCurrent, badge];
     });
   };
 
   useEffect(() => {
     if (tasks.length >= 1) {
-      unlockBadge(
-        "first-task"
-      );
+      unlockBadge("first-task");
     }
 
     if (
       tasks.some(
-        (task) =>
-          task.completed
+        (task) => task.completed
       )
     ) {
-      unlockBadge(
-        "first-win"
-      );
+      unlockBadge("first-win");
     }
 
-    if (
-      streak.current >= 3
-    ) {
-      unlockBadge(
-        "three-day"
-      );
+    if (streak.current >= 3) {
+      unlockBadge("three-day");
     }
 
-    if (
-      streak.current >= 7
-    ) {
-      unlockBadge(
-        "seven-day"
-      );
+    if (streak.current >= 7) {
+      unlockBadge("seven-day");
     }
 
     if (xp >= 500) {
-      unlockBadge(
-        "xp-500"
-      );
+      unlockBadge("xp-500");
     }
-  }, [
-    tasks,
-    streak.current,
-    xp,
-  ]);
+  }, [tasks, streak.current, xp]);
 
   // ==========================================
   // SOUND
   // ==========================================
 
-  const playCompletionSound =
-    () => {
-      if (
-        !notificationsEnabled ||
-        !notificationSound
-      ) {
-        return;
-      }
+  const playCompletionSound = () => {
+    if (
+      !notificationsEnabled ||
+      !notificationSound
+    ) {
+      return;
+    }
 
-      try {
-        const AudioContext =
-          window.AudioContext ||
-          window.webkitAudioContext;
+    try {
+      const AudioContext =
+        window.AudioContext ||
+        window.webkitAudioContext;
 
-        if (!AudioContext)
-          return;
+      if (!AudioContext) return;
 
-        const audio =
-          new AudioContext();
+      const audio = new AudioContext();
 
-        const oscillator =
-          audio.createOscillator();
+      const oscillator =
+        audio.createOscillator();
 
-        const gain =
-          audio.createGain();
+      const gain = audio.createGain();
 
-        oscillator.type =
-          "sine";
+      oscillator.type = "sine";
 
-        oscillator.frequency.setValueAtTime(
-          660,
-          audio.currentTime
-        );
+      oscillator.frequency.setValueAtTime(
+        660,
+        audio.currentTime
+      );
 
-        oscillator.frequency.setValueAtTime(
-          880,
-          audio.currentTime +
-            0.08
-        );
+      oscillator.frequency.setValueAtTime(
+        880,
+        audio.currentTime + 0.08
+      );
 
-        gain.gain.setValueAtTime(
-          0.0001,
-          audio.currentTime
-        );
+      gain.gain.setValueAtTime(
+        0.0001,
+        audio.currentTime
+      );
 
-        gain.gain.exponentialRampToValueAtTime(
-          0.12,
-          audio.currentTime +
-            0.02
-        );
+      gain.gain.exponentialRampToValueAtTime(
+        0.12,
+        audio.currentTime + 0.02
+      );
 
-        gain.gain.exponentialRampToValueAtTime(
-          0.0001,
-          audio.currentTime +
-            0.18
-        );
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        audio.currentTime + 0.18
+      );
 
-        oscillator.connect(gain);
+      oscillator.connect(gain);
 
-        gain.connect(
-          audio.destination
-        );
+      gain.connect(audio.destination);
 
-        oscillator.start();
+      oscillator.start();
 
-        oscillator.stop(
-          audio.currentTime +
-            0.2
-        );
-      } catch {
-        // Ignore sound errors
-      }
-    };
+      oscillator.stop(
+        audio.currentTime + 0.2
+      );
+    } catch {
+      // Ignore sound errors
+    }
+  };
 
   // ==========================================
   // STATS
@@ -741,19 +623,16 @@ function App() {
   const stats = useMemo(() => {
     const completed =
       tasks.filter(
-        (task) =>
-          task.completed
+        (task) => task.completed
       ).length;
 
     const pending =
-      tasks.length -
-      completed;
+      tasks.length - completed;
 
     const highPriority =
       tasks.filter(
         (task) =>
-          task.priority ===
-            "High" &&
+          task.priority === "High" &&
           !task.completed
       ).length;
 
@@ -761,9 +640,7 @@ function App() {
       tasks.length === 0
         ? 0
         : Math.round(
-            (completed /
-              tasks.length) *
-              100
+            (completed / tasks.length) * 100
           );
 
     return {
@@ -782,14 +659,9 @@ function App() {
   const addTask = (task) => {
     const newTask = {
       ...task,
-
       id: crypto.randomUUID(),
-
       completed: false,
-
-      createdAt:
-        new Date().toISOString(),
-
+      createdAt: new Date().toISOString(),
       completedAt: null,
     };
 
@@ -811,14 +683,12 @@ function App() {
 
   const deleteTask = (id) => {
     const task = tasks.find(
-      (item) =>
-        item.id === id
+      (item) => item.id === id
     );
 
     setTasks((current) =>
       current.filter(
-        (item) =>
-          item.id !== id
+        (item) => item.id !== id
       )
     );
 
@@ -837,8 +707,7 @@ function App() {
 
   const toggleTask = (id) => {
     const task = tasks.find(
-      (item) =>
-        item.id === id
+      (item) => item.id === id
     );
 
     if (!task) return;
@@ -854,26 +723,22 @@ function App() {
             item.id === id
               ? {
                   ...item,
-                  completed:
-                    false,
-                  completedAt:
-                    null,
+                  completed: false,
+                  completedAt: null,
                 }
               : item
         )
       );
 
       const deductedXP =
-        task.priority ===
-        "High"
+        task.priority === "High"
           ? 15
           : 10;
 
       setXp((currentXP) =>
         Math.max(
           0,
-          currentXP -
-            deductedXP
+          currentXP - deductedXP
         )
       );
 
@@ -902,8 +767,7 @@ function App() {
           item.id === id
             ? {
                 ...item,
-                completed:
-                  true,
+                completed: true,
                 completedAt:
                   new Date().toISOString(),
               }
@@ -912,22 +776,17 @@ function App() {
     );
 
     const earnedXP =
-      task.priority ===
-      "High"
+      task.priority === "High"
         ? 15
         : 10;
 
     setXp(
       (currentXP) =>
-        currentXP +
-        earnedXP
+        currentXP + earnedXP
     );
 
     setEnergy((current) =>
-      Math.max(
-        0,
-        current - 5
-      )
+      Math.max(0, current - 5)
     );
 
     recordCompletionDay();
@@ -945,9 +804,7 @@ function App() {
     // ========================================
 
     if (!missionCompleted) {
-      setMissionCompleted(
-        true
-      );
+      setMissionCompleted(true);
 
       setXp(
         (currentXP) =>
@@ -966,14 +823,11 @@ function App() {
   // UPDATE TASK
   // ==========================================
 
-  const updateTask = (
-    updatedTask
-  ) => {
+  const updateTask = (updatedTask) => {
     setTasks((current) =>
       current.map(
         (task) =>
-          task.id ===
-          updatedTask.id
+          task.id === updatedTask.id
             ? {
                 ...task,
                 ...updatedTask,
@@ -998,8 +852,7 @@ function App() {
     newEnergy
   ) => {
     const task = tasks.find(
-      (item) =>
-        item.id === taskId
+      (item) => item.id === taskId
     );
 
     setTasks((current) =>
@@ -1008,8 +861,7 @@ function App() {
           item.id === taskId
             ? {
                 ...item,
-                energy:
-                  newEnergy,
+                energy: newEnergy,
               }
             : item
       )
@@ -1034,8 +886,7 @@ function App() {
   ) => {
     setFocusTask({
       ...task,
-      focusMinutes:
-        minutes,
+      focusMinutes: minutes,
     });
 
     setFocusMode(true);
@@ -1071,20 +922,16 @@ function App() {
   const clearCompleted = () => {
     const completedCount =
       tasks.filter(
-        (task) =>
-          task.completed
+        (task) => task.completed
       ).length;
 
     setTasks((current) =>
       current.filter(
-        (task) =>
-          !task.completed
+        (task) => !task.completed
       )
     );
 
-    if (
-      completedCount > 0
-    ) {
+    if (completedCount > 0) {
       addNotification(
         "Completed tasks cleared",
         `${completedCount} completed ${
@@ -1102,8 +949,7 @@ function App() {
   // ==========================================
 
   const clearAllTasks = () => {
-    const count =
-      tasks.length;
+    const count = tasks.length;
 
     setTasks([]);
 
@@ -1122,207 +968,162 @@ function App() {
   // ANTI PROCRASTINATION
   // ==========================================
 
-  const antiProcrastination =
-    () => {
-      const nextTask =
-        tasks.find(
-          (task) =>
-            !task.completed
-        );
+  const antiProcrastination = () => {
+    const nextTask = tasks.find(
+      (task) => !task.completed
+    );
 
-      if (!nextTask) {
-        addNotification(
-          "Nothing to do",
-          "All your tasks are completed.",
-          "success"
-        );
-
-        return null;
-      }
-
-      startFocus(
-        nextTask,
-        5
+    if (!nextTask) {
+      addNotification(
+        "Nothing to do",
+        "All your tasks are completed.",
+        "success"
       );
 
-      return nextTask;
-    };
+      return null;
+    }
+
+    startFocus(nextTask, 5);
+
+    return nextTask;
+  };
 
   // ==========================================
   // RESET PROGRESS
   // ==========================================
 
-  const resetAllProgress =
-    () => {
-      setXp(0);
+  const resetAllProgress = () => {
+    setXp(0);
 
-      setCompletionDays(
-        []
-      );
+    setCompletionDays([]);
 
-      setBadges([]);
+    setBadges([]);
 
-      setEnergy(100);
+    setEnergy(100);
 
-      setMissionCompleted(
-        false
-      );
+    setMissionCompleted(false);
 
-      setMissionDate(
-        getToday()
-      );
+    setMissionDate(getToday());
 
-      addNotification(
-        "Progress reset",
-        "XP, streaks, badges and energy were reset.",
-        "reset"
-      );
-    };
+    addNotification(
+      "Progress reset",
+      "XP, streaks, badges and energy were reset.",
+      "reset"
+    );
+  };
 
   // ==========================================
   // RESET EVERYTHING
   // ==========================================
 
-  const resetEverything =
-    () => {
-      setTasks([]);
+  const resetEverything = () => {
+    setTasks([]);
 
-      setXp(0);
+    setXp(0);
 
-      setCompletionDays(
-        []
-      );
+    setCompletionDays([]);
 
-      setBadges([]);
+    setBadges([]);
 
-      setEnergy(100);
+    setEnergy(100);
 
-      setMissionCompleted(
-        false
-      );
+    setMissionCompleted(false);
 
-      setMissionDate(
-        getToday()
-      );
+    setMissionDate(getToday());
 
-      setFocusMode(false);
+    setFocusMode(false);
 
-      setFocusTask(null);
+    setFocusTask(null);
 
-      setGlobalSearch("");
+    setGlobalSearch("");
 
-      setDarkMode(false);
+    setDarkMode(false);
 
-      // Remove stored data
+    // Remove stored data
 
-      localStorage.removeItem(
-        "lockin_tasks"
-      );
+    localStorage.removeItem("lockin_tasks");
 
-      localStorage.removeItem(
-        "lockin_xp"
-      );
+    localStorage.removeItem("lockin_xp");
 
-      localStorage.removeItem(
-        "lockin_completion_days"
-      );
+    localStorage.removeItem(
+      "lockin_completion_days"
+    );
 
-      localStorage.removeItem(
-        "lockin_badges"
-      );
+    localStorage.removeItem("lockin_badges");
 
-      localStorage.removeItem(
-        "lockin_energy"
-      );
+    localStorage.removeItem("lockin_energy");
 
-      localStorage.removeItem(
-        "lockin_focus_mode"
-      );
+    localStorage.removeItem(
+      "lockin_focus_mode"
+    );
 
-      localStorage.removeItem(
-        "lockin_notifications"
-      );
+    localStorage.removeItem(
+      "lockin_notifications"
+    );
 
-      localStorage.removeItem(
-        "lockin_notifications_read"
-      );
+    localStorage.removeItem(
+      "lockin_notifications_read"
+    );
 
-      localStorage.setItem(
-        "lockin_theme",
-        "light"
-      );
+    localStorage.setItem(
+      "lockin_theme",
+      "light"
+    );
 
-      document.documentElement.classList.remove(
-        "dark"
-      );
+    document.documentElement.classList.remove(
+      "dark"
+    );
 
-      // IMPORTANT:
-      // This is an ARRAY.
-      // This prevents current.map errors.
+    setNotificationsList([
+      {
+        id: crypto.randomUUID(),
 
-      setNotificationsList([
-        {
-          id: crypto.randomUUID(),
+        title: "Lockin reset",
 
-          title:
-            "Lockin reset",
+        message:
+          "Everything has been reset to default.",
 
-          message:
-            "Everything has been reset to default.",
+        type: "reset",
 
-          type: "reset",
+        createdAt:
+          new Date().toISOString(),
 
-          createdAt:
-            new Date().toISOString(),
+        read: false,
+      },
+    ]);
 
-          read: false,
-        },
-      ]);
-
-      setNotificationsRead(
-        false
-      );
-    };
+    setNotificationsRead(false);
+  };
 
   // ==========================================
   // NOTIFICATION CONTROLS
   // ==========================================
 
-  const markNotificationsRead =
-    () => {
-      setNotificationsList(
-        (current) => {
-          const safeCurrent =
-            Array.isArray(
-              current
-            )
-              ? current
-              : [];
+  const markNotificationsRead = () => {
+    setNotificationsList(
+      (current) => {
+        const safeCurrent =
+          Array.isArray(current)
+            ? current
+            : [];
 
-          return safeCurrent.map(
-            (notification) => ({
-              ...notification,
-              read: true,
-            })
-          );
-        }
-      );
+        return safeCurrent.map(
+          (notification) => ({
+            ...notification,
+            read: true,
+          })
+        );
+      }
+    );
 
-      setNotificationsRead(
-        true
-      );
-    };
+    setNotificationsRead(true);
+  };
 
-  const clearNotifications =
-    () => {
-      setNotificationsList(
-        []
-      );
+  const clearNotifications = () => {
+    setNotificationsList([]);
 
-      setNotificationsRead(
-        true
-      );
-    };
+    setNotificationsRead(true);
+  };
 
   // ==========================================
   // MAIN LAYOUT
@@ -1333,38 +1134,21 @@ function App() {
 
       {/* SIDEBAR */}
 
-      {/* SIDEBAR */}
-
-<Sidebar tasks={tasks} />
+      <Sidebar tasks={tasks} />
 
       {/* MAIN */}
 
-      <div className="relative min-h-screen lg:ml-72">
+      <div className="relative min-h-screen pb-24 lg:ml-72 lg:pb-0">
 
         {/* NAVBAR */}
 
         <Navbar
           darkMode={darkMode}
-          setDarkMode={
-            setDarkMode
-          }
-
-          globalSearch={
-            globalSearch
-          }
-
-          setGlobalSearch={
-            setGlobalSearch
-          }
-
-          focusTask={
-            focusTask
-          }
-
-          onStopFocus={
-            stopFocus
-          }
-
+          setDarkMode={setDarkMode}
+          globalSearch={globalSearch}
+          setGlobalSearch={setGlobalSearch}
+          focusTask={focusTask}
+          onStopFocus={stopFocus}
           notifications={
             Array.isArray(
               notificationsList
@@ -1372,15 +1156,12 @@ function App() {
               ? notificationsList
               : []
           }
-
           notificationsRead={
             notificationsRead
           }
-
           onMarkNotificationsRead={
             markNotificationsRead
           }
-
           onClearNotifications={
             clearNotifications
           }
@@ -1478,6 +1259,7 @@ function App() {
           />
 
         </main>
+
       </div>
     </div>
   );
