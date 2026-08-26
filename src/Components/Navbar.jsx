@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Bell,
   Check,
@@ -19,20 +20,31 @@ function Navbar({
   markAllNotificationsRead,
   clearNotifications,
 }) {
+  const [showNotifications, setShowNotifications] =
+    useState(false);
+
   const unreadCount = notificationsList.filter(
     (notification) => !notification.read
   ).length;
 
   const handleThemeToggle = () => {
-    // IMPORTANT:
-    // Navbar only switches LIGHT <-> DARK.
-    //
-    // It does NOT select System.
-    //
-    // If Settings currently has System selected,
-    // this uses the currently displayed mode.
-
     changeTheme?.();
+  };
+
+  const handleNotificationToggle = () => {
+    setShowNotifications((current) => !current);
+  };
+
+  const handleMarkNotificationRead = (id) => {
+    markNotificationRead?.(id);
+  };
+
+  const handleMarkAllRead = () => {
+    markAllNotificationsRead?.();
+  };
+
+  const handleClearNotifications = () => {
+    clearNotifications?.();
   };
 
   return (
@@ -94,9 +106,7 @@ function Navbar({
               type="text"
               value={globalSearch}
               onChange={(event) =>
-                setGlobalSearch?.(
-                  event.target.value
-                )
+                setGlobalSearch?.(event.target.value)
               }
               placeholder="Search tasks..."
               className="
@@ -142,13 +152,9 @@ function Navbar({
         ================================================= */}
 
         <div className="flex shrink-0 items-center gap-2">
+
           {/* =================================================
-              THEME BUTTON
-
-              LIGHT -> DARK
-              DARK -> LIGHT
-
-              SYSTEM IS NEVER SELECTED HERE.
+              THEME
           ================================================= */}
 
           <button
@@ -197,11 +203,14 @@ function Navbar({
               NOTIFICATIONS
           ================================================= */}
 
-          <div className="group relative">
+          <div className="relative">
+
             <button
               type="button"
               title="Notifications"
               aria-label="Notifications"
+              aria-expanded={showNotifications}
+              onClick={handleNotificationToggle}
               className="
                 relative
                 flex
@@ -254,179 +263,259 @@ function Navbar({
               )}
             </button>
 
-            {/* Notification dropdown */}
+            {/* =================================================
+                NOTIFICATION PANEL
 
-            <div
-              className="
-                invisible
-                absolute
-                right-0
-                top-[calc(100%+10px)]
-                z-50
-                w-[min(360px,calc(100vw-2rem))]
-                translate-y-2
-                overflow-hidden
-                rounded-2xl
-                border
-                border-[#ded9d1]
-                bg-white
-                opacity-0
-                shadow-2xl
-                transition-all
-                duration-200
-                group-hover:visible
-                group-hover:translate-y-0
-                group-hover:opacity-100
-                dark:border-[#343934]
-                dark:bg-[#1b1f1c]
-              "
-            >
-              <div
-                className="
-                  flex
-                  items-center
-                  justify-between
-                  border-b
-                  border-[#e8e4dd]
-                  px-4
-                  py-3
-                  dark:border-[#343934]
-                "
-              >
-                <div>
-                  <p className="text-sm font-black">
-                    Notifications
-                  </p>
+                IMPORTANT:
+                This uses React state instead of hover.
+                Therefore it works on phones.
+            ================================================= */}
 
-                  <p className="text-[11px] text-[#918b82]">
-                    {unreadCount} unread
-                  </p>
-                </div>
+            {showNotifications && (
+              <>
+                {/* MOBILE BACKDROP */}
 
-                <div className="flex items-center gap-1">
-                  {unreadCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={
-                        markAllNotificationsRead
-                      }
-                      title="Mark all as read"
-                      className="
-                        rounded-lg
-                        p-2
-                        text-[#765b6b]
-                        transition
-                        hover:bg-[#765b6b]/10
-                      "
-                    >
-                      <Check size={15} />
-                    </button>
-                  )}
+                <button
+                  type="button"
+                  aria-label="Close notifications"
+                  onClick={() =>
+                    setShowNotifications(false)
+                  }
+                  className="
+                    fixed
+                    inset-0
+                    z-40
+                    cursor-default
+                    bg-black/20
+                    backdrop-blur-[2px]
+                    sm:hidden
+                  "
+                />
 
-                  {notificationsList.length >
-                    0 && (
-                    <button
-                      type="button"
-                      onClick={
-                        clearNotifications
-                      }
-                      title="Clear notifications"
-                      className="
-                        rounded-lg
-                        p-2
-                        text-rose-500
-                        transition
-                        hover:bg-rose-50
-                        dark:hover:bg-rose-950/20
-                      "
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  )}
-                </div>
-              </div>
+                {/* PANEL */}
 
-              <div className="max-h-80 overflow-y-auto">
-                {notificationsList.length ===
-                0 ? (
-                  <div className="px-5 py-8 text-center">
-                    <Bell
-                      size={24}
-                      className="mx-auto text-[#b2ada5]"
-                    />
+                <div
+                  className="
+                    fixed
+                    left-3
+                    right-3
+                    top-[82px]
+                    z-50
+                    overflow-hidden
+                    rounded-3xl
+                    border
+                    border-[#ded9d1]
+                    bg-white
+                    shadow-[0_25px_80px_rgba(0,0,0,0.22)]
+                    sm:absolute
+                    sm:left-auto
+                    sm:right-0
+                    sm:top-[calc(100%+10px)]
+                    sm:w-[360px]
+                    sm:rounded-2xl
+                    dark:border-[#343934]
+                    dark:bg-[#1b1f1c]
+                  "
+                >
 
-                    <p className="mt-2 text-xs font-bold text-[#918b82]">
-                      No notifications
-                    </p>
-                  </div>
-                ) : (
-                  notificationsList
-                    .slice(0, 20)
-                    .map((notification) => (
+                  {/* HEADER */}
+
+                  <div
+                    className="
+                      flex
+                      items-center
+                      justify-between
+                      border-b
+                      border-[#e8e4dd]
+                      px-4
+                      py-3
+                      dark:border-[#343934]
+                    "
+                  >
+                    <div>
+                      <p className="text-sm font-black">
+                        Notifications
+                      </p>
+
+                      <p className="text-[11px] text-[#918b82]">
+                        {unreadCount} unread
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleMarkAllRead}
+                          title="Mark all as read"
+                          className="
+                            rounded-lg
+                            p-2
+                            text-[#765b6b]
+                            transition
+                            hover:bg-[#765b6b]/10
+                          "
+                        >
+                          <Check size={15} />
+                        </button>
+                      )}
+
+                      {notificationsList.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={
+                            handleClearNotifications
+                          }
+                          title="Clear notifications"
+                          className="
+                            rounded-lg
+                            p-2
+                            text-rose-500
+                            transition
+                            hover:bg-rose-50
+                            dark:hover:bg-rose-950/20
+                          "
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+
                       <button
-                        key={notification.id}
                         type="button"
                         onClick={() =>
-                          markNotificationRead?.(
-                            notification.id
-                          )
+                          setShowNotifications(false)
                         }
-                        className={`
-                          flex
-                          w-full
-                          gap-3
-                          border-b
-                          border-[#eeeae4]
-                          px-4
-                          py-3
-                          text-left
+                        title="Close"
+                        className="
+                          rounded-lg
+                          p-2
+                          text-[#918b82]
                           transition
-                          last:border-b-0
-                          dark:border-[#30352f]
-                          ${
-                            notification.read
-                              ? "bg-transparent"
-                              : "bg-[#765b6b]/5 dark:bg-[#765b6b]/10"
-                          }
-                        `}
+                          hover:bg-[#eeeae4]
+                          dark:hover:bg-white/5
+                        "
                       >
-                        <span
-                          className={`
-                            mt-1.5
-                            h-2
-                            w-2
-                            shrink-0
-                            rounded-full
-                            ${
-                              notification.read
-                                ? "bg-[#d2cec7]"
-                                : "bg-[#765b6b]"
-                            }
-                          `}
-                        />
+                        <X size={15} />
+                      </button>
+                    </div>
+                  </div>
 
-                        <div className="min-w-0">
-                          <p
+                  {/* NOTIFICATION LIST */}
+
+                  <div className="max-h-[70vh] overflow-y-auto sm:max-h-80">
+
+                    {notificationsList.length === 0 ? (
+                      <div className="px-5 py-10 text-center">
+
+                        <div
+                          className="
+                            mx-auto
+                            flex
+                            h-12
+                            w-12
+                            items-center
+                            justify-center
+                            rounded-2xl
+                            bg-[#765b6b]/10
+                            text-[#765b6b]
+                          "
+                        >
+                          <Bell size={22} />
+                        </div>
+
+                        <p className="mt-3 text-xs font-black">
+                          No notifications
+                        </p>
+
+                        <p className="mt-1 text-[11px] text-[#918b82]">
+                          You're all caught up.
+                        </p>
+                      </div>
+                    ) : (
+                      notificationsList
+                        .slice(0, 20)
+                        .map((notification) => (
+                          <button
+                            key={notification.id}
+                            type="button"
+                            onClick={() =>
+                              handleMarkNotificationRead(
+                                notification.id
+                              )
+                            }
                             className={`
-                              text-xs
-                              leading-5
+                              flex
+                              w-full
+                              gap-3
+                              border-b
+                              border-[#eeeae4]
+                              px-4
+                              py-3.5
+                              text-left
+                              transition
+                              last:border-b-0
+                              hover:bg-[#f6f4ef]
+                              dark:border-[#30352f]
+                              dark:hover:bg-white/[0.03]
                               ${
                                 notification.read
-                                  ? "text-[#77716a] dark:text-[#929a92]"
-                                  : "font-bold text-[#292725] dark:text-white"
+                                  ? "bg-transparent"
+                                  : "bg-[#765b6b]/5 dark:bg-[#765b6b]/10"
                               }
                             `}
                           >
-                            {
-                              notification.message
-                            }
-                          </p>
-                        </div>
-                      </button>
-                    ))
-                )}
-              </div>
-            </div>
+                            <span
+                              className={`
+                                mt-1.5
+                                h-2
+                                w-2
+                                shrink-0
+                                rounded-full
+                                ${
+                                  notification.read
+                                    ? "bg-[#d2cec7]"
+                                    : "bg-[#765b6b]"
+                                }
+                              `}
+                            />
+
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className={`
+                                  text-xs
+                                  leading-5
+                                  ${
+                                    notification.read
+                                      ? "text-[#77716a] dark:text-[#929a92]"
+                                      : "font-bold text-[#292725] dark:text-white"
+                                  }
+                                `}
+                              >
+                                {notification.message}
+                              </p>
+
+                              {notification.createdAt && (
+                                <p className="mt-1 text-[9px] font-semibold text-[#aaa49c]">
+                                  {new Date(
+                                    notification.createdAt
+                                  ).toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+
+                            {!notification.read && (
+                              <span className="self-center text-[9px] font-black text-[#765b6b]">
+                                NEW
+                              </span>
+                            )}
+                          </button>
+                        ))
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

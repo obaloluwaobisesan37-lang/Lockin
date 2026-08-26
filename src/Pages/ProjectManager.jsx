@@ -44,6 +44,9 @@ function ProjectManager() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [taskFilter, setTaskFilter] = useState("all");
 
+  // DELETE CONFIRMATION
+  const [deleteProjectTarget, setDeleteProjectTarget] = useState(null);
+
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -113,7 +116,7 @@ function ProjectManager() {
 
     return Math.ceil(
       (target.getTime() - today.getTime()) /
-        (1000 * 60 * 60 * 24),
+        (1000 * 60 * 60 * 24)
     );
   };
 
@@ -210,7 +213,6 @@ function ProjectManager() {
   };
 
   // =========================================================
-  // IMPORTANT:
   // MERGE PROJECTS + PROJECT STATS
   // =========================================================
 
@@ -219,7 +221,7 @@ function ProjectManager() {
       projectStats.map((project) => [
         String(project.id),
         project,
-      ]),
+      ])
     );
 
     return projects.map((project) => {
@@ -298,7 +300,7 @@ function ProjectManager() {
 
       if (sortBy === "name") {
         return getProjectName(a).localeCompare(
-          getProjectName(b),
+          getProjectName(b)
         );
       }
 
@@ -312,7 +314,7 @@ function ProjectManager() {
   ]);
 
   // =========================================================
-  // MODAL
+  // CREATE / EDIT MODAL
   // =========================================================
 
   const openCreateModal = () => {
@@ -395,26 +397,32 @@ function ProjectManager() {
   // DELETE
   // =========================================================
 
-  const handleDelete = (project) => {
-    const name = getProjectName(project);
+  const requestDeleteProject = (project) => {
+    setOpenMenu(null);
+    setDeleteProjectTarget(project);
+  };
 
-    const confirmed = window.confirm(
-      `Delete "${name}"?\n\nThis will remove the project. Its tasks will not be deleted.`,
-    );
+  const cancelDeleteProject = () => {
+    setDeleteProjectTarget(null);
+  };
 
-    if (!confirmed) return;
+  const confirmDeleteProject = () => {
+    if (!deleteProjectTarget) return;
 
-    deleteProject?.(project.id);
+    const projectId = deleteProjectTarget.id;
 
-    if (selectedProject?.id === project.id) {
+    deleteProject?.(projectId);
+
+    if (selectedProject?.id === projectId) {
       setSelectedProject(null);
     }
 
+    setDeleteProjectTarget(null);
     setOpenMenu(null);
   };
 
   // =========================================================
-  // VIEW
+  // VIEW PROJECT
   // =========================================================
 
   const viewProjectTasks = (project) => {
@@ -432,11 +440,11 @@ function ProjectManager() {
 
   const overallStats = useMemo(() => {
     const activeTasks = tasks.filter(
-      (task) => !task.archived,
+      (task) => !task.archived
     );
 
     const completedTasks = activeTasks.filter(
-      (task) => task.completed,
+      (task) => task.completed
     );
 
     const overdueTasks = activeTasks.filter(
@@ -444,11 +452,11 @@ function ProjectManager() {
         !task.completed &&
         task.dueDate &&
         new Date(`${task.dueDate}T00:00:00`) <
-          new Date(`${getToday()}T00:00:00`),
+          new Date(`${getToday()}T00:00:00`)
     );
 
     const activeProjects = projects.filter(
-      (project) => project.status !== "completed",
+      (project) => project.status !== "completed"
     );
 
     const averageProgress =
@@ -456,10 +464,9 @@ function ProjectManager() {
         ? Math.round(
             displayProjects.reduce(
               (sum, project) =>
-                sum +
-                Number(project.progress || 0),
-              0,
-            ) / displayProjects.length,
+                sum + Number(project.progress || 0),
+              0
+            ) / displayProjects.length
           )
         : 0;
 
@@ -474,7 +481,7 @@ function ProjectManager() {
   }, [projects, tasks, displayProjects]);
 
   // =========================================================
-  // SELECTED TASKS
+  // SELECTED PROJECT TASKS
   // =========================================================
 
   const selectedProjectTasks = useMemo(() => {
@@ -484,18 +491,18 @@ function ProjectManager() {
       (task) =>
         String(task.projectId) ===
           String(selectedProject.id) &&
-        !task.archived,
+        !task.archived
     );
 
     if (taskFilter === "open") {
       return projectTasks.filter(
-        (task) => !task.completed,
+        (task) => !task.completed
       );
     }
 
     if (taskFilter === "completed") {
       return projectTasks.filter(
-        (task) => task.completed,
+        (task) => task.completed
       );
     }
 
@@ -505,12 +512,16 @@ function ProjectManager() {
           !task.completed &&
           task.dueDate &&
           new Date(`${task.dueDate}T00:00:00`) <
-            new Date(`${getToday()}T00:00:00`),
+            new Date(`${getToday()}T00:00:00`)
       );
     }
 
     return projectTasks;
   }, [selectedProject, tasks, taskFilter]);
+
+  // =========================================================
+  // SELECTED ANALYTICS
+  // =========================================================
 
   const selectedAnalytics = useMemo(() => {
     if (!selectedProject) {
@@ -526,11 +537,11 @@ function ProjectManager() {
       (task) =>
         String(task.projectId) ===
           String(selectedProject.id) &&
-        !task.archived,
+        !task.archived
     );
 
     const completed = projectTasks.filter(
-      (task) => task.completed,
+      (task) => task.completed
     );
 
     const overdue = projectTasks.filter(
@@ -538,7 +549,7 @@ function ProjectManager() {
         !task.completed &&
         task.dueDate &&
         new Date(`${task.dueDate}T00:00:00`) <
-          new Date(`${getToday()}T00:00:00`),
+          new Date(`${getToday()}T00:00:00`)
     );
 
     return {
@@ -589,7 +600,6 @@ function ProjectManager() {
       {/* STATS */}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-
         <StatCard
           icon={<FolderKanban size={20} />}
           label="Projects"
@@ -722,8 +732,8 @@ function ProjectManager() {
               100,
               Math.max(
                 0,
-                Number(project.progress || 0),
-              ),
+                Number(project.progress || 0)
+              )
             );
 
             return (
@@ -775,7 +785,7 @@ function ProjectManager() {
                           setOpenMenu(
                             openMenu === project.id
                               ? null
-                              : project.id,
+                              : project.id
                           )
                         }
                         className="flex h-9 w-9 items-center justify-center rounded-xl text-black/35 hover:bg-black/5 dark:text-white/35 dark:hover:bg-white/5"
@@ -813,7 +823,7 @@ function ProjectManager() {
                           <button
                             type="button"
                             onClick={() =>
-                              handleDelete(project)
+                              requestDeleteProject(project)
                             }
                             className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-rose-500 hover:bg-rose-500/10"
                           >
@@ -834,7 +844,7 @@ function ProjectManager() {
 
                     <span
                       className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${getPriorityStyle(
-                        project.priority,
+                        project.priority
                       )}`}
                     >
                       {project.priority || "Medium"}{" "}
@@ -843,7 +853,7 @@ function ProjectManager() {
 
                     <span
                       className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${getStatusStyle(
-                        project.status,
+                        project.status
                       )}`}
                     >
                       {project.status || "active"}
@@ -916,32 +926,32 @@ function ProjectManager() {
                           <CalendarDays size={14} />
 
                           {new Date(
-                            `${project.deadline}T00:00:00`,
+                            `${project.deadline}T00:00:00`
                           ).toLocaleDateString(
                             undefined,
                             {
                               day: "numeric",
                               month: "short",
                               year: "numeric",
-                            },
+                            }
                           )}
                         </div>
 
                         <span
                           className={`text-[10px] font-black ${
                             getDaysUntilDeadline(
-                              project.deadline,
+                              project.deadline
                             ) < 0
                               ? "text-rose-500"
                               : getDaysUntilDeadline(
-                                    project.deadline,
+                                    project.deadline
                                   ) <= 3
                                 ? "text-orange-500"
                                 : "text-[#6f9473]"
                           }`}
                         >
                           {getDeadlineLabel(
-                            project.deadline,
+                            project.deadline
                           )}
                         </span>
                       </>
@@ -969,7 +979,7 @@ function ProjectManager() {
                     <button
                       type="button"
                       onClick={() =>
-                        handleDelete(project)
+                        requestDeleteProject(project)
                       }
                       className="flex h-full items-center justify-center rounded-2xl border border-rose-500/10 px-4 text-rose-500 hover:bg-rose-500/10"
                     >
@@ -1026,7 +1036,7 @@ function ProjectManager() {
                 <button
                   type="button"
                   onClick={() =>
-                    handleDelete(selectedProject)
+                    requestDeleteProject(selectedProject)
                   }
                   className="flex items-center gap-2 rounded-xl bg-rose-500/10 px-4 py-2.5 text-xs font-black text-rose-500 hover:bg-rose-500/15"
                 >
@@ -1070,7 +1080,6 @@ function ProjectManager() {
                 value={selectedAnalytics.overdue}
                 className="text-rose-500"
               />
-
             </div>
           </div>
 
@@ -1159,7 +1168,7 @@ function ProjectManager() {
                   {task.priority && (
                     <span
                       className={`hidden rounded-full px-2.5 py-1 text-[9px] font-black uppercase sm:block ${getPriorityStyle(
-                        task.priority,
+                        task.priority
                       )}`}
                     >
                       {task.priority}
@@ -1189,8 +1198,6 @@ function ProjectManager() {
         >
 
           <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[34px] border border-black/[0.06] bg-white shadow-[0_30px_100px_rgba(0,0,0,0.3)] dark:border-white/[0.08] dark:bg-[#171a17]">
-
-            {/* MODAL TOP */}
 
             <div className="relative overflow-hidden border-b border-black/[0.06] p-6 dark:border-white/[0.06] sm:p-8">
 
@@ -1234,14 +1241,10 @@ function ProjectManager() {
               </div>
             </div>
 
-            {/* FORM */}
-
             <form
               onSubmit={handleSubmit}
               className="space-y-6 p-6 sm:p-8"
             >
-
-              {/* NAME */}
 
               <div>
                 <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-black/45 dark:text-white/45">
@@ -1258,8 +1261,6 @@ function ProjectManager() {
                 />
               </div>
 
-              {/* DESCRIPTION */}
-
               <div>
                 <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-black/45 dark:text-white/45">
                   Description
@@ -1274,8 +1275,6 @@ function ProjectManager() {
                   className="w-full resize-none rounded-2xl border border-black/[0.08] bg-[#f5f6f3] p-4 text-sm font-semibold outline-none focus:border-[#6f9473]/50 focus:ring-4 focus:ring-[#6f9473]/10 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white"
                 />
               </div>
-
-              {/* OPTIONS */}
 
               <div className="grid gap-5 sm:grid-cols-2">
 
@@ -1303,8 +1302,6 @@ function ProjectManager() {
                   ]}
                 />
 
-                {/* BEAUTIFUL DATE FIELD */}
-
                 <div>
                   <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-black/45 dark:text-white/45">
                     Deadline
@@ -1325,31 +1322,7 @@ function ProjectManager() {
                       value={form.deadline}
                       onChange={handleChange}
                       min={getToday()}
-                      className="
-                        h-13
-                        w-full
-                        cursor-pointer
-                        rounded-2xl
-                        border
-                        border-black/[0.08]
-                        bg-[#f5f6f3]
-                        pl-12
-                        pr-4
-                        text-sm
-                        font-bold
-                        text-black
-                        outline-none
-                        transition
-                        hover:border-[#6f9473]/40
-                        focus:border-[#6f9473]/60
-                        focus:ring-4
-                        focus:ring-[#6f9473]/10
-                        [color-scheme:light]
-                        dark:border-white/[0.08]
-                        dark:bg-white/[0.04]
-                        dark:text-white
-                        dark:[color-scheme:dark]
-                      "
+                      className="h-13 w-full cursor-pointer rounded-2xl border border-black/[0.08] bg-[#f5f6f3] pl-12 pr-4 text-sm font-bold text-black outline-none transition hover:border-[#6f9473]/40 focus:border-[#6f9473]/60 focus:ring-4 focus:ring-[#6f9473]/10 [color-scheme:light] dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:[color-scheme:dark]"
                     />
                   </div>
 
@@ -1358,13 +1331,11 @@ function ProjectManager() {
 
                     {form.deadline
                       ? getDeadlineLabel(
-                          form.deadline,
+                          form.deadline
                         )
                       : "Choose when this project should be completed."}
                   </p>
                 </div>
-
-                {/* COLOR */}
 
                 <StyledSelect
                   label="Project Color"
@@ -1381,8 +1352,6 @@ function ProjectManager() {
                   ]}
                 />
               </div>
-
-              {/* COLOR CHOICES */}
 
               <div>
                 <p className="mb-3 text-[10px] font-black uppercase tracking-wider text-black/45 dark:text-white/45">
@@ -1412,12 +1381,10 @@ function ProjectManager() {
                           className={`h-6 w-6 rounded-full ${color.background}`}
                         />
                       </button>
-                    ),
+                    )
                   )}
                 </div>
               </div>
-
-              {/* PREVIEW */}
 
               <div className="overflow-hidden rounded-3xl border border-black/[0.07] bg-[#f5f6f3] dark:border-white/[0.07] dark:bg-white/[0.035]">
 
@@ -1455,7 +1422,7 @@ function ProjectManager() {
 
                     <span
                       className={`rounded-full px-3 py-1.5 text-[9px] font-black uppercase ${getPriorityStyle(
-                        form.priority,
+                        form.priority
                       )}`}
                     >
                       {form.priority}
@@ -1466,7 +1433,7 @@ function ProjectManager() {
 
                     <span
                       className={`rounded-full px-3 py-1.5 text-[9px] font-black uppercase ${getStatusStyle(
-                        form.status,
+                        form.status
                       )}`}
                     >
                       {form.status}
@@ -1476,22 +1443,20 @@ function ProjectManager() {
                       <span className="flex items-center gap-1.5 rounded-full bg-black/5 px-3 py-1.5 text-[9px] font-black dark:bg-white/5">
                         <CalendarDays size={12} />
                         {new Date(
-                          `${form.deadline}T00:00:00`,
+                          `${form.deadline}T00:00:00`
                         ).toLocaleDateString(
                           undefined,
                           {
                             day: "numeric",
                             month: "short",
                             year: "numeric",
-                          },
+                          }
                         )}
                       </span>
                     )}
                   </div>
                 </div>
               </div>
-
-              {/* BUTTONS */}
 
               <div className="flex flex-col-reverse gap-3 border-t border-black/[0.06] pt-6 dark:border-white/[0.06] sm:flex-row sm:justify-end">
 
@@ -1516,6 +1481,88 @@ function ProjectManager() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          DELETE CONFIRMATION MODAL
+      ===================================================== */}
+
+      {deleteProjectTarget && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget
+            ) {
+              cancelDeleteProject();
+            }
+          }}
+        >
+          <div className="w-full max-w-md overflow-hidden rounded-[30px] border border-black/[0.07] bg-white shadow-[0_30px_100px_rgba(0,0,0,0.3)] dark:border-white/[0.08] dark:bg-[#171a17]">
+
+            <div className="p-6 sm:p-7">
+
+              <div className="flex items-start gap-4">
+
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-500">
+                  <Trash2 size={21} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl font-black">
+                    Delete project?
+                  </h2>
+
+                  <p className="mt-1 text-sm leading-6 text-black/45 dark:text-white/45">
+                    Are you sure you want to delete{" "}
+                    <span className="font-black text-black dark:text-white">
+                      "{getProjectName(
+                        deleteProjectTarget
+                      )}"
+                    </span>
+                    ?
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={cancelDeleteProject}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-black/5 text-black/40 hover:bg-black/10 dark:bg-white/5 dark:text-white/40 dark:hover:bg-white/10"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+
+              <div className="mt-5 rounded-2xl bg-rose-500/5 p-4 dark:bg-rose-500/[0.06]">
+                <p className="text-xs font-semibold leading-5 text-rose-500">
+                  The project will be removed. Its tasks will
+                  not be deleted.
+                </p>
+              </div>
+
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+                <button
+                  type="button"
+                  onClick={cancelDeleteProject}
+                  className="rounded-2xl px-5 py-3 text-sm font-black text-black/50 transition hover:bg-black/5 dark:text-white/50 dark:hover:bg-white/5"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={confirmDeleteProject}
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-rose-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-600"
+                >
+                  <Trash2 size={16} />
+                  Delete Project
+                </button>
+
+              </div>
+            </div>
           </div>
         </div>
       )}

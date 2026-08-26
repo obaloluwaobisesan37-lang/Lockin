@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import {
@@ -12,6 +13,8 @@ import {
   CalendarDays,
   ChevronRight,
   Sparkles,
+  MoreHorizontal,
+  X,
 } from "lucide-react";
 
 const links = [
@@ -67,6 +70,8 @@ function Sidebar({
   tasks = [],
   projects = [],
 }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+
   const safeTasks = Array.isArray(tasks)
     ? tasks
     : [];
@@ -75,8 +80,10 @@ function Sidebar({
     ? projects
     : [];
 
-  // Only count non-archived tasks
-  // in the normal workspace statistics.
+  // =========================================================
+  // TASK STATS
+  // =========================================================
+
   const activeTasks = safeTasks.filter(
     (task) => task?.archived !== true
   );
@@ -110,6 +117,26 @@ function Sidebar({
   const archivedTasks = safeTasks.filter(
     (task) => task?.archived === true
   ).length;
+
+  // =========================================================
+  // MOBILE LINKS
+  // These are always visible.
+  // =========================================================
+
+  const mobileMainLinks = [
+    links[0], // Dashboard
+    links[1], // My Tasks
+    links[2], // Projects
+    links[4], // Completed
+    links[5], // Archives
+  ];
+
+  const mobileMoreLinks = [
+    links[3], // Task Overview
+    links[6], // Calendar
+    links[7], // Profile
+    links[8], // Settings
+  ];
 
   return (
     <>
@@ -184,7 +211,7 @@ function Sidebar({
         <div className="mx-5 h-px shrink-0 bg-[#ddd8cf] dark:bg-[#393a36]" />
 
         {/* =====================================================
-            NAVIGATION
+            DESKTOP NAVIGATION
         ===================================================== */}
 
         <nav
@@ -223,7 +250,6 @@ function Sidebar({
                     font-semibold
                     transition-all
                     duration-200
-
                     ${
                       isActive
                         ? "bg-[#765b6b] text-white shadow-lg shadow-[#765b6b]/20"
@@ -245,9 +271,7 @@ function Sidebar({
                         {link.name}
                       </span>
 
-                      {/* Archive count */}
-                      {link.path ===
-                        "/archives" &&
+                      {link.path === "/archives" &&
                         archivedTasks > 0 && (
                           <span
                             className={`
@@ -260,7 +284,6 @@ function Sidebar({
                               px-1.5
                               text-[9px]
                               font-black
-
                               ${
                                 isActive
                                   ? "bg-white/20 text-white"
@@ -305,8 +328,6 @@ function Sidebar({
               dark:bg-[#1d211e]
             "
           >
-            {/* HEADER */}
-
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[10px] font-black uppercase tracking-wider text-[#918b82]">
@@ -336,8 +357,6 @@ function Sidebar({
               </div>
             </div>
 
-            {/* PROGRESS LABEL */}
-
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-semibold text-[#918b82]">
                 Completion
@@ -347,8 +366,6 @@ function Sidebar({
                 {progress}%
               </span>
             </div>
-
-            {/* PROGRESS BAR */}
 
             <div className="h-2 overflow-hidden rounded-full bg-[#ece8e2] dark:bg-[#303430]">
               <div
@@ -364,8 +381,6 @@ function Sidebar({
                 }}
               />
             </div>
-
-            {/* STATS */}
 
             <div className="mt-4 grid grid-cols-2 gap-2">
               <div className="rounded-xl bg-[#f6f4ef] p-3 dark:bg-[#252925]">
@@ -389,10 +404,24 @@ function Sidebar({
               </div>
             </div>
 
-            {/* ARCHIVED COUNT */}
-
             {archivedTasks > 0 && (
-              <div className="mt-2 flex items-center justify-between rounded-xl bg-[#f0e9ee] px-3 py-2.5 dark:bg-[#332a30]">
+              <NavLink
+                to="/archives"
+                className="
+                  mt-2
+                  flex
+                  items-center
+                  justify-between
+                  rounded-xl
+                  bg-[#f0e9ee]
+                  px-3
+                  py-2.5
+                  transition
+                  hover:bg-[#e8dfe5]
+                  dark:bg-[#332a30]
+                  dark:hover:bg-[#3b3038]
+                "
+              >
                 <div className="flex items-center gap-2">
                   <Archive
                     size={14}
@@ -407,7 +436,7 @@ function Sidebar({
                 <span className="text-xs font-black text-[#765b6b] dark:text-[#c9aebe]">
                   {archivedTasks}
                 </span>
-              </div>
+              </NavLink>
             )}
           </div>
         </div>
@@ -439,19 +468,87 @@ function Sidebar({
           md:hidden
         "
       >
-        <div
-          className="
-            mx-auto
-            flex
-            w-full
-            max-w-lg
-            items-center
-            gap-1
-            overflow-x-auto
-            scrollbar-none
-          "
-        >
-          {links.map((link) => {
+        {/* =====================================================
+            MORE MENU
+        ===================================================== */}
+
+        {moreOpen && (
+          <div
+            className="
+              absolute
+              bottom-[78px]
+              right-3
+              w-56
+              overflow-hidden
+              rounded-3xl
+              border
+              border-[#ddd8cf]
+              bg-[#f7f5f0]
+              p-2
+              shadow-2xl
+              dark:border-[#393a36]
+              dark:bg-[#1d211e]
+            "
+          >
+            <div className="mb-1 flex items-center justify-between px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#918b82]">
+                More
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setMoreOpen(false)}
+                className="rounded-lg p-1 text-[#918b82] hover:bg-black/5 dark:hover:bg-white/10"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              {mobileMoreLinks.map((link) => {
+                const Icon = link.icon;
+
+                return (
+                  <NavLink
+                    key={link.path}
+                    to={link.path}
+                    end={link.end}
+                    onClick={() =>
+                      setMoreOpen(false)
+                    }
+                    className={({ isActive }) => `
+                      flex
+                      items-center
+                      gap-3
+                      rounded-2xl
+                      px-3
+                      py-3
+                      text-sm
+                      font-bold
+                      transition
+                      ${
+                        isActive
+                          ? "bg-[#765b6b] text-white"
+                          : "text-[#716d66] hover:bg-[#e9e5de] dark:text-[#aaa69e] dark:hover:bg-[#292b29]"
+                      }
+                    `}
+                  >
+                    <Icon size={18} />
+
+                    <span>{link.name}</span>
+                  </NavLink>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================
+            MAIN MOBILE BUTTONS
+        ===================================================== */}
+
+        <div className="mx-auto flex w-full max-w-lg items-center gap-1">
+          {mobileMainLinks.map((link) => {
             const Icon = link.icon;
 
             return (
@@ -459,7 +556,7 @@ function Sidebar({
                 key={link.path}
                 to={link.path}
                 end={link.end}
-                className="min-w-[68px] flex-1"
+                className="min-w-0 flex-1"
               >
                 {({ isActive }) => (
                   <div
@@ -477,7 +574,6 @@ function Sidebar({
                       rounded-2xl
                       transition-all
                       duration-200
-
                       ${
                         isActive
                           ? "bg-[#765b6b] text-white shadow-md shadow-[#765b6b]/20"
@@ -496,16 +592,15 @@ function Sidebar({
                       {link.name}
                     </span>
 
-                    {/* MOBILE ARCHIVE BADGE */}
+                    {/* ARCHIVE BADGE */}
 
-                    {link.path ===
-                      "/archives" &&
+                    {link.path === "/archives" &&
                       archivedTasks > 0 && (
                         <span
                           className={`
                             absolute
-                            right-2
-                            top-1.5
+                            right-1
+                            top-1
                             flex
                             h-4
                             min-w-4
@@ -515,7 +610,6 @@ function Sidebar({
                             px-1
                             text-[8px]
                             font-black
-
                             ${
                               isActive
                                 ? "bg-white text-[#765b6b]"
@@ -531,6 +625,36 @@ function Sidebar({
               </NavLink>
             );
           })}
+
+          {/* ===================================================
+              MORE BUTTON
+          =================================================== */}
+
+          <button
+            type="button"
+            onClick={() =>
+              setMoreOpen((previous) => !previous)
+            }
+            className={`
+              min-w-0
+              flex-1
+              rounded-2xl
+              transition
+              ${
+                moreOpen
+                  ? "bg-[#765b6b] text-white"
+                  : "text-[#817b73] hover:bg-[#e9e5de] dark:text-[#aaa69e] dark:hover:bg-[#292b29]"
+              }
+            `}
+          >
+            <div className="mx-auto flex min-h-[58px] max-w-[78px] flex-col items-center justify-center gap-1">
+              <MoreHorizontal size={20} />
+
+              <span className="text-[8px] font-bold">
+                More
+              </span>
+            </div>
+          </button>
         </div>
       </nav>
     </>

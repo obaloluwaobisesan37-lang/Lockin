@@ -36,6 +36,84 @@ function App() {
   };
 
   // =========================================================
+  // NOTIFICATION SOUND
+  // =========================================================
+
+  const playNotificationSound = () => {
+    try {
+      const soundEnabled =
+        localStorage.getItem("lockin_sound") !== "false";
+
+      const notificationsEnabled =
+        localStorage.getItem(
+          "lockin_notifications_enabled"
+        ) !== "false";
+
+      if (!soundEnabled || !notificationsEnabled) {
+        return;
+      }
+
+      const AudioContext =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+      if (!AudioContext) {
+        return;
+      }
+
+      const audioContext = new AudioContext();
+
+      const oscillator =
+        audioContext.createOscillator();
+
+      const gainNode =
+        audioContext.createGain();
+
+      oscillator.type = "sine";
+
+      oscillator.frequency.setValueAtTime(
+        660,
+        audioContext.currentTime
+      );
+
+      oscillator.frequency.setValueAtTime(
+        880,
+        audioContext.currentTime + 0.08
+      );
+
+      gainNode.gain.setValueAtTime(
+        0,
+        audioContext.currentTime
+      );
+
+      gainNode.gain.linearRampToValueAtTime(
+        0.12,
+        audioContext.currentTime + 0.02
+      );
+
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.001,
+        audioContext.currentTime + 0.25
+      );
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.start();
+
+      oscillator.stop(
+        audioContext.currentTime + 0.25
+      );
+
+      oscillator.onended = () => {
+        audioContext.close().catch(() => {});
+      };
+    } catch {
+      // Ignore browser audio errors.
+    }
+  };
+
+  // =========================================================
   // TASKS
   // =========================================================
 
@@ -100,7 +178,8 @@ function App() {
   // =========================================================
 
   const [theme, setTheme] = useState(() => {
-    const savedTheme = localStorage.getItem("lockin_theme");
+    const savedTheme =
+      localStorage.getItem("lockin_theme");
 
     if (
       savedTheme === "light" ||
@@ -114,7 +193,8 @@ function App() {
   });
 
   const [darkMode, setDarkModeState] = useState(() => {
-    const savedTheme = localStorage.getItem("lockin_theme");
+    const savedTheme =
+      localStorage.getItem("lockin_theme");
 
     if (savedTheme === "dark") {
       return true;
@@ -425,6 +505,9 @@ function App() {
         ...previous,
       ]
     );
+
+    // PLAY NOTIFICATION SOUND
+    playNotificationSound();
   };
 
   const markNotificationRead = (id) => {
@@ -588,60 +671,80 @@ function App() {
   ) => {
     const newTask = {
       id: makeId(),
+
       title:
         taskData.title ||
         "New task",
+
       description:
         taskData.description ||
         "",
+
       priority:
         taskData.priority ||
         "Medium",
+
       dueDate:
-        taskData.dueDate || "",
+        taskData.dueDate ||
+        "",
+
       dueTime:
-        taskData.dueTime || "",
+        taskData.dueTime ||
+        "",
+
       tags: Array.isArray(
         taskData.tags
       )
         ? taskData.tags
         : [],
+
       recurring:
         taskData.recurring ||
         "None",
+
       energy:
         taskData.energy ||
         "Medium",
+
       progress:
         Number(
           taskData.progress
         ) || 0,
+
       subtasks:
         Array.isArray(
           taskData.subtasks
         )
           ? taskData.subtasks
           : [],
+
       projectId:
         taskData.projectId ||
         null,
+
       category:
         taskData.category ||
         "",
+
       status:
         taskData.status ||
         "backlog",
+
       dependencies:
         Array.isArray(
           taskData.dependencies
         )
           ? taskData.dependencies
           : [],
+
       archived:
         taskData.archived === true,
+
       completed: false,
+
       createdAt:
         new Date().toISOString(),
+
       completedAt: null,
     };
 
@@ -750,10 +853,12 @@ function App() {
                 ? "backlog"
                 : item.status ||
                   "backlog",
+
               completedAt:
                 completed
                   ? new Date().toISOString()
                   : null,
+
               progress:
                 completed
                   ? 100
@@ -765,6 +870,7 @@ function App() {
 
     if (completed) {
       addXp(10);
+
       updateStreak();
 
       setEnergy(
@@ -1207,6 +1313,15 @@ function App() {
           }`,
           "success"
         );
+
+        addNotification(
+          `Completed ${completedCount} selected task${
+            completedCount === 1
+              ? ""
+              : "s"
+          }. Nice work!`,
+          "success"
+        );
       }
 
       setSelectedTasks([]);
@@ -1449,12 +1564,14 @@ function App() {
     setFocusSeconds(
       5 * 60
     );
+
     setFocusPaused(false);
   };
 
   const completeFocus = () => {
     setFocusMode(false);
     setFocusPaused(false);
+
     setFocusSeconds(
       5 * 60
     );
@@ -1488,6 +1605,7 @@ function App() {
       focusSeconds <= 0
     ) {
       completeFocus();
+
       return undefined;
     }
 
@@ -1616,14 +1734,19 @@ function App() {
 
       return {
         total: tasks.length,
+
         completed:
           completed.length,
+
         pending:
           pending.length,
+
         today:
           todayTasks.length,
+
         overdue:
           overdueTasks.length,
+
         highPriority:
           highPriorityTasks.length,
 
@@ -1659,26 +1782,37 @@ function App() {
       });
 
       setBadges([]);
+
       setNotificationsList(
         []
       );
+
       setActivity([]);
+
       setGlobalSearch("");
+
       setSelectedTasks([]);
 
       setTaskFilter("all");
+
       setPriorityFilter(
         "all"
       );
+
       setCategoryFilter(
         "all"
       );
+
       setEnergyFilter("all");
+
       setProjectFilter("all");
+
       setTaskView("list");
 
       setFocusMode(false);
+
       setFocusPaused(false);
+
       setFocusSeconds(
         5 * 60
       );
@@ -1688,6 +1822,7 @@ function App() {
       );
 
       setTheme("light");
+
       setDarkModeState(false);
 
       document.documentElement.classList.remove(
@@ -1722,6 +1857,17 @@ function App() {
       localStorage.setItem(
         "lockin_dark_mode",
         "false"
+      );
+
+      // Reset notification settings too.
+      localStorage.setItem(
+        "lockin_notifications_enabled",
+        "true"
+      );
+
+      localStorage.setItem(
+        "lockin_sound",
+        "true"
       );
     };
 
@@ -1847,6 +1993,7 @@ function App() {
       `}
     >
       <div className="flex min-h-screen w-full">
+
         {/* ===================================================
             SIDEBAR
         =================================================== */}
@@ -1869,6 +2016,7 @@ function App() {
             md:ml-72
           "
         >
+
           {/* NAVBAR */}
 
           <Navbar
@@ -1973,6 +2121,7 @@ function App() {
             </div>
 
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+
               <button
                 type="button"
                 onClick={
@@ -2070,6 +2219,7 @@ function App() {
               >
                 Exit
               </button>
+
             </div>
           </div>
         </div>
