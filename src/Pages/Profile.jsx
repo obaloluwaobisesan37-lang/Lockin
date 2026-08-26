@@ -14,9 +14,14 @@ function Profile() {
 
   const {
     completed = 0,
-    progress = 0,
+    completionRate = 0,
     total = 0,
   } = stats;
+
+  const progress = Math.min(
+    100,
+    Math.max(0, completionRate)
+  );
 
   const level =
     completed >= 10
@@ -26,47 +31,52 @@ function Profile() {
       : "Rising";
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="mx-auto w-full max-w-6xl space-y-6 pb-10">
 
-  
+      {/* =====================================================
+          PROFILE HEADER
+      ===================================================== */}
 
+      <section className="profile-card relative overflow-hidden rounded-[2rem] border border-[#e2ddd5] bg-[#f6f4ef] p-6 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c] sm:p-8">
 
-      <section className="lockin-depth relative overflow-hidden rounded-4xl border border-[#ddd7ce] bg-[#f3f0e9] p-6 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c] sm:p-8">
-
-        
-        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#a8c5a5]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-[#765b6b]/10 blur-3xl dark:bg-[#765b6b]/20" />
 
         <div className="relative">
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-4">
 
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[#4f6f52] text-2xl font-black text-white shadow-[0_7px_0_#344a37]">
+            {/* AVATAR */}
+
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-[#765b6b] text-2xl font-black text-white shadow-[0_6px_0_#594451]">
               L
             </div>
+
+            {/* NAME */}
 
             <div>
 
               <div className="flex flex-wrap items-center gap-2">
 
-                <h1 className="text-3xl font-black tracking-tight">
+                <h1 className="text-3xl font-black tracking-tight text-[#292725] dark:text-white">
                   Lockin User
                 </h1>
 
-                <span className="rounded-full bg-[#4f6f52] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white">
+                <span className="rounded-full bg-[#765b6b] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white">
                   {level}
                 </span>
 
               </div>
 
-              <p className="mt-2 text-sm text-[#6f756e] dark:text-[#b1b7b1]">
+              <p className="mt-2 text-sm text-[#777169] dark:text-[#aaa69e]">
                 Building better habits, one task at a time.
               </p>
 
             </div>
-
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-3 text-xs text-[#6f756e] dark:text-[#aaa69e]">
+          {/* MEMBER INFO */}
+
+          <div className="mt-5 flex flex-wrap gap-4 text-xs text-[#777169] dark:text-[#aaa69e]">
 
             <span className="flex items-center gap-1.5">
               <CalendarDays size={14} />
@@ -81,25 +91,27 @@ function Profile() {
           </div>
 
         </div>
-
       </section>
 
-  
+
+      {/* =====================================================
+          STATS
+      ===================================================== */}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-        
+        {/* COMPLETED */}
 
-        <div className="profile-shine-card lockin-depth rounded-3xl border border-[#ddd7ce] bg-white p-5 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
+        <div className="profile-shine-card rounded-3xl border border-[#e2ddd5] bg-white p-5 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
 
           <div className="relative z-10">
 
             <Trophy
               size={22}
-              className="text-[#b58b4b]"
+              className="text-[#a87938] dark:text-[#c59a59]"
             />
 
-            <p className="mt-5 text-2xl font-black">
+            <p className="mt-5 text-2xl font-black text-[#292725] dark:text-white">
               {completed}
             </p>
 
@@ -111,18 +123,19 @@ function Profile() {
 
         </div>
 
-        
 
-        <div className="profile-shine-card lockin-depth rounded-3xl border border-[#ddd7ce] bg-white p-5 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
+        {/* COMPLETION RATE */}
+
+        <div className="profile-shine-card rounded-3xl border border-[#e2ddd5] bg-white p-5 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
 
           <div className="relative z-10">
 
             <Target
               size={22}
-              className="text-[#765b6b]"
+              className="text-[#765b6b] dark:text-[#c7aebe]"
             />
 
-            <p className="mt-5 text-2xl font-black">
+            <p className="mt-5 text-2xl font-black text-[#292725] dark:text-white">
               {progress}%
             </p>
 
@@ -134,18 +147,19 @@ function Profile() {
 
         </div>
 
-        {/* TOTAL TASKS */}
 
-        <div className="profile-shine-card lockin-depth rounded-3xl border border-[#ddd7ce] bg-white p-5 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
+        {/* TOTAL */}
+
+        <div className="profile-shine-card rounded-3xl border border-[#e2ddd5] bg-white p-5 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
 
           <div className="relative z-10">
 
             <CheckCircle2
               size={22}
-              className="text-[#627b82]"
+              className="text-[#627b82] dark:text-[#91aeb5]"
             />
 
-            <p className="mt-5 text-2xl font-black">
+            <p className="mt-5 text-2xl font-black text-[#292725] dark:text-white">
               {total}
             </p>
 
@@ -157,18 +171,19 @@ function Profile() {
 
         </div>
 
-        {/* CURRENT LEVEL */}
 
-        <div className="profile-shine-card lockin-depth rounded-3xl border border-[#ddd7ce] bg-white p-5 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
+        {/* LEVEL */}
+
+        <div className="profile-shine-card rounded-3xl border border-[#e2ddd5] bg-white p-5 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
 
           <div className="relative z-10">
 
             <Award
               size={22}
-              className="text-[#a65d43]"
+              className="text-[#a65d43] dark:text-[#d58b6d]"
             />
 
-            <p className="mt-5 text-2xl font-black">
+            <p className="mt-5 text-2xl font-black text-[#292725] dark:text-white">
               {level}
             </p>
 
@@ -182,19 +197,20 @@ function Profile() {
 
       </section>
 
-      {/* ===================================== */}
-      {/* PRODUCTIVITY */}
-      {/* ===================================== */}
 
-      <section className="profile-shine-card lockin-depth rounded-3xl border border-[#ddd7ce] bg-white p-6 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
+      {/* =====================================================
+          PRODUCTIVITY
+      ===================================================== */}
+
+      <section className="profile-shine-card rounded-3xl border border-[#e2ddd5] bg-white p-6 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
 
         <div className="relative z-10">
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
 
             <div>
 
-              <h2 className="text-lg font-black">
+              <h2 className="text-lg font-black text-[#292725] dark:text-white">
                 Productivity level
               </h2>
 
@@ -204,16 +220,19 @@ function Profile() {
 
             </div>
 
-            <span className="text-sm font-black text-[#a65d43]">
+            <span className="text-sm font-black text-[#765b6b] dark:text-[#c7aebe]">
               {progress}%
             </span>
 
           </div>
 
-          <div className="mt-5 h-4 overflow-hidden rounded-full bg-[#ebe6de] dark:bg-[#292a27]">
+
+          {/* PROGRESS BAR */}
+
+          <div className="mt-5 h-4 overflow-hidden rounded-full bg-[#ebe7e0] dark:bg-[#292e2a]">
 
             <div
-              className="h-full rounded-full bg-[#a65d43] transition-all duration-700"
+              className="h-full rounded-full bg-[#765b6b] transition-all duration-700"
               style={{
                 width: `${progress}%`,
               }}
@@ -225,11 +244,13 @@ function Profile() {
 
       </section>
 
-      {/* ===================================== */}
-      {/* PROFILE SHINE ANIMATION */}
-      {/* ===================================== */}
+
+      {/* =====================================================
+          SHINE ANIMATION
+      ===================================================== */}
 
       <style>{`
+
         .profile-shine-card {
           position: relative;
           overflow: hidden;
@@ -249,9 +270,9 @@ function Profile() {
           background: linear-gradient(
             90deg,
             transparent 0%,
-            rgba(255, 255, 255, 0.05) 25%,
-            rgba(255, 255, 255, 0.65) 50%,
-            rgba(255, 255, 255, 0.05) 75%,
+            rgba(255, 255, 255, 0.02) 25%,
+            rgba(255, 255, 255, 0.45) 50%,
+            rgba(255, 255, 255, 0.02) 75%,
             transparent 100%
           );
 
@@ -261,45 +282,24 @@ function Profile() {
 
           z-index: 5;
 
-          /*
-            Total cycle:
-            2.5 seconds = complete sweep
-            30 seconds = wait
-            32.5 seconds = complete cycle
-          */
-
           animation: profile-shine-cycle 32.5s linear infinite;
         }
 
         @keyframes profile-shine-cycle {
 
-          /*
-            Start outside the left side.
-          */
           0% {
             left: -90%;
           }
 
-          /*
-            Complete the entire sweep.
-          */
           7.69% {
             left: 140%;
           }
 
-          /*
-            Remain completely off-screen
-            for the remaining 30 seconds.
-          */
           100% {
             left: 140%;
           }
-        }
 
-        /*
-          Slight delay between cards so they don't
-          all flash at exactly the same time.
-        */
+        }
 
         .profile-shine-card:nth-child(2)::after {
           animation-delay: 0.35s;
@@ -313,30 +313,14 @@ function Profile() {
           animation-delay: 1.05s;
         }
 
-        /*
-          Productivity card gets a later shine so
-          the whole page feels more organic.
-        */
-
-        .profile-shine-card:last-child::after {
-          animation-delay: 1.4s;
-        }
-
-        /*
-          Keep the animation from interfering with
-          clicks or text.
-        */
-
-        .profile-shine-card > * {
-          position: relative;
-          z-index: 6;
-        }
-
         @media (prefers-reduced-motion: reduce) {
+
           .profile-shine-card::after {
             animation: none;
           }
+
         }
+
       `}</style>
 
     </div>
@@ -344,4 +328,3 @@ function Profile() {
 }
 
 export default Profile;
-

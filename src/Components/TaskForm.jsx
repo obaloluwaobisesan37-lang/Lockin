@@ -1,76 +1,236 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  CalendarDays,
-  Check,
+  Plus,
   X,
-  Flag,
-  Briefcase,
-  User,
-  GraduationCap,
-  Code2,
-  Dumbbell,
-  MoreHorizontal,
+  CalendarDays,
+  Clock3,
+  Tag,
   Zap,
-  Brain,
-  BatteryLow,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  FolderKanban,
 } from "lucide-react";
 
-const initialForm = {
-  title: "",
-  description: "",
-  priority: "Medium",
-  category: "Personal",
-  dueDate: "",
-  energy: "Quick",
-};
-
 function TaskForm({
-  onSubmit,
-  onClose,
-  editingTask,
+  onAdd,
+  projects = [],
+  tasks = [],
 }) {
-  const [form, setForm] = useState(initialForm);
-  const [error, setError] = useState("");
+  const [open, setOpen] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showProjectMenu, setShowProjectMenu] =
+    useState(false);
 
-  // ==========================================
-  // LOAD EDITING TASK
-  // ==========================================
+  const [calendarDate, setCalendarDate] = useState(
+    new Date()
+  );
 
-  useEffect(() => {
-    if (editingTask) {
-      setForm({
-        title: editingTask.title || "",
-        description: editingTask.description || "",
-        priority: editingTask.priority || "Medium",
-        category: editingTask.category || "Personal",
-        dueDate: editingTask.dueDate || "",
-        energy: editingTask.energy || "Quick",
-      });
-    } else {
-      setForm(initialForm);
-    }
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    priority: "Medium",
+    category: "General",
+    status: "backlog",
+    dueDate: "",
+    estimatedMinutes: 30,
+    energy: "Medium",
+    projectId: "",
+    tags: "",
+    dependencies: [],
+  });
 
-    setError("");
-  }, [editingTask]);
-
-  // ==========================================
-  // UPDATE FIELD
-  // ==========================================
-
-  const updateField = (name, value) => {
+  const update = (key, value) => {
     setForm((current) => ({
       ...current,
-      [name]: value,
+      [key]: value,
     }));
-
-    if (error) {
-      setError("");
-    }
   };
 
-  // ==========================================
+  // =========================================================
+  // CALENDAR
+  // =========================================================
+
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const weekDays = [
+    "Sun",
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+  ];
+
+  const getDateKey = (date) => {
+    return (
+      `${date.getFullYear()}-` +
+      `${String(date.getMonth() + 1).padStart(2, "0")}-` +
+      `${String(date.getDate()).padStart(2, "0")}`
+    );
+  };
+
+  const getCalendarDays = () => {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+
+    const firstDay = new Date(
+      year,
+      month,
+      1
+    ).getDay();
+
+    const daysInMonth = new Date(
+      year,
+      month + 1,
+      0
+    ).getDate();
+
+    const previousMonthDays = new Date(
+      year,
+      month,
+      0
+    ).getDate();
+
+    const days = [];
+
+    // Previous month
+    for (let i = firstDay - 1; i >= 0; i--) {
+      days.push({
+        date: new Date(
+          year,
+          month - 1,
+          previousMonthDays - i
+        ),
+        currentMonth: false,
+      });
+    }
+
+    // Current month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push({
+        date: new Date(year, month, day),
+        currentMonth: true,
+      });
+    }
+
+    // Next month
+    let nextDay = 1;
+
+    while (days.length < 42) {
+      days.push({
+        date: new Date(
+          year,
+          month + 1,
+          nextDay
+        ),
+        currentMonth: false,
+      });
+
+      nextDay++;
+    }
+
+    return days;
+  };
+
+  const selectDate = (date) => {
+    update("dueDate", getDateKey(date));
+    setCalendarDate(date);
+    setShowCalendar(false);
+  };
+
+  const goPreviousMonth = () => {
+    setCalendarDate(
+      (current) =>
+        new Date(
+          current.getFullYear(),
+          current.getMonth() - 1,
+          1
+        )
+    );
+  };
+
+  const goNextMonth = () => {
+    setCalendarDate(
+      (current) =>
+        new Date(
+          current.getFullYear(),
+          current.getMonth() + 1,
+          1
+        )
+    );
+  };
+
+  const goToday = () => {
+    const today = new Date();
+
+    setCalendarDate(today);
+    update("dueDate", getDateKey(today));
+    setShowCalendar(false);
+  };
+
+  const clearDate = () => {
+    update("dueDate", "");
+    setShowCalendar(false);
+  };
+
+  const formatSelectedDate = () => {
+    if (!form.dueDate) {
+      return "Choose a due date";
+    }
+
+    const [year, month, day] =
+      form.dueDate.split("-");
+
+    const date = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day)
+    );
+
+    return date.toLocaleDateString([], {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const todayKey = getDateKey(new Date());
+
+  // =========================================================
+  // PROJECT
+  // =========================================================
+
+  const selectedProject = projects.find(
+    (project) =>
+      String(project.id) ===
+      String(form.projectId)
+  );
+
+  const selectedProjectName = selectedProject
+    ? selectedProject.name ||
+      selectedProject.title ||
+      "Untitled Project"
+    : "No project";
+
+  // =========================================================
   // SUBMIT
-  // ==========================================
+  // =========================================================
 
   const submit = (event) => {
     event.preventDefault();
@@ -78,438 +238,1282 @@ function TaskForm({
     const title = form.title.trim();
 
     if (!title) {
-      setError("Please give your task a title.");
       return;
     }
 
-    const taskData = {
-      ...form,
+    const cleanTask = {
       title,
+      description: form.description.trim(),
+      priority: form.priority,
+      category:
+        form.category.trim() || "General",
+      status: form.status,
+      dueDate: form.dueDate,
+      estimatedMinutes:
+        Number(form.estimatedMinutes) || 0,
+      energy: form.energy,
+      projectId:
+        form.projectId || null,
+
+      tags: form.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+
+      dependencies:
+        Array.isArray(form.dependencies)
+          ? form.dependencies
+          : [],
     };
 
-    if (editingTask) {
-      onSubmit({
-        ...editingTask,
-        ...taskData,
-      });
-    } else {
-      onSubmit(taskData);
-    }
+    onAdd(cleanTask);
+
+    // Reset
+    setForm({
+      title: "",
+      description: "",
+      priority: "Medium",
+      category: "General",
+      status: "backlog",
+      dueDate: "",
+      estimatedMinutes: 30,
+      energy: "Medium",
+      projectId: "",
+      tags: "",
+      dependencies: [],
+    });
+
+    setCalendarDate(new Date());
+    setShowCalendar(false);
+    setShowProjectMenu(false);
+    setOpen(false);
   };
 
-  // ==========================================
-  // PRIORITY OPTIONS
-  // ==========================================
+  // =========================================================
+  // OPEN BUTTON
+  // =========================================================
 
-  const priorities = [
-    {
-      name: "Low",
-      icon: "↓",
-      description: "Can wait",
-      active:
-        "border-[#627b82] bg-[#e7eff0] text-[#506d72] dark:border-[#627b82] dark:bg-[#293c3e] dark:text-[#b7ced0]",
-    },
-    {
-      name: "Medium",
-      icon: "→",
-      description: "Normal",
-      active:
-        "border-[#b58b4b] bg-[#f5ecd9] text-[#8d6a32] dark:border-[#b58b4b] dark:bg-[#514328] dark:text-[#e0c78d]",
-    },
-    {
-      name: "High",
-      icon: "↑",
-      description: "Important",
-      active:
-        "border-[#a65d43] bg-[#f5e1dc] text-[#a34f38] dark:border-[#a65d43] dark:bg-[#5a3028] dark:text-[#e0a08e]",
-    },
-  ];
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setOpen(true);
+          setCalendarDate(new Date());
+        }}
+        className="
+          group
+          flex
+          items-center
+          gap-2
+          rounded-2xl
+          bg-[#4f6f52]
+          px-5
+          py-3
+          text-sm
+          font-black
+          text-white
+          shadow-lg
+          shadow-[#4f6f52]/15
+          transition
+          hover:-translate-y-0.5
+          hover:bg-[#3f5d43]
+          hover:shadow-xl
+        "
+      >
+        <span className="flex h-5 w-5 items-center justify-center rounded-lg bg-white/15">
+          <Plus size={15} />
+        </span>
 
-  // ==========================================
-  // CATEGORY OPTIONS
-  // ==========================================
+        New Task
+      </button>
+    );
+  }
 
-  const categories = [
-    {
-      name: "Personal",
-      icon: User,
-    },
-    {
-      name: "Work",
-      icon: Briefcase,
-    },
-    {
-      name: "School",
-      icon: GraduationCap,
-    },
-    {
-      name: "Programming",
-      icon: Code2,
-    },
-    {
-      name: "Fitness",
-      icon: Dumbbell,
-    },
-    {
-      name: "Other",
-      icon: MoreHorizontal,
-    },
-  ];
-
-  // ==========================================
-  // ENERGY OPTIONS
-  // ==========================================
-
-  const energies = [
-    {
-      name: "Quick",
-      icon: Zap,
-      description: "Easy start",
-      active:
-        "border-yellow-400 bg-yellow-50 text-yellow-700 dark:border-yellow-600 dark:bg-yellow-950/30 dark:text-yellow-400",
-    },
-    {
-      name: "Deep Work",
-      icon: Brain,
-      description: "Full focus",
-      active:
-        "border-violet-400 bg-violet-50 text-violet-700 dark:border-violet-600 dark:bg-violet-950/30 dark:text-violet-400",
-    },
-    {
-      name: "Low Energy",
-      icon: BatteryLow,
-      description: "Keep it simple",
-      active:
-        "border-sky-400 bg-sky-50 text-sky-700 dark:border-sky-600 dark:bg-sky-950/30 dark:text-sky-400",
-    },
-  ];
+  // =========================================================
+  // FORM
+  // =========================================================
 
   return (
-    <div
-      className="w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-[#343a35] dark:bg-[#1b1f1c]"
-      onClick={(event) => event.stopPropagation()}
-    >
-      {/* ==========================================
-          HEADER
-      ========================================== */}
+    <>
+      {/* BACKDROP */}
 
-      <div className="relative overflow-hidden bg-[#4f6f52] px-6 py-6 text-white">
-        <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10" />
-
-        <div className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-white/5" />
-
-        <div className="relative flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">
-              {editingTask ? "Update" : "Create"}
-            </p>
-
-            <h2 className="mt-1 text-2xl font-black">
-              {editingTask
-                ? "Edit your task"
-                : "Create a new task"}
-            </h2>
-
-            <p className="mt-2 text-sm text-white/75">
-              Give your next goal some structure.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="shrink-0 rounded-xl bg-white/10 p-2.5 transition hover:rotate-90 hover:bg-white/20"
-          >
-            <X size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* ==========================================
-          FORM
-      ========================================== */}
-
-      <form
-        onSubmit={submit}
-        className="max-h-[75vh] space-y-6 overflow-y-auto p-6"
+      <div
+        className="
+          fixed
+          inset-0
+          z-[90]
+          bg-black/35
+          p-4
+          backdrop-blur-[3px]
+          dark:bg-black/60
+        "
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) {
+            setOpen(false);
+            setShowCalendar(false);
+            setShowProjectMenu(false);
+          }
+        }}
       >
-        {/* ========================================
-            TITLE
-        ======================================== */}
+        {/* MODAL */}
 
-        <div>
-          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Task title
-          </label>
+        <div
+          className="
+            mx-auto
+            mt-[4vh]
+            flex
+            max-h-[92vh]
+            w-full
+            max-w-3xl
+            flex-col
+            overflow-hidden
+            rounded-[28px]
+            border
+            border-black/10
+            bg-[#faf9f6]
+            shadow-2xl
+            dark:border-white/10
+            dark:bg-[#171a17]
+          "
+        >
+          {/* HEADER */}
 
-          <input
-            name="title"
-            type="text"
-            value={form.title}
-            onChange={(event) =>
-              updateField("title", event.target.value)
-            }
-            placeholder="What needs to get done?"
-            autoFocus
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-[#4f6f52] focus:bg-white focus:ring-4 focus:ring-[#4f6f52]/10 dark:border-[#343a35] dark:bg-[#202521] dark:text-white dark:placeholder:text-slate-500 dark:focus:bg-[#252a26]"
-          />
+          <div
+            className="
+              flex
+              items-center
+              justify-between
+              border-b
+              border-black/5
+              px-6
+              py-5
+              dark:border-white/10
+            "
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="
+                  flex
+                  h-11
+                  w-11
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  bg-[#4f6f52]/10
+                  text-[#4f6f52]
+                  dark:bg-[#6f9473]/10
+                  dark:text-[#8faf91]
+                "
+              >
+                <Plus size={21} />
+              </div>
 
-          {error && (
-            <p className="mt-2 text-xs font-semibold text-rose-500">
-              {error}
-            </p>
-          )}
-        </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#6f9473]">
+                  Task management
+                </p>
 
-        {/* ========================================
-            DESCRIPTION
-        ======================================== */}
+                <h2 className="mt-0.5 text-xl font-black">
+                  Create new task
+                </h2>
+              </div>
+            </div>
 
-        <div>
-          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Description
-          </label>
-
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={(event) =>
-              updateField(
-                "description",
-                event.target.value
-              )
-            }
-            rows={3}
-            placeholder="Add some context..."
-            className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-[#4f6f52] focus:bg-white focus:ring-4 focus:ring-[#4f6f52]/10 dark:border-[#343a35] dark:bg-[#202521] dark:text-white dark:placeholder:text-slate-500 dark:focus:bg-[#252a26]"
-          />
-        </div>
-
-        {/* ========================================
-            PRIORITY
-        ======================================== */}
-
-        <div>
-          <div className="mb-3 flex items-center gap-2">
-            <Flag size={15} className="text-[#a65d43]" />
-
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Priority
-            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setShowCalendar(false);
+                setShowProjectMenu(false);
+              }}
+              className="
+                rounded-xl
+                p-2
+                text-black/35
+                transition
+                hover:bg-black/5
+                hover:text-black
+                dark:text-white/35
+                dark:hover:bg-white/10
+                dark:hover:text-white
+              "
+            >
+              <X size={20} />
+            </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
-            {priorities.map((priority) => {
-              const selected =
-                form.priority === priority.name;
+          {/* SCROLLABLE CONTENT */}
 
-              return (
-                <button
-                  key={priority.name}
-                  type="button"
-                  onClick={() =>
-                    updateField(
-                      "priority",
-                      priority.name
+          <div className="overflow-y-auto px-6 py-5">
+            <form
+              onSubmit={submit}
+              className="space-y-5"
+            >
+              {/* TITLE */}
+
+              <div>
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-white/40">
+                  Task title
+                </label>
+
+                <input
+                  value={form.title}
+                  onChange={(e) =>
+                    update(
+                      "title",
+                      e.target.value
                     )
                   }
-                  className={`rounded-2xl border-2 p-3 text-left transition-all duration-200 ${
-                    selected
-                      ? priority.active
-                      : "border-slate-200 bg-slate-50 text-slate-500 hover:-translate-y-0.5 hover:border-slate-300 dark:border-[#343a35] dark:bg-[#202521] dark:text-slate-400 dark:hover:border-[#4b514c]"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-black">
-                      {priority.icon}
+                  placeholder="What needs to be done?"
+                  autoFocus
+                  className="
+                    w-full
+                    rounded-2xl
+                    border
+                    border-black/10
+                    bg-white
+                    px-4
+                    py-3.5
+                    text-sm
+                    font-bold
+                    outline-none
+                    transition
+                    placeholder:text-black/25
+                    focus:border-[#6f9473]
+                    focus:ring-4
+                    focus:ring-[#6f9473]/10
+                    dark:border-white/10
+                    dark:bg-[#1d211e]
+                    dark:placeholder:text-white/20
+                  "
+                />
+              </div>
+
+              {/* DESCRIPTION */}
+
+              <div>
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-white/40">
+                  Description
+                </label>
+
+                <textarea
+                  value={form.description}
+                  onChange={(e) =>
+                    update(
+                      "description",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Add some details about this task..."
+                  rows={3}
+                  className="
+                    w-full
+                    resize-none
+                    rounded-2xl
+                    border
+                    border-black/10
+                    bg-white
+                    px-4
+                    py-3
+                    text-sm
+                    outline-none
+                    transition
+                    placeholder:text-black/25
+                    focus:border-[#6f9473]
+                    focus:ring-4
+                    focus:ring-[#6f9473]/10
+                    dark:border-white/10
+                    dark:bg-[#1d211e]
+                    dark:placeholder:text-white/20
+                  "
+                />
+              </div>
+
+              {/* OPTIONS */}
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Select
+                  label="Priority"
+                  value={form.priority}
+                  onChange={(value) =>
+                    update(
+                      "priority",
+                      value
+                    )
+                  }
+                  options={[
+                    "Low",
+                    "Medium",
+                    "High",
+                  ]}
+                />
+
+                <Select
+                  label="Status"
+                  value={form.status}
+                  onChange={(value) =>
+                    update(
+                      "status",
+                      value
+                    )
+                  }
+                  options={[
+                    "backlog",
+                    "in-progress",
+                    "review",
+                  ]}
+                />
+
+                <Select
+                  label="Energy"
+                  value={form.energy}
+                  onChange={(value) =>
+                    update(
+                      "energy",
+                      value
+                    )
+                  }
+                  options={[
+                    "Low",
+                    "Medium",
+                    "High",
+                  ]}
+                />
+
+                {/* DATE */}
+
+                <div className="relative">
+                  <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-white/40">
+                    Due date
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCalendar(
+                        (current) => !current
+                      );
+                      setShowProjectMenu(
+                        false
+                      );
+                    }}
+                    className="
+                      flex
+                      min-h-[46px]
+                      w-full
+                      items-center
+                      gap-3
+                      rounded-xl
+                      border
+                      border-black/10
+                      bg-white
+                      px-3
+                      text-left
+                      text-sm
+                      outline-none
+                      transition
+                      hover:border-[#6f9473]
+                      dark:border-white/10
+                      dark:bg-[#1d211e]
+                    "
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#6f9473]/10 text-[#6f9473]">
+                      <CalendarDays size={15} />
                     </span>
 
-                    {selected && (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-current text-white">
-                        <Check size={12} />
-                      </span>
-                    )}
-                  </div>
+                    <span
+                      className={
+                        form.dueDate
+                          ? "font-bold"
+                          : "text-black/35 dark:text-white/35"
+                      }
+                    >
+                      {formatSelectedDate()}
+                    </span>
+                  </button>
 
-                  <p className="mt-2 text-xs font-black">
-                    {priority.name}
-                  </p>
+                  {/* CALENDAR */}
 
-                  <p className="mt-0.5 text-[10px] opacity-70">
-                    {priority.description}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                  {showCalendar && (
+                    <div
+                      className="
+                        absolute
+                        left-0
+                        top-full
+                        z-[120]
+                        mt-2
+                        w-[320px]
+                        rounded-3xl
+                        border
+                        border-black/10
+                        bg-[#faf9f6]
+                        p-4
+                        shadow-2xl
+                        dark:border-white/10
+                        dark:bg-[#1b1f1c]
+                      "
+                    >
+                      {/* CALENDAR HEADER */}
 
-        {/* ========================================
-            CATEGORY
-        ======================================== */}
+                      <div className="flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={
+                            goPreviousMonth
+                          }
+                          className="
+                            rounded-xl
+                            p-2
+                            text-black/45
+                            transition
+                            hover:bg-black/5
+                            dark:text-white/45
+                            dark:hover:bg-white/10
+                          "
+                        >
+                          <ChevronLeft
+                            size={18}
+                          />
+                        </button>
 
-        <div>
-          <label className="mb-3 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Category
-          </label>
+                        <div className="text-center">
+                          <p className="text-sm font-black">
+                            {
+                              monthNames[
+                                calendarDate.getMonth()
+                              ]
+                            }
+                          </p>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {categories.map((category) => {
-              const Icon = category.icon;
+                          <p className="text-[11px] font-bold text-black/35 dark:text-white/35">
+                            {
+                              calendarDate.getFullYear()
+                            }
+                          </p>
+                        </div>
 
-              const selected =
-                form.category === category.name;
+                        <button
+                          type="button"
+                          onClick={
+                            goNextMonth
+                          }
+                          className="
+                            rounded-xl
+                            p-2
+                            text-black/45
+                            transition
+                            hover:bg-black/5
+                            dark:text-white/45
+                            dark:hover:bg-white/10
+                          "
+                        >
+                          <ChevronRight
+                            size={18}
+                          />
+                        </button>
+                      </div>
 
-              return (
-                <button
-                  key={category.name}
-                  type="button"
-                  onClick={() =>
-                    updateField(
-                      "category",
-                      category.name
-                    )
-                  }
-                  className={`flex items-center gap-2.5 rounded-2xl border-2 px-3 py-3 text-left text-xs font-bold transition-all duration-200 ${
-                    selected
-                      ? "border-[#4f6f52] bg-[#eef3ec] text-[#3f5d43] shadow-sm dark:border-[#627b82] dark:bg-[#263328] dark:text-[#a8c5a5]"
-                      : "border-slate-200 bg-slate-50 text-slate-500 hover:-translate-y-0.5 hover:border-slate-300 dark:border-[#343a35] dark:bg-[#202521] dark:text-slate-400 dark:hover:border-[#4b514c]"
-                  }`}
-                >
-                  <Icon size={16} />
+                      {/* WEEKDAYS */}
 
-                  <span>{category.name}</span>
+                      <div className="mt-4 grid grid-cols-7">
+                        {weekDays.map(
+                          (day) => (
+                            <div
+                              key={day}
+                              className="
+                                py-2
+                                text-center
+                                text-[9px]
+                                font-black
+                                uppercase
+                                tracking-wider
+                                text-black/30
+                                dark:text-white/30
+                              "
+                            >
+                              {day.slice(
+                                0,
+                                1
+                              )}
+                            </div>
+                          )
+                        )}
+                      </div>
 
-                  {selected && (
-                    <Check
-                      size={14}
-                      className="ml-auto"
-                    />
+                      {/* DAYS */}
+
+                      <div className="grid grid-cols-7 gap-1">
+                        {getCalendarDays().map(
+                          ({
+                            date,
+                            currentMonth,
+                          }) => {
+                            const dateKey =
+                              getDateKey(
+                                date
+                              );
+
+                            const selected =
+                              dateKey ===
+                              form.dueDate;
+
+                            const isToday =
+                              dateKey ===
+                              todayKey;
+
+                            return (
+                              <button
+                                type="button"
+                                key={dateKey}
+                                onClick={() =>
+                                  selectDate(
+                                    date
+                                  )
+                                }
+                                className={`
+                                  relative
+                                  flex
+                                  h-9
+                                  items-center
+                                  justify-center
+                                  rounded-xl
+                                  text-xs
+                                  font-bold
+                                  transition
+                                  ${
+                                    currentMonth
+                                      ? "text-black/70 hover:bg-[#6f9473]/10 dark:text-white/75 dark:hover:bg-[#6f9473]/10"
+                                      : "text-black/20 dark:text-white/20"
+                                  }
+                                  ${
+                                    selected
+                                      ? "bg-[#4f6f52] text-white hover:bg-[#3f5d43] dark:bg-[#4f6f52]"
+                                      : ""
+                                  }
+                                `}
+                              >
+                                {date.getDate()}
+
+                                {isToday &&
+                                  !selected && (
+                                    <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#6f9473]" />
+                                  )}
+
+                                {selected && (
+                                  <Check
+                                    size={
+                                      9
+                                    }
+                                    className="absolute right-1 top-1"
+                                  />
+                                )}
+                              </button>
+                            );
+                          }
+                        )}
+                      </div>
+
+                      {/* CALENDAR FOOTER */}
+
+                      <div className="mt-4 flex items-center justify-between border-t border-black/5 pt-3 dark:border-white/10">
+                        <button
+                          type="button"
+                          onClick={clearDate}
+                          className="
+                            rounded-xl
+                            px-3
+                            py-2
+                            text-xs
+                            font-black
+                            text-black/40
+                            transition
+                            hover:bg-black/5
+                            dark:text-white/40
+                            dark:hover:bg-white/10
+                          "
+                        >
+                          Clear
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={goToday}
+                          className="
+                            rounded-xl
+                            bg-[#6f9473]/10
+                            px-3
+                            py-2
+                            text-xs
+                            font-black
+                            text-[#5f8263]
+                            transition
+                            hover:bg-[#6f9473]/20
+                          "
+                        >
+                          Today
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                </div>
 
-        {/* ========================================
-            ENERGY
-        ======================================== */}
+                {/* ESTIMATE */}
 
-        <div>
-          <div className="mb-3 flex items-center gap-2">
-            <Zap
-              size={15}
-              className="text-[#b58b4b]"
-            />
+                <div>
+                  <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-white/40">
+                    Estimate
+                  </label>
 
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Energy
-            </label>
-          </div>
+                  <div className="relative">
+                    <Clock3
+                      size={15}
+                      className="
+                        absolute
+                        left-3
+                        top-3.5
+                        text-black/25
+                        dark:text-white/25
+                      "
+                    />
 
-          <div className="grid grid-cols-3 gap-2">
-            {energies.map((item) => {
-              const Icon = item.icon;
+                    <input
+                      type="number"
+                      min="0"
+                      value={
+                        form.estimatedMinutes
+                      }
+                      onChange={(e) =>
+                        update(
+                          "estimatedMinutes",
+                          e.target.value
+                        )
+                      }
+                      className="
+                        w-full
+                        rounded-xl
+                        border
+                        border-black/10
+                        bg-white
+                        py-3
+                        pl-9
+                        pr-3
+                        text-sm
+                        font-bold
+                        outline-none
+                        transition
+                        focus:border-[#6f9473]
+                        focus:ring-4
+                        focus:ring-[#6f9473]/10
+                        dark:border-white/10
+                        dark:bg-[#1d211e]
+                      "
+                    />
+                  </div>
+                </div>
 
-              const selected =
-                form.energy === item.name;
+                {/* CATEGORY */}
 
-              return (
+                <div>
+                  <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-white/40">
+                    Category
+                  </label>
+
+                  <input
+                    value={form.category}
+                    onChange={(e) =>
+                      update(
+                        "category",
+                        e.target.value
+                      )
+                    }
+                    placeholder="School, work..."
+                    className="
+                      w-full
+                      rounded-xl
+                      border
+                      border-black/10
+                      bg-white
+                      px-3
+                      py-3
+                      text-sm
+                      outline-none
+                      transition
+                      placeholder:text-black/25
+                      focus:border-[#6f9473]
+                      focus:ring-4
+                      focus:ring-[#6f9473]/10
+                      dark:border-white/10
+                      dark:bg-[#1d211e]
+                      dark:placeholder:text-white/20
+                    "
+                  />
+                </div>
+              </div>
+
+              {/* PROJECT */}
+
+              <div className="relative">
+                <label className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-white/40">
+                  <FolderKanban size={12} />
+                  Project
+                </label>
+
                 <button
-                  key={item.name}
                   type="button"
-                  onClick={() =>
-                    updateField(
-                      "energy",
-                      item.name
-                    )
-                  }
-                  className={`rounded-2xl border-2 p-3 text-left transition-all duration-200 ${
-                    selected
-                      ? item.active
-                      : "border-slate-200 bg-slate-50 text-slate-500 hover:-translate-y-0.5 hover:border-slate-300 dark:border-[#343a35] dark:bg-[#202521] dark:text-slate-400 dark:hover:border-[#4b514c]"
-                  }`}
+                  onClick={() => {
+                    setShowProjectMenu(
+                      (current) => !current
+                    );
+                    setShowCalendar(false);
+                  }}
+                  className="
+                    flex
+                    min-h-[50px]
+                    w-full
+                    items-center
+                    justify-between
+                    rounded-2xl
+                    border
+                    border-black/10
+                    bg-white
+                    px-3
+                    transition
+                    hover:border-[#6f9473]
+                    dark:border-white/10
+                    dark:bg-[#1d211e]
+                  "
                 >
-                  <div className="flex items-center justify-between">
-                    <Icon size={17} />
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#765b6b]/10 text-[#765b6b] dark:bg-[#765b6b]/20 dark:text-[#b58fa3]">
+                      <FolderKanban
+                        size={16}
+                      />
+                    </span>
 
-                    {selected && (
-                      <Check size={13} />
-                    )}
+                    <div className="text-left">
+                      <p className="text-[9px] font-black uppercase tracking-wider text-black/30 dark:text-white/30">
+                        Assigned project
+                      </p>
+
+                      <p
+                        className={
+                          selectedProject
+                            ? "text-sm font-black"
+                            : "text-sm font-bold text-black/35 dark:text-white/35"
+                        }
+                      >
+                        {selectedProjectName}
+                      </p>
+                    </div>
                   </div>
 
-                  <p className="mt-2 text-[11px] font-black">
-                    {item.name}
-                  </p>
-
-                  <p className="mt-0.5 text-[10px] opacity-70">
-                    {item.description}
-                  </p>
+                  <span className="text-black/30 dark:text-white/30">
+                    ▾
+                  </span>
                 </button>
-              );
-            })}
+
+                {showProjectMenu && (
+                  <div
+                    className="
+                      absolute
+                      left-0
+                      right-0
+                      top-full
+                      z-[110]
+                      mt-2
+                      max-h-60
+                      overflow-y-auto
+                      rounded-2xl
+                      border
+                      border-black/10
+                      bg-[#faf9f6]
+                      p-1.5
+                      shadow-2xl
+                      dark:border-white/10
+                      dark:bg-[#1b1f1c]
+                    "
+                  >
+                    {/* NO PROJECT */}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        update(
+                          "projectId",
+                          ""
+                        );
+                        setShowProjectMenu(
+                          false
+                        );
+                      }}
+                      className="
+                        flex
+                        w-full
+                        items-center
+                        gap-3
+                        rounded-xl
+                        px-3
+                        py-3
+                        text-left
+                        transition
+                        hover:bg-black/5
+                        dark:hover:bg-white/10
+                      "
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/5 text-black/35 dark:bg-white/10 dark:text-white/35">
+                        <X size={14} />
+                      </span>
+
+                      <span className="text-sm font-bold">
+                        No project
+                      </span>
+
+                      {!form.projectId && (
+                        <Check
+                          size={15}
+                          className="ml-auto text-[#4f6f52]"
+                        />
+                      )}
+                    </button>
+
+                    {/* PROJECTS */}
+
+                    {projects.length === 0 ? (
+                      <div className="px-3 py-5 text-center">
+                        <FolderKanban
+                          size={22}
+                          className="mx-auto text-black/20 dark:text-white/20"
+                        />
+
+                        <p className="mt-2 text-xs font-bold text-black/35 dark:text-white/35">
+                          No projects created yet
+                        </p>
+                      </div>
+                    ) : (
+                      projects.map(
+                        (project) => {
+                          const name =
+                            project.name ||
+                            project.title ||
+                            "Untitled Project";
+
+                          const selected =
+                            String(
+                              form.projectId
+                            ) ===
+                            String(
+                              project.id
+                            );
+
+                          return (
+                            <button
+                              type="button"
+                              key={
+                                project.id
+                              }
+                              onClick={() => {
+                                update(
+                                  "projectId",
+                                  String(
+                                    project.id
+                                  )
+                                );
+
+                                setShowProjectMenu(
+                                  false
+                                );
+                              }}
+                              className="
+                                flex
+                                w-full
+                                items-center
+                                gap-3
+                                rounded-xl
+                                px-3
+                                py-3
+                                text-left
+                                transition
+                                hover:bg-black/5
+                                dark:hover:bg-white/10
+                              "
+                            >
+                              <span
+                                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                                style={{
+                                  backgroundColor:
+                                    `${
+                                      project.color ||
+                                      "#765b6b"
+                                    }18`,
+                                  color:
+                                    project.color ||
+                                    "#765b6b",
+                                }}
+                              >
+                                <FolderKanban
+                                  size={
+                                    15
+                                  }
+                                />
+                              </span>
+
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-black">
+                                  {name}
+                                </p>
+
+                                {project.description && (
+                                  <p className="truncate text-[10px] font-medium text-black/35 dark:text-white/35">
+                                    {
+                                      project.description
+                                    }
+                                  </p>
+                                )}
+                              </div>
+
+                              {selected && (
+                                <Check
+                                  size={
+                                    15
+                                  }
+                                  className="text-[#4f6f52]"
+                                />
+                              )}
+                            </button>
+                          );
+                        }
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* TAGS */}
+
+              <div>
+                <label className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-white/40">
+                  <Tag size={12} />
+                  Tags
+                </label>
+
+                <input
+                  value={form.tags}
+                  onChange={(e) =>
+                    update(
+                      "tags",
+                      e.target.value
+                    )
+                  }
+                  placeholder="frontend, urgent, school"
+                  className="
+                    w-full
+                    rounded-xl
+                    border
+                    border-black/10
+                    bg-white
+                    px-3
+                    py-3
+                    text-sm
+                    outline-none
+                    transition
+                    placeholder:text-black/25
+                    focus:border-[#6f9473]
+                    focus:ring-4
+                    focus:ring-[#6f9473]/10
+                    dark:border-white/10
+                    dark:bg-[#1d211e]
+                    dark:placeholder:text-white/20
+                  "
+                />
+              </div>
+
+              {/* DEPENDENCIES */}
+
+              {tasks.length > 0 && (
+                <div>
+                  <label className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-white/40">
+                    <Zap size={12} />
+                    Dependencies
+                  </label>
+
+                  <select
+                    multiple
+                    value={
+                      form.dependencies
+                    }
+                    onChange={(e) =>
+                      update(
+                        "dependencies",
+                        Array.from(
+                          e.target
+                            .selectedOptions,
+                          (option) =>
+                            option.value
+                        )
+                      )
+                    }
+                    className="
+                      min-h-24
+                      w-full
+                      rounded-xl
+                      border
+                      border-black/10
+                      bg-white
+                      px-3
+                      py-2
+                      text-sm
+                      outline-none
+                      focus:border-[#6f9473]
+                      dark:border-white/10
+                      dark:bg-[#1d211e]
+                    "
+                  >
+                    {tasks
+                      .filter(
+                        (task) =>
+                          !task.completed &&
+                          !task.archived
+                      )
+                      .map((task) => (
+                        <option
+                          key={task.id}
+                          value={task.id}
+                        >
+                          {task.title}
+                        </option>
+                      ))}
+                  </select>
+
+                  <p className="mt-1.5 text-[10px] font-medium text-black/30 dark:text-white/30">
+                    Hold Ctrl/Cmd to select
+                    multiple tasks.
+                  </p>
+                </div>
+              )}
+
+              {/* FOOTER */}
+
+              <div className="flex flex-col-reverse gap-2 border-t border-black/5 pt-5 sm:flex-row sm:justify-end dark:border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    setShowCalendar(false);
+                    setShowProjectMenu(
+                      false
+                    );
+                  }}
+                  className="
+                    rounded-xl
+                    px-5
+                    py-3
+                    text-sm
+                    font-black
+                    text-black/45
+                    transition
+                    hover:bg-black/5
+                    dark:text-white/45
+                    dark:hover:bg-white/10
+                  "
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="
+                    flex
+                    items-center
+                    justify-center
+                    gap-2
+                    rounded-xl
+                    bg-[#4f6f52]
+                    px-6
+                    py-3
+                    text-sm
+                    font-black
+                    text-white
+                    shadow-lg
+                    shadow-[#4f6f52]/15
+                    transition
+                    hover:bg-[#3f5d43]
+                    hover:shadow-xl
+                  "
+                >
+                  <Check size={17} />
+                  Create Task
+                </button>
+              </div>
+            </form>
           </div>
         </div>
+      </div>
+    </>
+  );
+}
 
-        {/* ========================================
-            DUE DATE
-        ======================================== */}
+// =========================================================
+// STYLED SELECT
+// =========================================================
 
-        <div>
-          <label className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            <CalendarDays size={14} />
+function Select({
+  label,
+  value,
+  onChange,
+  options,
+}) {
+  const [open, setOpen] = useState(false);
 
-            Due date
-          </label>
+  const formatOption = (option) => {
+    return option
+      .replace("-", " ")
+      .replace(/\b\w/g, (char) =>
+        char.toUpperCase()
+      );
+  };
 
-          <div className="relative">
-            <CalendarDays
-              size={18}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-            />
+  const getOptionStyle = (option) => {
+    if (option === "High") {
+      return "bg-rose-500/10 text-rose-600 dark:text-rose-400";
+    }
 
-            <input
-              type="date"
-              name="dueDate"
-              value={form.dueDate}
-              onChange={(event) =>
-                updateField(
-                  "dueDate",
-                  event.target.value
-                )
-              }
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#4f6f52] focus:bg-white focus:ring-4 focus:ring-[#4f6f52]/10 dark:border-[#343a35] dark:bg-[#202521] dark:text-white dark:focus:bg-[#252a26]"
-            />
-          </div>
+    if (option === "Medium") {
+      return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
+    }
+
+    if (option === "Low") {
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+    }
+
+    if (option === "in-progress") {
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
+    }
+
+    if (option === "review") {
+      return "bg-purple-500/10 text-purple-600 dark:text-purple-400";
+    }
+
+    if (option === "backlog") {
+      return "bg-black/5 text-black/60 dark:bg-white/10 dark:text-white/60";
+    }
+
+    return "bg-black/5 text-black/60 dark:bg-white/10 dark:text-white/60";
+  };
+
+  return (
+    <div className="relative">
+      <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-white/40">
+        {label}
+      </label>
+
+      <button
+        type="button"
+        onClick={() =>
+          setOpen((current) => !current)
+        }
+        className="
+          flex
+          min-h-[46px]
+          w-full
+          items-center
+          justify-between
+          rounded-xl
+          border
+          border-black/10
+          bg-white
+          px-3
+          text-sm
+          font-bold
+          outline-none
+          transition
+          hover:border-[#6f9473]
+          dark:border-white/10
+          dark:bg-[#1d211e]
+        "
+      >
+        <span
+          className={`
+            rounded-lg
+            px-2
+            py-1
+            text-xs
+            font-black
+            ${getOptionStyle(value)}
+          `}
+        >
+          {formatOption(value)}
+        </span>
+
+        <span className="text-black/30 dark:text-white/30">
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <div
+          className="
+            absolute
+            left-0
+            right-0
+            top-full
+            z-[130]
+            mt-2
+            overflow-hidden
+            rounded-2xl
+            border
+            border-black/10
+            bg-[#faf9f6]
+            p-1.5
+            shadow-2xl
+            dark:border-white/10
+            dark:bg-[#1b1f1c]
+          "
+        >
+          {options.map((option) => (
+            <button
+              type="button"
+              key={option}
+              onClick={() => {
+                onChange(option);
+                setOpen(false);
+              }}
+              className="
+                flex
+                w-full
+                items-center
+                rounded-xl
+                px-2
+                py-2
+                text-left
+                transition
+                hover:bg-black/5
+                dark:hover:bg-white/10
+              "
+            >
+              <span
+                className={`
+                  rounded-lg
+                  px-2
+                  py-1
+                  text-xs
+                  font-black
+                  ${getOptionStyle(option)}
+                `}
+              >
+                {formatOption(option)}
+              </span>
+
+              {value === option && (
+                <Check
+                  size={15}
+                  className="ml-auto text-[#4f6f52]"
+                />
+              )}
+            </button>
+          ))}
         </div>
-
-        {/* ========================================
-            BUTTONS
-        ======================================== */}
-
-        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 dark:border-[#343a35] sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl px-5 py-3 text-sm font-bold text-slate-500 transition hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-[#252a26]"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#4f6f52] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#4f6f52]/20 transition hover:-translate-y-0.5 hover:bg-[#3f5d43] active:translate-y-0"
-          >
-            <Check size={17} />
-
-            {editingTask
-              ? "Save Changes"
-              : "Create Task"}
-          </button>
-        </div>
-      </form>
+      )}
     </div>
   );
 }

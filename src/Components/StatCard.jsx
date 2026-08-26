@@ -1,51 +1,41 @@
 function StatCard({
-title,
-value,
-description,
-icon,
-accent = "terracotta",
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  onClick,
 }) {
-const accents = {
-terracotta: {
-icon: "bg-[#a65d43] text-white",
-},
-blue: {
-icon: "bg-[#627b82] text-white",
-},
-gold: {
-icon: "bg-[#b58b4b] text-white",
-},
-plum: {
-icon: "bg-[#765b6b] text-white",
-},
-};
-
-const style =
-accents[accent] || accents.terracotta;
-
-return ( <div className="glass card-hover rounded-3xl p-5"> <div className="relative flex items-start justify-between"> <div> <p className="text-xs font-bold uppercase tracking-wider text-[#918b82]">
-{title} </p>
-
-```
-      <h3 className="mt-2 text-3xl font-black tracking-tight">
-        {value}
-      </h3>
-
-      <p className="mt-2 text-xs text-[#716d66] dark:text-[#aaa69e]">
-        {description}
-      </p>
-    </div>
-
-    <div
-      className={`rounded-2xl p-3 shadow-lg ${style.icon}`}
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group w-full rounded-3xl border border-black/5 bg-white p-5 text-left transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-[#171a17]"
     >
-      {icon}
-    </div>
-  </div>
-</div>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-black/35 dark:text-white/30">
+            {title}
+          </p>
 
+          <p className="mt-2 text-3xl font-black tracking-tight">
+            {value}
+          </p>
 
-);
+          {subtitle && (
+            <p className="mt-1 text-xs font-bold text-black/35 dark:text-white/30">
+              {subtitle}
+            </p>
+          )}
+        </div>
+
+        {Icon && (
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#6f9473]/10 text-[#5f8263] transition group-hover:scale-110">
+            <Icon size={20} />
+          </div>
+        )}
+      </div>
+    </button>
+  );
 }
 
 export default StatCard;

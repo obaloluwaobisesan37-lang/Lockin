@@ -1,1147 +1,863 @@
+import { useEffect, useRef, useState } from "react";
 import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  Filter,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  Trash2,
-  X,
+  LayoutList,
+  Columns3,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 
-import {
-  useOutletContext,
-  useSearchParams,
-} from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 
 import TaskCard from "../Components/TaskCard";
 import TaskForm from "../Components/TaskForm";
+import EmptyState from "../Components/EmptyState";
+
+
+// =========================================================
+// CUSTOM DROPDOWN
+// =========================================================
+
+function StyledDropdown({
+  value,
+  onChange,
+  options = [],
+  placeholder = "Select",
+}) {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    };
+  }, []);
+
+  const selectedOption = options.find(
+    (option) => option.value === value
+  );
+
+  return (
+    <div
+      ref={dropdownRef}
+      className="relative w-full"
+    >
+      {/* BUTTON */}
+
+      <button
+        type="button"
+        onClick={() => setOpen((previous) => !previous)}
+        className={`
+          flex
+          w-full
+          items-center
+          justify-between
+          rounded-2xl
+          border
+          px-4
+          py-3
+          text-left
+          text-xs
+          font-black
+          outline-none
+          transition-all
+          duration-200
+
+          ${
+            open
+              ? "border-[#765b6b] bg-[#765b6b]/5 shadow-[0_0_0_3px_rgba(118,91,107,0.08)]"
+              : "border-black/10 bg-[#faf9f6] hover:border-black/20 hover:bg-white dark:border-white/10 dark:bg-[#202420] dark:hover:bg-[#252925]"
+          }
+
+          text-[#292725]
+          dark:text-white
+        `}
+      >
+        <span
+          className={
+            selectedOption?.value === "all"
+              ? "text-black/40 dark:text-white/40"
+              : "text-[#292725] dark:text-white"
+          }
+        >
+          {selectedOption?.label || placeholder}
+        </span>
+
+        <ChevronDown
+          size={16}
+          className={`
+            shrink-0
+            transition-transform
+            duration-200
+            ${
+              open
+                ? "rotate-180 text-[#765b6b]"
+                : "text-black/30 dark:text-white/30"
+            }
+          `}
+        />
+      </button>
+
+      {/* DROPDOWN */}
+
+      {open && (
+        <div
+          className="
+            absolute
+            left-0
+            right-0
+            top-[calc(100%+8px)]
+            z-50
+            overflow-hidden
+            rounded-2xl
+            border
+            border-black/10
+            bg-white
+            p-1.5
+            shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+            dark:border-white/10
+            dark:bg-[#1b1f1c]
+            dark:shadow-[0_15px_40px_rgba(0,0,0,0.35)]
+          "
+        >
+          <div className="max-h-64 overflow-y-auto">
+            {options.map((option) => {
+              const selected =
+                option.value === value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                  className={`
+                    flex
+                    w-full
+                    items-center
+                    justify-between
+                    rounded-xl
+                    px-3
+                    py-2.5
+                    text-left
+                    text-xs
+                    font-black
+                    transition
+
+                    ${
+                      selected
+                        ? "bg-[#765b6b]/10 text-[#765b6b] dark:bg-[#765b6b]/15 dark:text-[#c4aebe]"
+                        : "text-black/60 hover:bg-black/5 hover:text-[#292725] dark:text-white/55 dark:hover:bg-white/5 dark:hover:text-white"
+                    }
+                  `}
+                >
+                  <span className="flex items-center gap-2">
+                    {option.dot && (
+                      <span
+                        className={`h-2 w-2 rounded-full ${option.dot}`}
+                      />
+                    )}
+
+                    {option.label}
+                  </span>
+
+                  {selected && (
+                    <Check
+                      size={15}
+                      className="text-[#765b6b] dark:text-[#c4aebe]"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// =========================================================
+// TODOS
+// =========================================================
 
 function Todos() {
   const {
     tasks = [],
+
+    filteredTasks = [],
+
+    tasksByStatus = {
+      backlog: [],
+      "in-progress": [],
+      review: [],
+      done: [],
+    },
+
     addTask,
-    deleteTask,
     toggleTask,
-    updateTask,
-    clearAllTasks,
-    globalSearch = "",
-    setGlobalSearch,
+    deleteTask,
+    archiveTask,
+    startFocus,
+
+    selectedTasks = [],
+    toggleTaskSelection,
+    selectAllVisibleTasks,
+    clearTaskSelection,
+
+    completeSelectedTasks,
+    archiveSelectedTasks,
+    deleteSelectedTasks,
+
+    taskView,
+    setTaskView,
+
+    taskFilter,
+    setTaskFilter,
+
+    priorityFilter,
+    setPriorityFilter,
+
+    categoryFilter,
+    setCategoryFilter,
+
+    energyFilter,
+    setEnergyFilter,
+
+    projectFilter,
+    setProjectFilter,
+
+    projects = [],
+
+    getTaskDependencies,
+    hasBlockedDependencies,
   } = useOutletContext();
 
-  const [searchParams, setSearchParams] =
-    useSearchParams();
+  const safeTasks = Array.isArray(tasks)
+    ? tasks
+    : [];
 
-  const [showForm, setShowForm] =
-    useState(false);
+  const safeFilteredTasks =
+    Array.isArray(filteredTasks)
+      ? filteredTasks
+      : [];
 
-  const [editingTask, setEditingTask] =
-    useState(null);
+  const safeProjects = Array.isArray(projects)
+    ? projects
+    : [];
 
-  const [showClearModal, setShowClearModal] =
-    useState(false);
+  const categories = [
+    ...new Set(
+      safeTasks
+        .map((task) => task.category)
+        .filter(Boolean)
+    ),
+  ];
 
-  const [searchInput, setSearchInput] =
-    useState("");
+  const safeTasksByStatus = {
+    backlog: Array.isArray(
+      tasksByStatus?.backlog
+    )
+      ? tasksByStatus.backlog
+      : [],
 
-  const [filter, setFilter] =
-    useState("All");
+    "in-progress": Array.isArray(
+      tasksByStatus?.["in-progress"]
+    )
+      ? tasksByStatus["in-progress"]
+      : [],
 
-  const [sort, setSort] =
-    useState("Newest");
+    review: Array.isArray(
+      tasksByStatus?.review
+    )
+      ? tasksByStatus.review
+      : [],
 
-  // ==========================================
-  // OPEN NEW TASK FROM NAVBAR
-  // ==========================================
-
-  useEffect(() => {
-    const shouldOpen =
-      searchParams.get("new") === "true";
-
-    const urlSearch =
-      searchParams.get("search") || "";
-
-    if (urlSearch) {
-      setSearchInput(urlSearch);
-
-      if (setGlobalSearch) {
-        setGlobalSearch(urlSearch);
-      }
-    }
-
-    if (shouldOpen) {
-      setEditingTask(null);
-      setShowForm(true);
-
-      setSearchParams(
-        urlSearch
-          ? { search: urlSearch }
-          : {},
-        { replace: true }
-      );
-    }
-  }, [
-    searchParams,
-    setSearchParams,
-    setGlobalSearch,
-  ]);
-
-  // ==========================================
-  // SEARCH
-  // ==========================================
-
-  const handleSearch = () => {
-    const query = searchInput.trim();
-
-    if (setGlobalSearch) {
-      setGlobalSearch(query);
-    }
-
-    if (query) {
-      setSearchParams(
-        { search: query },
-        { replace: true }
-      );
-    } else {
-      setSearchParams(
-        {},
-        { replace: true }
-      );
-    }
+    done: Array.isArray(
+      tasksByStatus?.done
+    )
+      ? tasksByStatus.done
+      : [],
   };
 
-  const clearSearch = () => {
-    setSearchInput("");
 
-    if (setGlobalSearch) {
-      setGlobalSearch("");
-    }
+  // =========================================================
+  // DROPDOWN OPTIONS
+  // =========================================================
 
-    setSearchParams(
-      {},
-      { replace: true }
-    );
-  };
+  const priorityOptions = [
+    {
+      value: "all",
+      label: "All priorities",
+    },
+    {
+      value: "High",
+      label: "High",
+      dot: "bg-red-500",
+    },
+    {
+      value: "Medium",
+      label: "Medium",
+      dot: "bg-amber-500",
+    },
+    {
+      value: "Low",
+      label: "Low",
+      dot: "bg-emerald-500",
+    },
+  ];
 
-  // ==========================================
-  // FILTER + SEARCH + SORT
-  // ==========================================
+  const energyOptions = [
+    {
+      value: "all",
+      label: "All energy",
+    },
+    {
+      value: "High",
+      label: "High energy",
+      dot: "bg-orange-500",
+    },
+    {
+      value: "Medium",
+      label: "Medium energy",
+      dot: "bg-yellow-500",
+    },
+    {
+      value: "Low",
+      label: "Low energy",
+      dot: "bg-blue-500",
+    },
+  ];
 
-  const filteredTasks = useMemo(() => {
-    let result = [...tasks];
+  const categoryOptions = [
+    {
+      value: "all",
+      label: "All categories",
+    },
+    ...categories.map((category) => ({
+      value: category,
+      label: category,
+      dot: "bg-[#765b6b]",
+    })),
+  ];
 
-    const query =
-      globalSearch.trim().toLowerCase();
+  const projectOptions = [
+    {
+      value: "all",
+      label: "All projects",
+    },
+    ...safeProjects.map((project) => ({
+      value: project.id,
+      label:
+        project.name ||
+        project.title ||
+        "Untitled Project",
+      dot: "bg-[#765b6b]",
+    })),
+  ];
 
-    if (query) {
-      result = result.filter((task) => {
-        const title =
-          task.title?.toLowerCase() || "";
 
-        const description =
-          task.description?.toLowerCase() || "";
-
-        const category =
-          task.category?.toLowerCase() || "";
-
-        const priority =
-          task.priority?.toLowerCase() || "";
-
-        return (
-          title.includes(query) ||
-          description.includes(query) ||
-          category.includes(query) ||
-          priority.includes(query)
-        );
-      });
-    }
-
-    if (filter === "Active") {
-      result = result.filter(
-        (task) => !task.completed
-      );
-    }
-
-    if (filter === "Completed") {
-      result = result.filter(
-        (task) => task.completed
-      );
-    }
-
-    if (filter === "High") {
-      result = result.filter(
-        (task) => task.priority === "High"
-      );
-    }
-
-    if (sort === "Newest") {
-      result.sort(
-        (a, b) =>
-          new Date(b.createdAt || 0) -
-          new Date(a.createdAt || 0)
-      );
-    }
-
-    if (sort === "Oldest") {
-      result.sort(
-        (a, b) =>
-          new Date(a.createdAt || 0) -
-          new Date(b.createdAt || 0)
-      );
-    }
-
-    if (sort === "Priority") {
-      const levels = {
-        High: 3,
-        Medium: 2,
-        Low: 1,
-      };
-
-      result.sort(
-        (a, b) =>
-          (levels[b.priority] || 0) -
-          (levels[a.priority] || 0)
-      );
-    }
-
-    return result;
-  }, [
-    tasks,
-    globalSearch,
-    filter,
-    sort,
-  ]);
-
-  // ==========================================
-  // CREATE
-  // ==========================================
-
-  const openCreate = () => {
-    setEditingTask(null);
-    setShowForm(true);
-  };
-
-  // ==========================================
-  // EDIT
-  // ==========================================
-
-  const openEdit = (task) => {
-    setEditingTask(task);
-    setShowForm(true);
-  };
-
-  // ==========================================
-  // SAVE TASK
-  // ==========================================
-
-  const saveTask = (task) => {
-    if (editingTask) {
-      updateTask(task);
-    } else {
-      addTask(task);
-    }
-
-    setShowForm(false);
-    setEditingTask(null);
-  };
-
-  // ==========================================
-  // CLOSE FORM
-  // ==========================================
-
-  const closeForm = () => {
-    setShowForm(false);
-    setEditingTask(null);
-  };
-
-  // ==========================================
-  // CLEAR ALL
-  // ==========================================
-
-  const handleClearAll = () => {
-    if (tasks.length === 0) {
-      return;
-    }
-
-    setShowClearModal(true);
-  };
-
-  const confirmClearAll = () => {
-    if (clearAllTasks) {
-      clearAllTasks();
-    }
-
-    setShowClearModal(false);
-  };
-
-  // ==========================================
-  // RENDER
-  // ==========================================
+  // =========================================================
+  // VIEW
+  // =========================================================
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
 
-      {/* ====================================== */}
-      {/* HEADER */}
-      {/* ====================================== */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
-      <section className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#4f6f52]">
-            Workspace
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-[#765b6b]">
+            Task Management
           </p>
 
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-            My Tasks
+          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+            Your tasks
           </h1>
 
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-            Organize your work, prioritize what matters,
-            and keep moving.
+          <p className="mt-2 text-sm text-black/40 dark:text-white/35">
+            Plan, prioritize and execute your work.
           </p>
         </div>
 
-        {/* ==================================== */}
-        {/* HEADER ACTIONS */}
-        {/* ==================================== */}
+        <TaskForm
+          onAdd={addTask}
+          projects={safeProjects}
+          tasks={safeTasks}
+        />
+      </div>
 
-        <div className="flex flex-wrap gap-3">
 
-          {/* ================================== */}
-          {/* CLEAR ALL */}
-          {/* ================================== */}
+      {/* =====================================================
+          FILTER BAR
+      ===================================================== */}
 
-          <button
-            type="button"
-            onClick={handleClearAll}
-            disabled={tasks.length === 0}
-            className="
-              group
-              relative
-              inline-flex
-              items-center
-              gap-3
-              overflow-hidden
-              rounded-2xl
-              border
-              border-rose-200
-              bg-white
-              px-4
-              py-2.5
-              text-left
-              shadow-sm
-              transition-all
-              duration-300
+      <div
+        className="
+          rounded-[28px]
+          border
+          border-black/5
+          bg-white
+          p-4
+          shadow-sm
+          dark:border-white/10
+          dark:bg-[#171a17]
+        "
+      >
 
-              hover:-translate-y-1
-              hover:border-rose-300
-              hover:bg-rose-50
-              hover:shadow-lg
-              hover:shadow-rose-500/10
+        {/* TASK FILTERS */}
 
-              disabled:cursor-not-allowed
-              disabled:opacity-40
-              disabled:hover:translate-y-0
-
-              dark:border-rose-500/30
-              dark:bg-[#211918]
-              dark:shadow-[inset_0_0_20px_rgba(244,63,94,0.03)]
-
-              dark:hover:border-rose-500/60
-              dark:hover:bg-[#2d1b1a]
-              dark:hover:shadow-[0_0_25px_rgba(244,63,94,0.15)]
-            "
-          >
-
-            {/* HOVER GLOW */}
-
-            <span
-              className="
-                absolute
-                -right-8
-                -top-8
-                h-20
-                w-20
-                rounded-full
-                bg-rose-500/10
-                blur-2xl
-                transition-all
-                duration-500
-                group-hover:scale-150
-                dark:bg-rose-500/15
-              "
-            />
-
-            {/* ICON */}
-
-            <span
-              className="
-                relative
-                flex
-                h-9
-                w-9
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                bg-rose-50
-                text-rose-500
-                transition-all
-                duration-300
-
-                group-hover:rotate-[-8deg]
-                group-hover:bg-rose-100
-
-                dark:bg-rose-500/10
-                dark:text-rose-400
-                dark:ring-1
-                dark:ring-rose-500/20
-
-                dark:group-hover:bg-rose-500/20
-                dark:group-hover:ring-rose-500/40
-              "
-            >
-              <Trash2 size={17} />
-            </span>
-
-            {/* TEXT */}
-
-            <span className="relative flex flex-col">
-
-              <span
-                className="
-                  text-sm
-                  font-black
-                  leading-tight
-                  text-rose-600
-                  dark:text-rose-300
-                "
-              >
-                Clear All
-              </span>
-
-              <span
-                className="
-                  mt-0.5
-                  text-[10px]
-                  font-semibold
-                  text-rose-400
-                  dark:text-rose-500/80
-                "
-              >
-                {tasks.length}{" "}
-                {tasks.length === 1
-                  ? "task"
-                  : "tasks"}
-              </span>
-
-            </span>
-          </button>
-
-          {/* ================================== */}
-          {/* NEW TASK */}
-          {/* ================================== */}
-
-          <button
-            type="button"
-            onClick={openCreate}
-            className="
-              inline-flex
-              items-center
-              justify-center
-              gap-2
-              rounded-2xl
-              bg-[#4f6f52]
-              px-5
-              py-3
-              text-sm
-              font-bold
-              text-white
-              shadow-md
-              transition-all
-              duration-200
-
-              hover:-translate-y-1
-              hover:bg-[#3f5d43]
-              hover:shadow-lg
-
-              active:translate-y-0
-            "
-          >
-            <Plus size={18} />
-
-            New Task
-          </button>
-
-        </div>
-      </section>
-
-      {/* ====================================== */}
-      {/* SEARCH + FILTER */}
-      {/* ====================================== */}
-
-      <section className="glass rounded-3xl p-4">
-
-        <div className="flex flex-col gap-3 lg:flex-row">
-
-          {/* SEARCH */}
-
-          <div className="flex flex-1 gap-2">
-
-            <div className="relative flex-1">
-
-              <Search
-                size={17}
-                className="
-                  pointer-events-none
-                  absolute
-                  left-4
-                  top-1/2
-                  -translate-y-1/2
-                  text-slate-400
-                "
-              />
-
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(event) =>
-                  setSearchInput(
-                    event.target.value
-                  )
-                }
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    handleSearch();
-                  }
-                }}
-                placeholder="Search tasks..."
-                className="
-                  w-full
-                  rounded-2xl
-                  border
-                  border-[#e2e5df]
-                  bg-[#f7f7f5]
-                  py-3
-                  pl-11
-                  pr-4
-                  text-sm
-                  text-slate-800
-                  outline-none
-                  transition
-
-                  placeholder:text-slate-400
-
-                  focus:border-[#4f6f52]
-                  focus:ring-2
-                  focus:ring-[#d8e2d5]
-
-                  dark:border-[#343a35]
-                  dark:bg-[#1b1f1c]
-                  dark:text-white
-                  dark:placeholder:text-slate-500
-                  dark:focus:border-[#5f8565]
-                  dark:focus:ring-[#304433]
-                "
-              />
-
-            </div>
-
+        <div className="flex flex-wrap gap-2">
+          {[
+            ["all", "All"],
+            ["active", "Active"],
+            ["today", "Today"],
+            ["overdue", "Overdue"],
+            ["in-progress", "In Progress"],
+            ["review", "Review"],
+            ["completed", "Completed"],
+          ].map(([value, label]) => (
             <button
+              key={value}
               type="button"
-              onClick={handleSearch}
-              className="
-                flex
-                shrink-0
-                items-center
-                gap-2
-                rounded-2xl
-                bg-[#4f6f52]
-                px-4
-                py-3
-                text-sm
-                font-bold
-                text-white
-                transition
-                hover:bg-[#3f5d43]
-              "
-            >
-              <Search size={17} />
+              onClick={() =>
+                setTaskFilter(value)
+              }
+              className={`
+                rounded-xl
+                px-3.5
+                py-2
+                text-xs
+                font-black
+                transition-all
+                duration-200
 
-              <span className="hidden sm:inline">
-                Search
-              </span>
+                ${
+                  taskFilter === value
+                    ? "bg-[#765b6b] text-white shadow-md shadow-[#765b6b]/20"
+                    : "bg-black/5 text-black/50 hover:bg-black/10 dark:bg-white/5 dark:text-white/40 dark:hover:bg-white/10"
+                }
+              `}
+            >
+              {label}
             </button>
-
-          </div>
-
-          {/* ================================= */}
-          {/* FILTERS */}
-          {/* ================================= */}
-
-          <div className="flex gap-2 overflow-x-auto">
-
-            {/* FILTER */}
-
-            <div
-              className="
-                flex
-                shrink-0
-                items-center
-                gap-2
-                rounded-2xl
-                border
-                border-[#e2e5df]
-                bg-[#f7f7f5]
-                px-3
-
-                dark:border-[#343a35]
-                dark:bg-[#202520]
-              "
-            >
-              <Filter
-                size={15}
-                className="text-slate-400"
-              />
-
-              <select
-                value={filter}
-                onChange={(event) =>
-                  setFilter(
-                    event.target.value
-                  )
-                }
-                className="
-                  cursor-pointer
-                  appearance-none
-                  bg-transparent
-                  py-3
-                  text-sm
-                  font-semibold
-                  text-slate-700
-                  outline-none
-
-                  dark:bg-[#202520]
-                  dark:text-white
-
-                  [&>option]:bg-white
-                  [&>option]:text-slate-800
-
-                  dark:[&>option]:bg-[#202520]
-                  dark:[&>option]:text-white
-                "
-              >
-                <option value="All">
-                  All
-                </option>
-
-                <option value="Active">
-                  Active
-                </option>
-
-                <option value="Completed">
-                  Completed
-                </option>
-
-                <option value="High">
-                  High Priority
-                </option>
-              </select>
-            </div>
-
-            {/* SORT */}
-
-            <div
-              className="
-                flex
-                shrink-0
-                items-center
-                gap-2
-                rounded-2xl
-                border
-                border-[#e2e5df]
-                bg-[#f7f7f5]
-                px-3
-
-                dark:border-[#343a35]
-                dark:bg-[#202520]
-              "
-            >
-              <SlidersHorizontal
-                size={15}
-                className="text-slate-400"
-              />
-
-              <select
-                value={sort}
-                onChange={(event) =>
-                  setSort(
-                    event.target.value
-                  )
-                }
-                className="
-                  cursor-pointer
-                  appearance-none
-                  bg-transparent
-                  py-3
-                  text-sm
-                  font-semibold
-                  text-slate-700
-                  outline-none
-
-                  dark:bg-[#202520]
-                  dark:text-white
-
-                  [&>option]:bg-white
-                  [&>option]:text-slate-800
-
-                  dark:[&>option]:bg-[#202520]
-                  dark:[&>option]:text-white
-                "
-              >
-                <option value="Newest">
-                  Newest
-                </option>
-
-                <option value="Oldest">
-                  Oldest
-                </option>
-
-                <option value="Priority">
-                  Priority
-                </option>
-              </select>
-            </div>
-
-          </div>
+          ))}
         </div>
-      </section>
 
-      {/* ====================================== */}
-      {/* SEARCH STATUS */}
-      {/* ====================================== */}
 
-      {globalSearch.trim() && (
+        {/* CUSTOM DROPDOWNS */}
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+
+          {/* PRIORITY */}
+
+          <StyledDropdown
+            value={priorityFilter}
+            onChange={setPriorityFilter}
+            options={priorityOptions}
+            placeholder="All priorities"
+          />
+
+          {/* CATEGORY */}
+
+          <StyledDropdown
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            options={categoryOptions}
+            placeholder="All categories"
+          />
+
+          {/* ENERGY */}
+
+          <StyledDropdown
+            value={energyFilter}
+            onChange={setEnergyFilter}
+            options={energyOptions}
+            placeholder="All energy"
+          />
+
+          {/* PROJECT */}
+
+          <StyledDropdown
+            value={projectFilter}
+            onChange={setProjectFilter}
+            options={projectOptions}
+            placeholder="All projects"
+          />
+
+        </div>
+      </div>
+
+
+      {/* =====================================================
+          TASK COUNT
+      ===================================================== */}
+
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-black uppercase tracking-widest text-black/30 dark:text-white/30">
+          {safeFilteredTasks.length}{" "}
+          {safeFilteredTasks.length === 1
+            ? "task"
+            : "tasks"}
+        </p>
+
+        {safeProjects.length > 0 && (
+          <p className="text-xs font-bold text-black/30 dark:text-white/30">
+            {safeProjects.length}{" "}
+            {safeProjects.length === 1
+              ? "project"
+              : "projects"}
+          </p>
+        )}
+      </div>
+
+
+      {/* =====================================================
+          BULK ACTIONS
+      ===================================================== */}
+
+      {safeFilteredTasks.length > 0 && (
         <div
           className="
             flex
             flex-wrap
             items-center
-            justify-between
-            gap-3
+            gap-2
             rounded-2xl
             border
-            border-[#d8e2d5]
-            bg-[#eef3ec]
-            px-4
-            py-3
-
-            dark:border-[#3f5d43]
-            dark:bg-[#1d291f]
+            border-black/5
+            bg-white
+            p-3
+            dark:border-white/10
+            dark:bg-[#171a17]
           "
         >
-          <p className="text-sm text-[#3f5d43] dark:text-[#a8c5a5]">
-            Searching for{" "}
-            <span className="font-bold">
-              "{globalSearch}"
-            </span>
-          </p>
 
           <button
             type="button"
-            onClick={clearSearch}
+            onClick={selectAllVisibleTasks}
             className="
+              rounded-xl
+              px-3
+              py-2
               text-xs
-              font-bold
-              text-[#4f6f52]
-              hover:underline
-              dark:text-[#a8c5a5]
+              font-black
+              transition
+              hover:bg-black/5
+              dark:hover:bg-white/10
             "
           >
-            Clear Search
+            Select all
           </button>
-        </div>
-      )}
 
-      {/* ====================================== */}
-      {/* COUNT */}
-      {/* ====================================== */}
-
-      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-        {filteredTasks.length}{" "}
-        {filteredTasks.length === 1
-          ? "task"
-          : "tasks"}
-      </p>
-
-      {/* ====================================== */}
-      {/* TASKS */}
-      {/* ====================================== */}
-
-      <section className="space-y-3">
-
-        {filteredTasks.length > 0 ? (
-          filteredTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onToggle={toggleTask}
-              onDelete={deleteTask}
-              onEdit={openEdit}
-            />
-          ))
-        ) : (
-          <div className="glass rounded-3xl p-10 text-center">
-
-            <div
-              className="
-                mx-auto
-                flex
-                h-14
-                w-14
-                items-center
-                justify-center
-                rounded-2xl
-                bg-[#eef3ec]
-                text-[#4f6f52]
-
-                dark:bg-[#263328]
-                dark:text-[#a8c5a5]
-              "
-            >
-              <Search size={24} />
-            </div>
-
-            <h2 className="mt-4 text-lg font-black text-slate-900 dark:text-white">
-              {globalSearch.trim() ||
-              filter !== "All"
-                ? "No matching tasks"
-                : "No tasks yet"}
-            </h2>
-
-            <p
-              className="
-                mx-auto
-                mt-2
-                max-w-md
-                text-sm
-                leading-6
-                text-slate-500
-                dark:text-slate-400
-              "
-            >
-              {globalSearch.trim() ||
-              filter !== "All"
-                ? "Try changing your search or filter."
-                : "Create your first task and start getting things done."}
-            </p>
-
-            {!globalSearch.trim() &&
-              filter === "All" && (
-                <button
-                  type="button"
-                  onClick={openCreate}
-                  className="
-                    mt-5
-                    inline-flex
-                    items-center
-                    gap-2
-                    rounded-xl
-                    bg-[#4f6f52]
-                    px-5
-                    py-3
-                    text-sm
-                    font-bold
-                    text-white
-                    shadow-md
-                    transition
-
-                    hover:-translate-y-0.5
-                    hover:bg-[#3f5d43]
-                  "
-                >
-                  <Plus size={17} />
-                  Create Task
-                </button>
-              )}
-
-          </div>
-        )}
-
-      </section>
-
-      {/* ====================================== */}
-      {/* CREATE / EDIT MODAL */}
-      {/* ====================================== */}
-
-      {showForm && (
-        <div
-          className="
-            fixed
-            inset-0
-            z-50
-            flex
-            items-center
-            justify-center
-            overflow-y-auto
-            bg-black/50
-            p-4
-            backdrop-blur-sm
-          "
-          onClick={closeForm}
-        >
-          <TaskForm
-            editingTask={editingTask}
-            onSubmit={saveTask}
-            onClose={closeForm}
-          />
-        </div>
-      )}
-
-      {/* ====================================== */}
-      {/* CLEAR ALL MODAL */}
-      {/* ====================================== */}
-
-      {showClearModal && (
-        <div
-          className="
-            fixed
-            inset-0
-            z-[100]
-            flex
-            items-center
-            justify-center
-            bg-black/60
-            p-4
-            backdrop-blur-sm
-          "
-          onClick={() =>
-            setShowClearModal(false)
-          }
-        >
-          <div
-            className="
-              w-full
-              max-w-md
-              overflow-hidden
-              rounded-3xl
-              border
-              border-slate-200
-              bg-white
-              shadow-2xl
-
-              dark:border-[#343a35]
-              dark:bg-[#171b18]
-              dark:shadow-[0_20px_70px_rgba(0,0,0,0.55)]
-            "
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-          >
-
-            {/* MODAL HEADER */}
-
-            <div
-              className="
-                relative
-                overflow-hidden
-                bg-[#4f6f52]
-                px-6
-                py-7
-                text-white
-
-                dark:bg-[#40201e]
-              "
-            >
-              <div
-                className="
-                  absolute
-                  -right-8
-                  -top-8
-                  h-28
-                  w-28
-                  rounded-full
-                  bg-white/10
-                "
-              />
-
-              <div
-                className="
-                  absolute
-                  -bottom-12
-                  -left-8
-                  h-32
-                  w-32
-                  rounded-full
-                  bg-white/5
-                "
-              />
+          {selectedTasks.length > 0 && (
+            <>
+              <span className="text-xs font-bold text-black/30 dark:text-white/30">
+                {selectedTasks.length} selected
+              </span>
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowClearModal(false)
-                }
+                onClick={completeSelectedTasks}
                 className="
-                  absolute
-                  right-4
-                  top-4
                   rounded-xl
-                  p-2
-                  text-white/70
+                  bg-[#765b6b]/10
+                  px-3
+                  py-2
+                  text-xs
+                  font-black
+                  text-[#765b6b]
                   transition
-
-                  hover:bg-white/10
-                  hover:text-white
+                  hover:bg-[#765b6b]/15
                 "
               >
-                <X size={18} />
+                Complete
               </button>
 
-              <div className="relative">
-
-                <div
-                  className="
-                    flex
-                    h-14
-                    w-14
-                    items-center
-                    justify-center
-                    rounded-2xl
-                    bg-white/15
-                    shadow-lg
-                    backdrop-blur
-                  "
-                >
-                  <Trash2 size={27} />
-                </div>
-
-                <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-white/70">
-                  Danger Zone
-                </p>
-
-                <h2 className="mt-1 text-2xl font-black">
-                  Clear everything?
-                </h2>
-
-              </div>
-            </div>
-
-            {/* MODAL BODY */}
-
-            <div className="p-6">
-
-              <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">
-                You're about to delete{" "}
-                <span className="font-bold text-slate-800 dark:text-white">
-                  all {tasks.length}{" "}
-                  {tasks.length === 1
-                    ? "task"
-                    : "tasks"}
-                </span>
-                .
-              </p>
-
-              <div
+              <button
+                type="button"
+                onClick={archiveSelectedTasks}
                 className="
-                  mt-4
-                  rounded-2xl
-                  border
-                  border-rose-100
-                  bg-rose-50
-                  p-4
-
-                  dark:border-rose-900/60
-                  dark:bg-[#2a1918]
+                  rounded-xl
+                  bg-black/5
+                  px-3
+                  py-2
+                  text-xs
+                  font-black
+                  transition
+                  hover:bg-black/10
+                  dark:bg-white/10
+                  dark:hover:bg-white/15
                 "
               >
-                <p className="text-sm font-bold text-rose-700 dark:text-rose-400">
-                  This can't be undone
-                </p>
+                Archive
+              </button>
 
-                <p className="mt-1 text-xs leading-5 text-rose-600/80 dark:text-rose-400/70">
-                  All your active and completed tasks
-                  will be removed from Lockin.
-                </p>
-              </div>
-
-              {/* MODAL BUTTONS */}
-
-              <div
+              <button
+                type="button"
+                onClick={deleteSelectedTasks}
                 className="
-                  mt-6
-                  flex
-                  flex-col-reverse
-                  gap-2
-                  sm:flex-row
-                  sm:justify-end
+                  rounded-xl
+                  bg-red-500/10
+                  px-3
+                  py-2
+                  text-xs
+                  font-black
+                  text-red-500
+                  transition
+                  hover:bg-red-500/15
                 "
               >
+                Delete
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowClearModal(false)
-                  }
-                  className="
-                    rounded-xl
-                    px-5
-                    py-3
-                    text-sm
-                    font-bold
-                    text-slate-500
-                    transition
+              <button
+                type="button"
+                onClick={clearTaskSelection}
+                className="
+                  rounded-xl
+                  px-3
+                  py-2
+                  text-xs
+                  font-black
+                  text-black/40
+                  hover:bg-black/5
+                  dark:text-white/40
+                  dark:hover:bg-white/5
+                "
+              >
+                Clear
+              </button>
+            </>
+          )}
 
-                    hover:bg-slate-100
 
-                    dark:text-slate-400
-                    dark:hover:bg-[#252a26]
-                    dark:hover:text-white
-                  "
-                >
-                  Keep My Tasks
-                </button>
+          {/* VIEW BUTTONS */}
 
-                <button
-                  type="button"
-                  onClick={confirmClearAll}
-                  className="
-                    inline-flex
-                    items-center
-                    justify-center
-                    gap-2
-                    rounded-xl
-                    bg-rose-500
-                    px-5
-                    py-3
-                    text-sm
-                    font-bold
-                    text-white
-                    shadow-lg
-                    shadow-rose-500/20
-                    transition
+          <div className="ml-auto flex gap-1 rounded-xl bg-black/5 p-1 dark:bg-white/5">
 
-                    hover:-translate-y-0.5
-                    hover:bg-rose-600
-                    hover:shadow-rose-500/30
-                  "
-                >
-                  <Trash2 size={16} />
-                  Yes, Clear All
-                </button>
+            <button
+              type="button"
+              onClick={() =>
+                setTaskView("list")
+              }
+              className={`
+                rounded-lg
+                p-2
+                transition
+                ${
+                  taskView === "list"
+                    ? "bg-white text-[#765b6b] shadow-sm dark:bg-[#252925]"
+                    : "text-black/30 dark:text-white/30"
+                }
+              `}
+            >
+              <LayoutList size={17} />
+            </button>
 
-              </div>
+            <button
+              type="button"
+              onClick={() =>
+                setTaskView("board")
+              }
+              className={`
+                rounded-lg
+                p-2
+                transition
+                ${
+                  taskView === "board"
+                    ? "bg-white text-[#765b6b] shadow-sm dark:bg-[#252925]"
+                    : "text-black/30 dark:text-white/30"
+                }
+              `}
+            >
+              <Columns3 size={17} />
+            </button>
 
-            </div>
           </div>
         </div>
       )}
 
+
+      {/* =====================================================
+          TASK LIST
+      ===================================================== */}
+
+      {taskView === "list" ? (
+
+        safeFilteredTasks.length === 0 ? (
+
+          <EmptyState
+            title={
+              safeTasks.length === 0
+                ? "No tasks yet"
+                : "No tasks found"
+            }
+            description={
+              safeTasks.length === 0
+                ? "Create your first task to get started."
+                : "Try changing your filters or create a new task."
+            }
+            action={
+              <TaskForm
+                onAdd={addTask}
+                projects={safeProjects}
+                tasks={safeTasks}
+              />
+            }
+          />
+
+        ) : (
+
+          <div className="space-y-3">
+            {safeFilteredTasks.map((task) => {
+
+              const dependencies =
+                getTaskDependencies
+                  ? getTaskDependencies(task)
+                  : [];
+
+              const blocked =
+                hasBlockedDependencies
+                  ? hasBlockedDependencies(task)
+                  : false;
+
+              return (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  projects={safeProjects}
+                  onToggle={toggleTask}
+                  onDelete={deleteTask}
+                  onArchive={archiveTask}
+                  onStartFocus={startFocus}
+                  onSelect={toggleTaskSelection}
+                  selected={selectedTasks.includes(
+                    task.id
+                  )}
+                  dependencies={dependencies}
+                  blocked={blocked}
+                />
+              );
+            })}
+          </div>
+
+        )
+
+      ) : (
+
+        /* ===================================================
+           KANBAN
+        =================================================== */
+
+        <div className="grid gap-4 xl:grid-cols-4">
+
+          {[
+            ["backlog", "Backlog"],
+            ["in-progress", "In Progress"],
+            ["review", "Review"],
+            ["done", "Done"],
+          ].map(([status, title]) => (
+
+            <div
+              key={status}
+              className="
+                min-h-[400px]
+                rounded-3xl
+                bg-black/[0.025]
+                p-3
+                dark:bg-white/[0.025]
+              "
+            >
+
+              <div className="mb-3 flex items-center justify-between px-2">
+
+                <h3 className="text-sm font-black">
+                  {title}
+                </h3>
+
+                <span
+                  className="
+                    rounded-full
+                    bg-black/5
+                    px-2
+                    py-1
+                    text-[10px]
+                    font-black
+                    dark:bg-white/10
+                  "
+                >
+                  {
+                    safeTasksByStatus[
+                      status
+                    ].length
+                  }
+                </span>
+
+              </div>
+
+              <div className="space-y-3">
+
+                {safeTasksByStatus[
+                  status
+                ].map((task) => {
+
+                  const dependencies =
+                    getTaskDependencies
+                      ? getTaskDependencies(task)
+                      : [];
+
+                  const blocked =
+                    hasBlockedDependencies
+                      ? hasBlockedDependencies(task)
+                      : false;
+
+                  return (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      projects={safeProjects}
+                      onToggle={toggleTask}
+                      onDelete={deleteTask}
+                      onArchive={archiveTask}
+                      onStartFocus={startFocus}
+                      onSelect={toggleTaskSelection}
+                      selected={selectedTasks.includes(
+                        task.id
+                      )}
+                      dependencies={dependencies}
+                      blocked={blocked}
+                    />
+                  );
+                })}
+
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

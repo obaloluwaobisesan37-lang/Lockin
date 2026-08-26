@@ -1,1033 +1,746 @@
-import { useEffect, useMemo, useState } from "react";
-
+import { useMemo } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import {
   CheckCircle2,
+  Circle,
   Clock3,
-  Flame,
+  FolderKanban,
   ListTodo,
+  Plus,
+  ArrowRight,
+  AlertTriangle,
+  Flame,
   Target,
-  Trophy,
   Zap,
-  X,
-  Play,
-  Pause,
-  RotateCcw,
+  CalendarDays,
+  TrendingUp,
 } from "lucide-react";
 
-import { useOutletContext } from "react-router-dom";
-
 function Dashboard() {
+  const navigate = useNavigate();
+
   const {
     tasks = [],
-    stats = {},
-    streak = {
-      current: 0,
-      best: 0,
-    },
+    projects = [],
+    streak = {},
     xp = 0,
     level = 1,
     xpProgress = 0,
-    xpNeeded = 100,
+    energy = 100,
+    addTask,
+    toggleTask,
   } = useOutletContext();
 
-  const {
-    total = 0,
-    completed = 0,
-    pending = 0,
-    highPriority = 0,
-    progress = 0,
-  } = stats;
+  const safeTasks = Array.isArray(tasks)
+    ? tasks
+    : [];
 
-  // ==========================================
-  // ANTI-PROCRASTINATION
-  // ==========================================
+  const safeProjects = Array.isArray(projects)
+    ? projects
+    : [];
 
-  const [showAntiProcrastination, setShowAntiProcrastination] =
-    useState(false);
+  // =====================================================
+  // TODAY
+  // =====================================================
 
-  const [focusStarted, setFocusStarted] = useState(false);
+  const today = new Date();
 
-  const [timeLeft, setTimeLeft] = useState(300);
+  const todayString =
+    `${today.getFullYear()}-` +
+    `${String(today.getMonth() + 1).padStart(2, "0")}-` +
+    `${String(today.getDate()).padStart(2, "0")}`;
 
-  const [isPaused, setIsPaused] = useState(false);
+  // =====================================================
+  // TASK CALCULATIONS
+  // =====================================================
 
-  const [focusFinished, setFocusFinished] = useState(false);
+  const completedTasks = safeTasks.filter(
+    (task) => task.completed
+  );
 
-  // ==========================================
-  // NEXT TASK
-  // ==========================================
+  const pendingTasks = safeTasks.filter(
+    (task) =>
+      !task.completed &&
+      !task.archived
+  );
 
-  const nextTask = useMemo(() => {
-    return tasks.find((task) => !task.completed) || null;
-  }, [tasks]);
+  const highPriorityTasks =
+    pendingTasks.filter(
+      (task) =>
+        task.priority === "High"
+    );
 
-  // ==========================================
-  // TIMER
-  // ==========================================
+  const todayTasks = pendingTasks.filter(
+    (task) =>
+      task.dueDate === todayString
+  );
 
-  useEffect(() => {
-    if (
-      !focusStarted ||
-      isPaused ||
-      focusFinished
-    ) {
-      return;
-    }
+  // =====================================================
+  // UPCOMING TASKS
+  // =====================================================
 
-    if (timeLeft <= 0) {
-      setFocusFinished(true);
-      setFocusStarted(false);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setTimeLeft((current) => {
-        if (current <= 1) {
-          clearInterval(timer);
+  const upcomingTasks = useMemo(() => {
+    return [...pendingTasks]
+      .sort((a, b) => {
+        if (
+          !a.dueDate &&
+          !b.dueDate
+        ) {
           return 0;
         }
 
-        return current - 1;
-      });
-    }, 1000);
+        if (!a.dueDate) {
+          return 1;
+        }
 
-    return () => clearInterval(timer);
-  }, [
-    focusStarted,
-    isPaused,
-    focusFinished,
-    timeLeft,
-  ]);
+        if (!b.dueDate) {
+          return -1;
+        }
 
-  // ==========================================
-  // FORMAT TIMER
-  // ==========================================
+        return a.dueDate.localeCompare(
+          b.dueDate
+        );
+      })
+      .slice(0, 6);
+  }, [pendingTasks]);
 
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
+  // =====================================================
+  // PROJECT CALCULATIONS
+  // =====================================================
 
-    const remainingSeconds = seconds % 60;
+  const activeProjects =
+    safeProjects.filter(
+      (project) =>
+        project.status !==
+        "Completed"
+    );
 
-    return `${String(minutes).padStart(
-      2,
-      "0"
-    )}:${String(remainingSeconds).padStart(
-      2,
-      "0"
-    )}`;
+  // =====================================================
+  // QUICK ADD
+  // =====================================================
+
+  const createQuickTask = () => {
+    if (!addTask) {
+      return;
+    }
+
+    addTask({
+      title: "New task",
+      description: "",
+      priority: "Medium",
+      dueDate: "",
+      dueTime: "",
+      tags: [],
+      recurring: "None",
+      energy: "Medium",
+      progress: 0,
+      subtasks: [],
+      category: "",
+      projectId: null,
+      status: "backlog",
+      dependencies: [],
+    });
+
+    navigate("/todos");
   };
 
-  // ==========================================
-  // START LOCK IN
-  // ==========================================
+  // =====================================================
+  // FORMAT DATE
+  // =====================================================
 
-  const startLockIn = () => {
-    setTimeLeft(300);
-    setFocusStarted(true);
-    setIsPaused(false);
-    setFocusFinished(false);
+  const formatDate = (date) => {
+    if (!date) {
+      return "No deadline";
+    }
+
+    try {
+      return new Date(
+        `${date}T00:00:00`
+      ).toLocaleDateString(
+        undefined,
+        {
+          month: "short",
+          day: "numeric",
+        }
+      );
+    } catch {
+      return date;
+    }
   };
 
-  // ==========================================
-  // PAUSE / RESUME
-  // ==========================================
+  // =====================================================
+  // PRIORITY STYLE
+  // =====================================================
 
-  const togglePause = () => {
-    setIsPaused((current) => !current);
-  };
+  const priorityClass = (
+    priority
+  ) => {
+    if (priority === "High") {
+      return "bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400";
+    }
 
-  // ==========================================
-  // RESET TIMER
-  // ==========================================
+    if (priority === "Medium") {
+      return "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400";
+    }
 
-  const resetTimer = () => {
-    setTimeLeft(300);
-    setFocusStarted(false);
-    setIsPaused(false);
-    setFocusFinished(false);
-  };
-
-  // ==========================================
-  // CLOSE MODAL
-  // ==========================================
-
-  const closeModal = () => {
-    setShowAntiProcrastination(false);
-
-    setFocusStarted(false);
-
-    setIsPaused(false);
-
-    setFocusFinished(false);
-
-    setTimeLeft(300);
+    return "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
   };
 
   return (
-    <div className="space-y-6">
-
-      {/* ===================================== */}
+    <div className="mx-auto max-w-7xl space-y-7">
       {/* HEADER */}
-      {/* ===================================== */}
 
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#4f6f52]">
-          Your workspace
-        </p>
+      <section className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-[#765b6b]">
+            Your workspace
+          </p>
 
-        <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">
-          Dashboard
-        </h1>
+          <h1 className="text-3xl font-black tracking-[-0.04em] text-[#292725] dark:text-white sm:text-4xl">
+            Good to see you.
+          </h1>
 
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Stay focused and keep making progress.
-        </p>
-      </div>
-
-      {/* ===================================== */}
-      {/* BASIC STATS */}
-      {/* ===================================== */}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
-        {/* TOTAL */}
-
-        <div className="dashboard-shine-card lockin-depth rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
-
-          <div className="dashboard-card-content">
-
-            <div className="flex items-center justify-between">
-
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-[#252a26] dark:text-slate-300">
-                <ListTodo size={21} />
-              </div>
-
-              <span className="text-xs font-bold text-slate-400">
-                TOTAL
-              </span>
-
-            </div>
-
-            <p className="mt-5 text-3xl font-black">
-              {total}
-            </p>
-
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Total tasks
-            </p>
-
-          </div>
-
+          <p className="mt-2 max-w-xl text-sm leading-6 text-[#817b73] dark:text-[#aaa69e]">
+            Manage your tasks, track
+            your projects, and keep
+            moving forward without
+            losing focus.
+          </p>
         </div>
 
-        {/* COMPLETED */}
+        <button
+          type="button"
+          onClick={createQuickTask}
+          className="
+            inline-flex
+            items-center
+            justify-center
+            gap-2
+            rounded-2xl
+            bg-[#765b6b]
+            px-5
+            py-3.5
+            text-sm
+            font-black
+            text-white
+            shadow-[0_4px_0_#543f4d]
+            transition
+            hover:-translate-y-0.5
+            hover:bg-[#674e5e]
+          "
+        >
+          <Plus size={18} />
+          New Task
+        </button>
+      </section>
 
-        <div className="dashboard-shine-card lockin-depth rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
+      {/* OVERVIEW */}
 
-          <div className="dashboard-card-content">
-
-            <div className="flex items-center justify-between">
-
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eef3ec] text-[#4f6f52] dark:bg-[#263328] dark:text-[#a8c5a5]">
-                <CheckCircle2 size={21} />
-              </div>
-
-              <span className="text-xs font-bold text-[#4f6f52]">
-                DONE
-              </span>
-
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="rounded-3xl border border-[#e0dcd5] bg-white p-5 dark:border-[#343934] dark:bg-[#1b1f1c]">
+          <div className="flex items-start justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f0e9ee] text-[#765b6b] dark:bg-[#332a30]">
+              <ListTodo size={19} />
             </div>
 
-            <p className="mt-5 text-3xl font-black">
-              {completed}
-            </p>
-
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Completed tasks
-            </p>
-
+            <TrendingUp
+              size={17}
+              className="text-[#9b958c]"
+            />
           </div>
 
+          <p className="mt-5 text-[10px] font-black uppercase tracking-wider text-[#918b82]">
+            Total Tasks
+          </p>
+
+          <p className="mt-1 text-3xl font-black text-[#292725] dark:text-white">
+            {safeTasks.length}
+          </p>
         </div>
 
-        {/* PENDING */}
-
-        <div className="dashboard-shine-card lockin-depth rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
-
-          <div className="dashboard-card-content">
-
-            <div className="flex items-center justify-between">
-
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
-                <Clock3 size={21} />
-              </div>
-
-              <span className="text-xs font-bold text-amber-600">
-                PENDING
-              </span>
-
-            </div>
-
-            <p className="mt-5 text-3xl font-black">
-              {pending}
-            </p>
-
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Tasks remaining
-            </p>
-
+        <div className="rounded-3xl border border-[#e0dcd5] bg-white p-5 dark:border-[#343934] dark:bg-[#1b1f1c]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
+            <CheckCircle2 size={19} />
           </div>
 
+          <p className="mt-5 text-[10px] font-black uppercase tracking-wider text-[#918b82]">
+            Completed
+          </p>
+
+          <p className="mt-1 text-3xl font-black text-[#292725] dark:text-white">
+            {completedTasks.length}
+          </p>
         </div>
 
-        {/* HIGH PRIORITY */}
-
-        <div className="dashboard-shine-card lockin-depth rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
-
-          <div className="dashboard-card-content">
-
-            <div className="flex items-center justify-between">
-
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400">
-                <Target size={21} />
-              </div>
-
-              <span className="text-xs font-bold text-rose-600">
-                HIGH
-              </span>
-
-            </div>
-
-            <p className="mt-5 text-3xl font-black">
-              {highPriority}
-            </p>
-
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              High priority
-            </p>
-
+        <div className="rounded-3xl border border-[#e0dcd5] bg-white p-5 dark:border-[#343934] dark:bg-[#1b1f1c]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
+            <CalendarDays size={19} />
           </div>
 
+          <p className="mt-5 text-[10px] font-black uppercase tracking-wider text-[#918b82]">
+            Due Today
+          </p>
+
+          <p className="mt-1 text-3xl font-black text-[#292725] dark:text-white">
+            {todayTasks.length}
+          </p>
         </div>
 
-      </div>
+        <div className="rounded-3xl border border-[#e0dcd5] bg-white p-5 dark:border-[#343934] dark:bg-[#1b1f1c]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400">
+            <AlertTriangle size={19} />
+          </div>
 
-      {/* ===================================== */}
-      {/* ANTI-PROCRASTINATION */}
-      {/* ===================================== */}
+          <p className="mt-5 text-[10px] font-black uppercase tracking-wider text-[#918b82]">
+            High Priority
+          </p>
 
-      <section className="dashboard-shine-card relative overflow-hidden rounded-3xl border border-[#dfe7dc] bg-[#f4f7f1] p-6 shadow-sm dark:border-[#344034] dark:bg-[#1b211c]">
+          <p className="mt-1 text-3xl font-black text-[#292725] dark:text-white">
+            {highPriorityTasks.length}
+          </p>
+        </div>
+      </section>
 
-        <div className="dashboard-card-content">
+      {/* MAIN GRID */}
 
-          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#a8c5a5]/20 blur-3xl" />
+      <section className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+        {/* TASKS */}
 
-          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-[28px] border border-[#e0dcd5] bg-white p-5 dark:border-[#343934] dark:bg-[#1b1f1c] sm:p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wider text-[#918b82]">
+                Priority queue
+              </p>
 
-            <div className="flex items-start gap-4">
-
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-xl shadow-sm dark:bg-[#252d26]">
-                🔒
-              </div>
-
-              <div>
-
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#4f6f52] dark:text-[#a8c5a5]">
-                  Need a push?
-                </p>
-
-                <h2 className="mt-1 text-xl font-black">
-                  Time to lock in.
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Beat the procrastination before it beats you. 💀
-                </p>
-
-              </div>
-
+              <h2 className="mt-1 text-xl font-black text-[#292725] dark:text-white">
+                My Tasks
+              </h2>
             </div>
 
             <button
               type="button"
               onClick={() =>
-                setShowAntiProcrastination(true)
+                navigate("/todos")
               }
-              className="lockin-3d inline-flex items-center justify-center gap-2 rounded-2xl bg-[#4f6f52] px-5 py-3 text-sm font-black text-white shadow-[0_5px_0_#344a37] transition hover:bg-[#456448] active:translate-y-1 active:shadow-[0_2px_0_#344a37]"
+              className="flex items-center gap-1 text-xs font-black text-[#765b6b] hover:underline"
             >
-              <Zap size={17} />
-              Anti-Procrastination
+              View all
+              <ArrowRight size={14} />
             </button>
-
           </div>
 
+          {upcomingTasks.length ===
+          0 ? (
+            <div className="rounded-2xl border border-dashed border-[#d8d3ca] px-5 py-12 text-center dark:border-[#393d39]">
+              <CheckCircle2
+                size={30}
+                className="mx-auto text-emerald-500"
+              />
+
+              <p className="mt-3 text-sm font-black text-[#292725] dark:text-white">
+                Everything is under
+                control.
+              </p>
+
+              <p className="mt-1 text-xs text-[#918b82]">
+                You don't have any
+                pending tasks.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {upcomingTasks.map(
+                (task) => (
+                  <div
+                    key={task.id}
+                    className="
+                      group
+                      flex
+                      items-center
+                      gap-3
+                      rounded-2xl
+                      border
+                      border-[#ebe7e0]
+                      bg-[#faf9f6]
+                      p-3
+                      transition
+                      hover:border-[#d9ced6]
+                      hover:bg-white
+                      dark:border-[#303530]
+                      dark:bg-[#161916]
+                      dark:hover:bg-[#202520]
+                    "
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toggleTask?.(
+                          task.id
+                        )
+                      }
+                      className="shrink-0 text-[#aaa49c] transition hover:text-[#765b6b]"
+                    >
+                      <Circle size={21} />
+                    </button>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-[#292725] dark:text-white">
+                        {task.title ||
+                          "Untitled task"}
+                      </p>
+
+                      <div className="mt-1 flex items-center gap-3">
+                        <span className="flex items-center gap-1 text-[10px] font-semibold text-[#918b82]">
+                          <Clock3 size={11} />
+                          {formatDate(
+                            task.dueDate
+                          )}
+                        </span>
+
+                        {task.projectId && (
+                          <span className="flex items-center gap-1 text-[10px] font-semibold text-[#918b82]">
+                            <FolderKanban
+                              size={11}
+                            />
+                            Project
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[9px] font-black ${priorityClass(
+                        task.priority
+                      )}`}
+                    >
+                      {task.priority ||
+                        "Low"}
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
+          )}
         </div>
 
-      </section>
+        {/* PRODUCTIVITY */}
 
-      {/* ===================================== */}
-      {/* STREAK CARDS */}
-      {/* ===================================== */}
-
-      <div className="grid gap-4 lg:grid-cols-2">
-
-        {/* CURRENT STREAK */}
-
-        <div className="dashboard-shine-card lockin-depth relative overflow-hidden rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 to-white p-6 shadow-sm dark:border-orange-900/40 dark:from-orange-950/30 dark:to-[#1b1f1c]">
-
-          <div className="dashboard-card-content">
-
-            <div className="relative">
-
-              <div className="flex items-center justify-between">
-
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400">
-                  <Flame size={25} />
-                </div>
-
-                <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-600 dark:bg-orange-900/40 dark:text-orange-400">
-                  CURRENT
-                </span>
-
-              </div>
-
-              <div className="mt-6">
-
-                <p className="text-5xl font-black tracking-tight">
-                  {streak.current}
+        <div className="space-y-6">
+          <div className="rounded-[28px] bg-[#765b6b] p-6 text-white shadow-xl shadow-[#765b6b]/15">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">
+                  Productivity level
                 </p>
 
-                <p className="mt-1 text-lg font-bold">
-                  Day Streak
-                </p>
-
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  {streak.current === 0
-                    ? "Complete a task today to start your streak."
-                    : streak.current === 1
-                    ? "Great start. Come back tomorrow!"
-                    : "Keep going. Don't break the streak!"}
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* BEST STREAK */}
-
-        <div className="dashboard-shine-card lockin-depth relative overflow-hidden rounded-3xl border border-yellow-200 bg-gradient-to-br from-yellow-50 to-white p-6 shadow-sm dark:border-yellow-900/40 dark:from-yellow-950/30 dark:to-[#1b1f1c]">
-
-          <div className="dashboard-card-content">
-
-            <div className="relative">
-
-              <div className="flex items-center justify-between">
-
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400">
-                  <Trophy size={25} />
-                </div>
-
-                <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400">
-                  BEST
-                </span>
-
-              </div>
-
-              <div className="mt-6">
-
-                <p className="text-5xl font-black tracking-tight">
-                  {streak.best}
-                </p>
-
-                <p className="mt-1 text-lg font-bold">
-                  Day Record
-                </p>
-
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  Your longest streak so far.
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* ===================================== */}
-      {/* XP & LEVEL */}
-      {/* ===================================== */}
-
-      <div className="dashboard-shine-card lockin-depth relative overflow-hidden rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-6 shadow-sm dark:border-violet-900/40 dark:from-violet-950/30 dark:to-[#1b1f1c]">
-
-        <div className="dashboard-card-content">
-
-          <div className="relative">
-
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-
-              <div className="flex items-center gap-4">
-
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400">
-                  <Zap size={26} />
-                </div>
-
-                <div>
-
-                  <p className="text-xs font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">
-                    XP & Level
-                  </p>
-
-                  <h2 className="mt-1 text-2xl font-black">
-                    Level {level}
-                  </h2>
-
-                </div>
-
-              </div>
-
-              <div className="sm:text-right">
-
-                <p className="text-2xl font-black">
-                  {xp} XP
-                </p>
-
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {xpNeeded} XP until next level
-                </p>
-
-              </div>
-
-            </div>
-
-            <div className="mt-6">
-
-              <div className="mb-2 flex justify-between text-xs font-bold">
-
-                <span>
+                <h2 className="mt-2 text-3xl font-black">
                   Level {level}
-                </span>
-
-                <span>
-                  {xpProgress}%
-                </span>
-
+                </h2>
               </div>
 
-              <div className="h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-[#252a26]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+                <Zap size={20} />
+              </div>
+            </div>
 
+            <div className="mt-7">
+              <div className="mb-2 flex justify-between text-xs">
+                <span className="font-bold text-white/60">
+                  XP Progress
+                </span>
+
+                <span className="font-black">
+                  {xp} XP
+                </span>
+              </div>
+
+              <div className="h-2 overflow-hidden rounded-full bg-white/15">
                 <div
-                  className="h-full rounded-full bg-violet-500 transition-all duration-500"
+                  className="h-full rounded-full bg-white transition-all duration-700"
                   style={{
                     width: `${xpProgress}%`,
                   }}
                 />
+              </div>
+            </div>
+          </div>
 
+          <div className="rounded-[28px] border border-[#e0dcd5] bg-white p-6 dark:border-[#343934] dark:bg-[#1b1f1c]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#918b82]">
+                  Current streak
+                </p>
+
+                <p className="mt-2 text-3xl font-black text-[#292725] dark:text-white">
+                  {streak.current ||
+                    0}
+
+                  <span className="ml-2 text-sm text-[#918b82]">
+                    days
+                  </span>
+                </p>
               </div>
 
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 dark:bg-orange-950/30">
+                <Flame size={21} />
+              </div>
             </div>
 
-            <div className="mt-5 rounded-2xl bg-white/70 p-4 dark:bg-[#202521]/70">
+            <div className="mt-5 flex items-center justify-between border-t border-[#eeeae4] pt-4 dark:border-[#303530]">
+              <span className="text-xs font-semibold text-[#918b82]">
+                Best streak
+              </span>
 
-              <p className="font-bold">
-                How to earn XP
-              </p>
-
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Normal task = +10 XP · High priority = +15 XP
-              </p>
-
+              <span className="text-sm font-black text-[#292725] dark:text-white">
+                {streak.best ||
+                  0}{" "}
+                days
+              </span>
             </div>
-
           </div>
 
-        </div>
+          <div className="rounded-[28px] border border-[#e0dcd5] bg-white p-6 dark:border-[#343934] dark:bg-[#1b1f1c]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#918b82]">
+                  Energy
+                </p>
 
-      </div>
-
-      {/* ===================================== */}
-      {/* OVERALL PROGRESS */}
-      {/* ===================================== */}
-
-      <div className="dashboard-shine-card lockin-depth rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
-
-        <div className="dashboard-card-content">
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-            <div>
-
-              <div className="flex items-center gap-2">
-
-                <Target
-                  size={19}
-                  className="text-[#4f6f52]"
-                />
-
-                <h2 className="font-black">
-                  Overall Progress
-                </h2>
-
+                <p className="mt-2 text-3xl font-black text-[#292725] dark:text-white">
+                  {energy}%
+                </p>
               </div>
 
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Keep completing tasks to reach 100%.
-              </p>
-
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-600 dark:bg-yellow-950/30 dark:text-yellow-400">
+                <Zap size={21} />
+              </div>
             </div>
 
-            <span className="text-2xl font-black text-[#4f6f52]">
-              {progress}%
-            </span>
+            <div className="mt-5 h-2 overflow-hidden rounded-full bg-[#eeeae4] dark:bg-[#303530]">
+              <div
+                className="h-full rounded-full bg-yellow-500 transition-all duration-500"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Math.max(
+                      0,
+                      energy
+                    )
+                  )}%`,
+                }}
+              />
+            </div>
 
+            <p className="mt-3 text-xs font-medium text-[#918b82]">
+              Complete tasks
+              strategically to manage
+              your energy.
+            </p>
           </div>
-
-          <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-[#252a26]">
-
-            <div
-              className="h-full rounded-full bg-[#4f6f52] transition-all duration-500"
-              style={{
-                width: `${progress}%`,
-              }}
-            />
-
-          </div>
-
         </div>
+      </section>
 
-      </div>
+      {/* PROJECTS */}
 
-      {/* ===================================== */}
-      {/* RECENT TASKS */}
-      {/* ===================================== */}
-
-      <div className="dashboard-shine-card lockin-depth rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[#343a35] dark:bg-[#1b1f1c]">
-
-        <div className="dashboard-card-content">
-
-          <div className="border-b border-slate-200 p-5 dark:border-[#343a35]">
-
-            <h2 className="font-black">
-              Recent Tasks
-            </h2>
-
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Your latest tasks.
+      <section className="rounded-[28px] border border-[#e0dcd5] bg-white p-5 dark:border-[#343934] dark:bg-[#1b1f1c] sm:p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-[#918b82]">
+              Work management
             </p>
 
+            <h2 className="mt-1 text-xl font-black text-[#292725] dark:text-white">
+              Active Projects
+            </h2>
           </div>
 
-          {tasks.length === 0 ? (
-
-            <div className="p-8 text-center">
-
-              <ListTodo
-                size={32}
-                className="mx-auto text-slate-300"
-              />
-
-              <p className="mt-3 font-bold">
-                No tasks yet
-              </p>
-
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Create your first task to get started.
-              </p>
-
-            </div>
-
-          ) : (
-
-            <div className="divide-y divide-slate-200 dark:divide-[#343a35]">
-
-              {tasks
-                .slice(0, 5)
-                .map((task) => (
-
-                  <div
-                    key={task.id}
-                    className="flex items-center gap-3 p-4 transition hover:bg-[#f4f7f1] dark:hover:bg-[#202720]"
-                  >
-
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eef3ec] text-[#4f6f52]">
-                      <CheckCircle2 size={18} />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-
-                      <p
-                        className={`truncate text-sm font-bold ${
-                          task.completed
-                            ? "text-[#8fa08d] line-through"
-                            : "text-[#4f6f52]"
-                        }`}
-                      >
-                        {task.title || "Untitled task"}
-                      </p>
-
-                      {task.priority && (
-                        <p className="mt-1 text-xs text-slate-400">
-                          {task.priority} priority
-                        </p>
-                      )}
-
-                    </div>
-
-                  </div>
-
-                ))}
-
-            </div>
-
-          )}
-
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/projects")
+            }
+            className="flex items-center gap-1 text-xs font-black text-[#765b6b] hover:underline"
+          >
+            Manage projects
+            <ArrowRight size={14} />
+          </button>
         </div>
 
-      </div>
+        {activeProjects.length ===
+        0 ? (
+          <div className="rounded-2xl border border-dashed border-[#d8d3ca] py-10 text-center dark:border-[#393d39]">
+            <FolderKanban
+              size={28}
+              className="mx-auto text-[#aaa49c]"
+            />
 
-      {/* ===================================== */}
-      {/* ANTI-PROCRASTINATION MODAL */}
-      {/* ===================================== */}
-
-      {showAntiProcrastination && (
-
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-          onMouseDown={(event) => {
-
-            if (
-              event.target === event.currentTarget
-            ) {
-              closeModal();
-            }
-
-          }}
-        >
-
-          <div className="relative w-full max-w-md overflow-hidden rounded-[32px] border border-white/10 bg-[#171c18] text-white shadow-[0_30px_100px_rgba(0,0,0,0.45)]">
-
-            {/* CLOSE */}
+            <p className="mt-3 text-sm font-black text-[#292725] dark:text-white">
+              No active projects
+            </p>
 
             <button
               type="button"
-              onClick={closeModal}
-              className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-400 transition hover:bg-white/10 hover:text-white"
+              onClick={() =>
+                navigate("/projects")
+              }
+              className="mt-3 text-xs font-black text-[#765b6b] hover:underline"
             >
-              <X size={19} />
+              Create a project
             </button>
+          </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {activeProjects
+              .slice(0, 6)
+              .map((project) => {
+                const projectTasks =
+                  safeTasks.filter(
+                    (task) =>
+                      task.projectId ===
+                      project.id
+                  );
 
-            {!focusStarted && !focusFinished && (
+                const completed =
+                  projectTasks.filter(
+                    (task) =>
+                      task.completed
+                  ).length;
 
-              <div className="p-7 text-center">
+                const projectProgress =
+                  projectTasks.length ===
+                  0
+                    ? 0
+                    : Math.round(
+                        (completed /
+                          projectTasks.length) *
+                          100
+                      );
 
-                <span className="inline-flex rounded-full bg-[#263528] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#a8c5a5]">
-                  Lockin check
-                </span>
+                return (
+                  <button
+                    key={project.id}
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        "/projects"
+                      )
+                    }
+                    className="
+                      rounded-2xl
+                      border
+                      border-[#ebe7e0]
+                      bg-[#faf9f6]
+                      p-4
+                      text-left
+                      transition
+                      hover:-translate-y-0.5
+                      hover:border-[#d9ced6]
+                      hover:bg-white
+                      dark:border-[#303530]
+                      dark:bg-[#161916]
+                      dark:hover:bg-[#202520]
+                    "
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-black text-[#292725] dark:text-white">
+                          {project.name ||
+                            project.title ||
+                            "Untitled Project"}
+                        </p>
 
-                <div className="mx-auto mt-7 flex h-20 w-20 items-center justify-center rounded-[26px] border border-white/10 bg-[#202720] text-4xl">
-                  😭
-                </div>
+                        <p className="mt-1 text-xs text-[#918b82]">
+                          {completed} /{" "}
+                          {
+                            projectTasks.length
+                          }{" "}
+                          tasks
+                        </p>
+                      </div>
 
-                <p className="mt-6 text-xs font-black uppercase tracking-[0.2em] text-[#9eb09b]">
-                  Be honest...
-                </p>
-
-                <h2 className="mt-2 text-3xl font-black">
-                  Are we locking in?
-                </h2>
-
-                <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-400">
-                  You came here for a reason.
-                  Don't let the next 5 minutes disappear.
-                </p>
-
-                {/* NEXT TASK */}
-
-                <div className="mt-6 rounded-[22px] border border-white/10 bg-[#202720] p-4 text-left">
-
-                  <p className="text-[10px] font-black uppercase tracking-wider text-[#a8c5a5]">
-                    Your next move
-                  </p>
-
-                  {nextTask ? (
-
-                    <div className="mt-2">
-
-                      <p className="font-bold text-white">
-                        {nextTask.title}
-                      </p>
-
-                      <p className="mt-1 text-xs text-slate-400">
-                        Pick this task and work on it for 5 minutes.
-                      </p>
-
+                      <FolderKanban
+                        size={17}
+                        className="shrink-0 text-[#765b6b]"
+                      />
                     </div>
 
-                  ) : (
-
-                    <div className="mt-2">
-
-                      <p className="font-bold text-white">
-                        No unfinished tasks 🎉
-                      </p>
-
-                      <p className="mt-1 text-xs text-slate-400">
-                        Add a task first, then come back here.
-
-                      </p>
-
+                    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#e9e5de] dark:bg-[#303530]">
+                      <div
+                        className="h-full rounded-full bg-[#765b6b]"
+                        style={{
+                          width: `${projectProgress}%`,
+                        }}
+                      />
                     </div>
 
-                  )}
+                    <div className="mt-2 flex justify-between">
+                      <span className="text-[10px] font-bold text-[#918b82]">
+                        {project.status ||
+                          "Not Started"}
+                      </span>
 
-                </div>
-
-                {/* START */}
-
-                <button
-                  type="button"
-                  disabled={!nextTask}
-                  onClick={startLockIn}
-                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4f6f52] px-5 py-4 text-sm font-black text-white shadow-[0_5px_0_#344a37] transition hover:bg-[#456448] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none active:translate-y-1"
-                >
-                  <Play size={17} fill="currentColor" />
-                  LOCK IN FOR 5 MINUTES
-                </button>
-
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="mt-2 w-full rounded-2xl px-5 py-3 text-xs font-bold text-slate-500 transition hover:bg-white/5 hover:text-slate-300"
-                >
-                  I'm choosing chaos 💀
-                </button>
-
-              </div>
-
-            )}
-
-            {/* ================================= */}
-            {/* ACTIVE TIMER */}
-            {/* ================================= */}
-
-            {focusStarted && !focusFinished && (
-
-              <div className="p-7 text-center">
-
-                <span className="inline-flex rounded-full bg-[#263528] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#a8c5a5]">
-                  LOCKED IN 🔒
-                </span>
-
-                <p className="mt-8 text-xs font-black uppercase tracking-[0.2em] text-[#9eb09b]">
-                  Focus session
-                </p>
-
-                <div className="mt-3 text-7xl font-black tracking-tight tabular-nums">
-                  {formatTime(timeLeft)}
-                </div>
-
-                <div className="mx-auto mt-6 h-3 max-w-sm overflow-hidden rounded-full bg-white/10">
-
-                  <div
-                    className="h-full rounded-full bg-[#6f9772] transition-all duration-1000"
-                    style={{
-                      width: `${Math.max(
-                        0,
-                        Math.min(
-                          100,
-                          ((300 - timeLeft) / 300) *
-                            100
-                        )
-                      )}%`,
-                    }}
-                  />
-
-                </div>
-
-                {nextTask && (
-
-                  <div className="mt-7 rounded-2xl bg-[#202720] p-4 text-left">
-
-                    <p className="text-[10px] font-black uppercase tracking-wider text-[#a8c5a5]">
-                      Working on
-                    </p>
-
-                    <p className="mt-1 font-bold">
-                      {nextTask.title}
-                    </p>
-
-                  </div>
-
-                )}
-
-                <div className="mt-6 flex gap-2">
-
-                  <button
-                    type="button"
-                    onClick={togglePause}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#4f6f52] px-4 py-3 font-bold text-white transition hover:bg-[#456448]"
-                  >
-                    {isPaused ? (
-                      <>
-                        <Play
-                          size={16}
-                          fill="currentColor"
-                        />
-                        Resume
-                      </>
-                    ) : (
-                      <>
-                        <Pause size={16} />
-                        Pause
-                      </>
-                    )}
+                      <span className="text-[10px] font-black text-[#765b6b]">
+                        {
+                          projectProgress
+                        }
+                        %
+                      </span>
+                    </div>
                   </button>
+                );
+              })}
+          </div>
+        )}
+      </section>
 
-                  <button
-                    type="button"
-                    onClick={resetTimer}
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-white/5 px-4 py-3 font-bold text-slate-300 transition hover:bg-white/10"
-                  >
-                    <RotateCcw size={16} />
-                    Reset
-                  </button>
+      {/* DAILY FOCUS */}
 
-                </div>
+      <section className="rounded-[28px] border border-[#e0dcd5] bg-[#f2eee8] p-6 dark:border-[#343934] dark:bg-[#202420]">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[#765b6b] shadow-sm dark:bg-[#171a17]">
+              <Target size={22} />
+            </div>
 
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="mt-3 w-full rounded-2xl px-4 py-3 text-xs font-bold text-slate-500 transition hover:bg-white/5 hover:text-slate-300"
-                >
-                  Give up
-                </button>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#918b82]">
+                Daily focus
+              </p>
 
-              </div>
+              <h2 className="mt-1 text-lg font-black text-[#292725] dark:text-white">
+                {todayTasks.length >
+                0
+                  ? `You have ${todayTasks.length} task${
+                      todayTasks.length ===
+                      1
+                        ? ""
+                        : "s"
+                    } due today.`
+                  : "No tasks are due today."}
+              </h2>
 
-            )}
-
-            {/* ================================= */}
-            {/* FINISHED */}
-            {/* ================================= */}
-
-            {focusFinished && (
-
-              <div className="p-8 text-center">
-
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#263c29] text-4xl">
-                  🎉
-                </div>
-
-                <p className="mt-6 text-xs font-black uppercase tracking-[0.2em] text-[#a8c5a5]">
-                  Session complete
-                </p>
-
-                <h2 className="mt-2 text-3xl font-black">
-                  You locked in!
-                </h2>
-
-                <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-400">
-                  Five minutes done. That's how momentum starts.
-                  Now you can keep going or finish the task.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4f6f52] px-5 py-4 text-sm font-black text-white transition hover:bg-[#456448]"
-                >
-                  KEEP GOING →
-                </button>
-
-              </div>
-
-            )}
-
+              <p className="mt-1 text-xs text-[#817b73] dark:text-[#aaa69e]">
+                Focus on the important
+                work before moving to
+                the next thing.
+              </p>
+            </div>
           </div>
 
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/todos")
+            }
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#292725] px-5 py-3 text-xs font-black text-white transition hover:bg-[#403c38] dark:bg-white dark:text-[#292725] dark:hover:bg-[#e8e8e8]"
+          >
+            Open task manager
+            <ArrowRight size={15} />
+          </button>
         </div>
-
-      )}
-
-      {/* ===================================== */}
-      {/* DASHBOARD ANIMATIONS */}
-      {/* ===================================== */}
-
-      <style>{`
-
-        .dashboard-shine-card {
-          position: relative;
-          overflow: hidden;
-          isolation: isolate;
-        }
-
-        .dashboard-shine-card::after {
-          content: "";
-
-          position: absolute;
-
-          top: -70%;
-          left: -90%;
-
-          width: 28%;
-          height: 240%;
-
-          background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.04) 25%,
-            rgba(255, 255, 255, 0.65) 50%,
-            rgba(255, 255, 255, 0.04) 75%,
-            transparent 100%
-          );
-
-          transform: rotate(24deg);
-
-          pointer-events: none;
-
-          z-index: 20;
-
-          animation: dashboard-shine-cycle 32.5s linear infinite;
-        }
-
-        @keyframes dashboard-shine-cycle {
-
-          0% {
-            left: -90%;
-          }
-
-          7.69% {
-            left: 140%;
-          }
-
-          100% {
-            left: 140%;
-          }
-
-        }
-
-        .dashboard-card-content {
-          position: relative;
-          z-index: 30;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-
-          .dashboard-shine-card::after {
-            animation: none;
-          }
-
-        }
-
-      `}</style>
-
+      </section>
     </div>
   );
 }

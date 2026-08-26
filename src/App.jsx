@@ -1,315 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Outlet } from "react-router-dom";
-
 import Sidebar from "./Components/Sidebar";
 import Navbar from "./Components/Navbar";
 
 function App() {
-  // ==========================================
-  // SAFE LOCAL STORAGE HELPERS
-  // ==========================================
-
-  const getArray = (key) => {
-    try {
-      const saved = localStorage.getItem(key);
-
-      if (!saved) return [];
-
-      const parsed = JSON.parse(saved);
-
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const getNumber = (key, fallback = 0) => {
-    try {
-      const saved = localStorage.getItem(key);
-
-      if (saved === null) return fallback;
-
-      const number = Number(saved);
-
-      return Number.isFinite(number) ? number : fallback;
-    } catch {
-      return fallback;
-    }
-  };
-
-  // ==========================================
-  // TASKS
-  // ==========================================
-
-  const [tasks, setTasks] = useState(() =>
-    getArray("lockin_tasks")
-  );
-
-  // ==========================================
-  // XP
-  // ==========================================
-
-  const [xp, setXp] = useState(() =>
-    getNumber("lockin_xp", 0)
-  );
-
-  // ==========================================
-  // STREAK
-  // ==========================================
-
-  const [completionDays, setCompletionDays] = useState(() =>
-    getArray("lockin_completion_days")
-  );
-
-  // ==========================================
-  // FOCUS MODE
-  // ==========================================
-
-  const [focusMode, setFocusMode] = useState(
-    () =>
-      localStorage.getItem("lockin_focus_mode") === "true"
-  );
-
-  const [focusTask, setFocusTask] = useState(null);
-
-  // ==========================================
-  // ENERGY
-  // ==========================================
-
-  const [energy, setEnergy] = useState(() =>
-    getNumber("lockin_energy", 100)
-  );
-
-  // ==========================================
-  // BADGES
-  // ==========================================
-
-  const [badges, setBadges] = useState(() =>
-    getArray("lockin_badges")
-  );
-
-  // ==========================================
-  // DAILY MISSION
-  // ==========================================
-
-  const [missionDate, setMissionDate] = useState(
-    () =>
-      localStorage.getItem("lockin_mission_date") || ""
-  );
-
-  const [missionCompleted, setMissionCompleted] = useState(
-    () =>
-      localStorage.getItem("lockin_mission_completed") ===
-      "true"
-  );
-
-  // ==========================================
-  // THEME
-  // ==========================================
-
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem("lockin_theme");
-
-    if (saved === "dark") return true;
-
-    if (saved === "light") return false;
-
-    return window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-  });
-
-  // ==========================================
-  // GLOBAL SEARCH
-  // ==========================================
-
-  const [globalSearch, setGlobalSearch] = useState("");
-
-  // ==========================================
-  // NOTIFICATIONS
-  // ==========================================
-
-  const [notificationsList, setNotificationsList] = useState(
-    () => getArray("lockin_notifications")
-  );
-
-  const [notificationsRead, setNotificationsRead] = useState(
-    () =>
-      localStorage.getItem(
-        "lockin_notifications_read"
-      ) === "true"
-  );
-
-  // ==========================================
-  // SETTINGS
-  // ==========================================
-
-  const notificationsEnabled =
-    localStorage.getItem(
-      "lockin_notifications_enabled"
-    ) !== "false";
-
-  const notificationSound =
-    localStorage.getItem("lockin_sound") !== "false";
-
-  // ==========================================
-  // ADD NOTIFICATION
-  // ==========================================
-
-  const addNotification = (
-    title,
-    message,
-    type = "info"
-  ) => {
-    if (!notificationsEnabled) return;
-
-    const notification = {
-      id: crypto.randomUUID(),
-      title,
-      message,
-      type,
-      createdAt: new Date().toISOString(),
-      read: false,
-    };
-
-    setNotificationsList((current) => {
-      const safeCurrent = Array.isArray(current)
-        ? current
-        : [];
-
-      return [notification, ...safeCurrent];
-    });
-
-    setNotificationsRead(false);
-  };
-
-  // ==========================================
-  // SAVE NOTIFICATIONS
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem(
-      "lockin_notifications",
-      JSON.stringify(
-        Array.isArray(notificationsList)
-          ? notificationsList
-          : []
-      )
-    );
-  }, [notificationsList]);
-
-  // ==========================================
-  // SAVE TASKS
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem(
-      "lockin_tasks",
-      JSON.stringify(tasks)
-    );
-  }, [tasks]);
-
-  // ==========================================
-  // SAVE XP
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem(
-      "lockin_xp",
-      String(xp)
-    );
-  }, [xp]);
-
-  // ==========================================
-  // SAVE STREAK
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem(
-      "lockin_completion_days",
-      JSON.stringify(completionDays)
-    );
-  }, [completionDays]);
-
-  // ==========================================
-  // SAVE FOCUS
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem(
-      "lockin_focus_mode",
-      String(focusMode)
-    );
-  }, [focusMode]);
-
-  // ==========================================
-  // SAVE ENERGY
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem(
-      "lockin_energy",
-      String(energy)
-    );
-  }, [energy]);
-
-  // ==========================================
-  // SAVE BADGES
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem(
-      "lockin_badges",
-      JSON.stringify(badges)
-    );
-  }, [badges]);
-
-  // ==========================================
-  // SAVE MISSION
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem(
-      "lockin_mission_date",
-      missionDate
-    );
-
-    localStorage.setItem(
-      "lockin_mission_completed",
-      String(missionCompleted)
-    );
-  }, [missionDate, missionCompleted]);
-
-  // ==========================================
-  // SAVE THEME
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem(
-      "lockin_theme",
-      darkMode ? "dark" : "light"
-    );
-
-    document.documentElement.classList.toggle(
-      "dark",
-      darkMode
-    );
-  }, [darkMode]);
-
-  // ==========================================
-  // SAVE NOTIFICATION READ STATUS
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem(
-      "lockin_notifications_read",
-      String(notificationsRead)
-    );
-  }, [notificationsRead]);
-
-  // ==========================================
-  // TODAY
-  // ==========================================
+  // =========================================================
+  // HELPERS
+  // =========================================================
+
+  const makeId = () =>
+    `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
   const getToday = () => {
     const date = new Date();
@@ -321,946 +21,2059 @@ function App() {
     );
   };
 
-  // ==========================================
-  // DAILY MISSION RESET
-  // ==========================================
+  const getStorage = (key, fallback) => {
+    try {
+      const saved = localStorage.getItem(key);
 
-  useEffect(() => {
-    const today = getToday();
-
-    if (missionDate !== today) {
-      setMissionDate(today);
-      setMissionCompleted(false);
-    }
-  }, [missionDate]);
-
-  // ==========================================
-  // RECORD COMPLETION DAY
-  // ==========================================
-
-  const recordCompletionDay = () => {
-    const today = getToday();
-
-    setCompletionDays((current) => {
-      const safeCurrent = Array.isArray(current)
-        ? current
-        : [];
-
-      if (safeCurrent.includes(today)) {
-        return safeCurrent;
+      if (saved === null) {
+        return fallback;
       }
 
-      return [...safeCurrent, today];
-    });
+      return JSON.parse(saved);
+    } catch {
+      return fallback;
+    }
   };
 
-  // ==========================================
-  // STREAK
-  // ==========================================
+  // =========================================================
+  // TASKS
+  // =========================================================
 
-  const streak = useMemo(() => {
+  const [tasks, setTasks] = useState(() =>
+    getStorage("lockin_tasks", [])
+  );
+
+  // =========================================================
+  // PROJECTS
+  // =========================================================
+
+  const [projects, setProjects] = useState(() =>
+    getStorage("lockin_projects", [])
+  );
+
+  // =========================================================
+  // XP
+  // =========================================================
+
+  const [xp, setXp] = useState(() =>
+    getStorage("lockin_xp", 0)
+  );
+
+  // =========================================================
+  // ENERGY
+  // =========================================================
+
+  const [energy, setEnergy] = useState(() =>
+    getStorage("lockin_energy", 100)
+  );
+
+  // =========================================================
+  // STREAK
+  // =========================================================
+
+  const [streak, setStreak] = useState(() =>
+    getStorage("lockin_streak", {
+      current: 0,
+      best: 0,
+      lastCompletedDate: null,
+    })
+  );
+
+  // =========================================================
+  // BADGES
+  // =========================================================
+
+  const [badges, setBadges] = useState(() =>
+    getStorage("lockin_badges", [])
+  );
+
+  // =========================================================
+  // FOCUS
+  // =========================================================
+
+  const [focusMode, setFocusMode] = useState(false);
+  const [focusSeconds, setFocusSeconds] = useState(5 * 60);
+  const [focusPaused, setFocusPaused] = useState(false);
+
+  // =========================================================
+  // THEME
+  // =========================================================
+
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem("lockin_theme");
+
     if (
-      !Array.isArray(completionDays) ||
-      completionDays.length === 0
+      savedTheme === "light" ||
+      savedTheme === "dark" ||
+      savedTheme === "system"
     ) {
-      return {
-        current: 0,
-        best: 0,
-      };
+      return savedTheme;
     }
 
-    const days = [
-      ...new Set(completionDays),
-    ].sort();
+    return "light";
+  });
 
-    const dateNumber = (value) => {
-      const date = new Date(value);
+  const [darkMode, setDarkModeState] = useState(() => {
+    const savedTheme = localStorage.getItem("lockin_theme");
 
-      return Date.UTC(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate()
+    if (savedTheme === "dark") {
+      return true;
+    }
+
+    if (savedTheme === "system") {
+      return window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+    }
+
+    return false;
+  });
+
+  // =========================================================
+  // APPLY THEME
+  // =========================================================
+
+  useEffect(() => {
+    const applyTheme = () => {
+      let isDark = false;
+
+      if (theme === "dark") {
+        isDark = true;
+      }
+
+      if (theme === "system") {
+        isDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+      }
+
+      setDarkModeState(isDark);
+
+      document.documentElement.classList.toggle(
+        "dark",
+        isDark
+      );
+
+      localStorage.setItem(
+        "lockin_theme",
+        theme
+      );
+
+      localStorage.setItem(
+        "lockin_dark_mode",
+        JSON.stringify(isDark)
       );
     };
 
-    let best = 1;
-    let running = 1;
+    applyTheme();
 
-    for (let i = 1; i < days.length; i++) {
-      const difference = Math.round(
-        (dateNumber(days[i]) -
-          dateNumber(days[i - 1])) /
-          (1000 * 60 * 60 * 24)
-      );
-
-      if (difference === 1) {
-        running += 1;
-
-        best = Math.max(
-          best,
-          running
-        );
-      } else {
-        running = 1;
-      }
+    if (theme !== "system") {
+      return undefined;
     }
 
-    const today = getToday();
-
-    const yesterdayDate = new Date();
-
-    yesterdayDate.setDate(
-      yesterdayDate.getDate() - 1
+    const mediaQuery = window.matchMedia(
+      "(prefers-color-scheme: dark)"
     );
 
-    const yesterday =
-      `${yesterdayDate.getFullYear()}-` +
-      `${String(
-        yesterdayDate.getMonth() + 1
-      ).padStart(2, "0")}-` +
-      `${String(
-        yesterdayDate.getDate()
-      ).padStart(2, "0")}`;
+    const handleSystemTheme = (event) => {
+      const isDark = event.matches;
 
-    if (
-      !days.includes(today) &&
-      !days.includes(yesterday)
-    ) {
-      return {
-        current: 0,
-        best,
-      };
-    }
+      setDarkModeState(isDark);
 
-    const currentDate = new Date();
-
-    if (!days.includes(today)) {
-      currentDate.setDate(
-        currentDate.getDate() - 1
+      document.documentElement.classList.toggle(
+        "dark",
+        isDark
       );
-    }
 
-    let current = 0;
-
-    while (true) {
-      const formatted =
-        `${currentDate.getFullYear()}-` +
-        `${String(
-          currentDate.getMonth() + 1
-        ).padStart(2, "0")}-` +
-        `${String(
-          currentDate.getDate()
-        ).padStart(2, "0")}`;
-
-      if (!days.includes(formatted)) {
-        break;
-      }
-
-      current += 1;
-
-      currentDate.setDate(
-        currentDate.getDate() - 1
+      localStorage.setItem(
+        "lockin_dark_mode",
+        JSON.stringify(isDark)
       );
-    }
-
-    return {
-      current,
-      best: Math.max(
-        best,
-        current
-      ),
     };
-  }, [completionDays]);
 
-  // ==========================================
-  // LEVEL
-  // ==========================================
+    mediaQuery.addEventListener(
+      "change",
+      handleSystemTheme
+    );
 
-  const XP_PER_LEVEL = 100;
+    return () => {
+      mediaQuery.removeEventListener(
+        "change",
+        handleSystemTheme
+      );
+    };
+  }, [theme]);
 
-  const level =
-    Math.floor(xp / XP_PER_LEVEL) + 1;
+  // =========================================================
+  // CHANGE THEME
+  // =========================================================
 
-  const xpIntoLevel =
-    xp % XP_PER_LEVEL;
-
-  const xpNeeded =
-    XP_PER_LEVEL - xpIntoLevel;
-
-  const xpProgress =
-    (xpIntoLevel / XP_PER_LEVEL) * 100;
-
-  // ==========================================
-  // BADGES
-  // ==========================================
-
-  const unlockBadge = (badge) => {
-    setBadges((current) => {
-      const safeCurrent = Array.isArray(current)
-        ? current
-        : [];
-
-      if (safeCurrent.includes(badge)) {
-        return safeCurrent;
+  const changeTheme = (newTheme) => {
+    if (newTheme !== undefined) {
+      if (
+        newTheme !== "light" &&
+        newTheme !== "dark" &&
+        newTheme !== "system"
+      ) {
+        return;
       }
 
-      const badgeNames = {
-        "first-task": "First Task",
-        "first-win": "First Win",
-        "three-day": "3 Day Streak",
-        "seven-day": "7 Day Streak",
-        "xp-500": "500 XP",
-      };
-
-      addNotification(
-        "Badge unlocked",
-        badgeNames[badge] ||
-          "New badge unlocked",
-        "badge"
-      );
-
-      return [...safeCurrent, badge];
-    });
-  };
-
-  useEffect(() => {
-    if (tasks.length >= 1) {
-      unlockBadge("first-task");
-    }
-
-    if (
-      tasks.some(
-        (task) => task.completed
-      )
-    ) {
-      unlockBadge("first-win");
-    }
-
-    if (streak.current >= 3) {
-      unlockBadge("three-day");
-    }
-
-    if (streak.current >= 7) {
-      unlockBadge("seven-day");
-    }
-
-    if (xp >= 500) {
-      unlockBadge("xp-500");
-    }
-  }, [tasks, streak.current, xp]);
-
-  // ==========================================
-  // SOUND
-  // ==========================================
-
-  const playCompletionSound = () => {
-    if (
-      !notificationsEnabled ||
-      !notificationSound
-    ) {
+      setTheme(newTheme);
       return;
     }
 
-    try {
-      const AudioContext =
-        window.AudioContext ||
-        window.webkitAudioContext;
-
-      if (!AudioContext) return;
-
-      const audio = new AudioContext();
-
-      const oscillator =
-        audio.createOscillator();
-
-      const gain = audio.createGain();
-
-      oscillator.type = "sine";
-
-      oscillator.frequency.setValueAtTime(
-        660,
-        audio.currentTime
-      );
-
-      oscillator.frequency.setValueAtTime(
-        880,
-        audio.currentTime + 0.08
-      );
-
-      gain.gain.setValueAtTime(
-        0.0001,
-        audio.currentTime
-      );
-
-      gain.gain.exponentialRampToValueAtTime(
-        0.12,
-        audio.currentTime + 0.02
-      );
-
-      gain.gain.exponentialRampToValueAtTime(
-        0.0001,
-        audio.currentTime + 0.18
-      );
-
-      oscillator.connect(gain);
-
-      gain.connect(audio.destination);
-
-      oscillator.start();
-
-      oscillator.stop(
-        audio.currentTime + 0.2
-      );
-    } catch {
-      // Ignore sound errors
-    }
+    setTheme(
+      darkMode
+        ? "light"
+        : "dark"
+    );
   };
 
-  // ==========================================
-  // STATS
-  // ==========================================
+  // =========================================================
+  // COMPATIBILITY SET DARK MODE
+  // =========================================================
 
-  const stats = useMemo(() => {
-    const completed =
-      tasks.filter(
-        (task) => task.completed
-      ).length;
+  const setDarkMode = (value) => {
+    if (typeof value === "function") {
+      setDarkModeState((current) => {
+        const nextValue = value(current);
 
-    const pending =
-      tasks.length - completed;
+        setTheme(
+          nextValue
+            ? "dark"
+            : "light"
+        );
 
-    const highPriority =
-      tasks.filter(
-        (task) =>
-          task.priority === "High" &&
-          !task.completed
-      ).length;
+        return nextValue;
+      });
 
-    const progress =
-      tasks.length === 0
-        ? 0
-        : Math.round(
-            (completed / tasks.length) * 100
-          );
+      return;
+    }
 
-    return {
-      total: tasks.length,
-      completed,
-      pending,
-      highPriority,
-      progress,
-    };
+    const nextValue = Boolean(value);
+
+    setDarkModeState(nextValue);
+
+    setTheme(
+      nextValue
+        ? "dark"
+        : "light"
+    );
+  };
+
+  // =========================================================
+  // SEARCH
+  // =========================================================
+
+  const [globalSearch, setGlobalSearch] =
+    useState("");
+
+  // =========================================================
+  // NOTIFICATIONS
+  // =========================================================
+
+  const [notificationsList, setNotificationsList] =
+    useState(() =>
+      getStorage(
+        "lockin_notifications",
+        []
+      )
+    );
+
+  // =========================================================
+  // ACTIVITY
+  // =========================================================
+
+  const [activity, setActivity] =
+    useState(() =>
+      getStorage(
+        "lockin_activity",
+        []
+      )
+    );
+
+  // =========================================================
+  // MISSION
+  // =========================================================
+
+  const [missionDate, setMissionDate] =
+    useState(() =>
+      getStorage(
+        "lockin_mission_date",
+        getToday()
+      )
+    );
+
+  // =========================================================
+  // TODO FILTERS
+  // =========================================================
+
+  const [taskView, setTaskView] =
+    useState("list");
+
+  const [taskFilter, setTaskFilter] =
+    useState("all");
+
+  const [priorityFilter, setPriorityFilter] =
+    useState("all");
+
+  const [categoryFilter, setCategoryFilter] =
+    useState("all");
+
+  const [energyFilter, setEnergyFilter] =
+    useState("all");
+
+  const [projectFilter, setProjectFilter] =
+    useState("all");
+
+  // =========================================================
+  // TASK SELECTION
+  // =========================================================
+
+  const [selectedTasks, setSelectedTasks] =
+    useState([]);
+
+  // =========================================================
+  // SAVE DATA
+  // =========================================================
+
+  useEffect(() => {
+    localStorage.setItem(
+      "lockin_tasks",
+      JSON.stringify(tasks)
+    );
   }, [tasks]);
 
-  // ==========================================
-  // ADD TASK
-  // ==========================================
+  useEffect(() => {
+    localStorage.setItem(
+      "lockin_projects",
+      JSON.stringify(projects)
+    );
+  }, [projects]);
 
-  const addTask = (task) => {
+  useEffect(() => {
+    localStorage.setItem(
+      "lockin_xp",
+      JSON.stringify(xp)
+    );
+  }, [xp]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "lockin_energy",
+      JSON.stringify(energy)
+    );
+  }, [energy]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "lockin_streak",
+      JSON.stringify(streak)
+    );
+  }, [streak]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "lockin_badges",
+      JSON.stringify(badges)
+    );
+  }, [badges]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "lockin_notifications",
+      JSON.stringify(
+        notificationsList
+      )
+    );
+  }, [notificationsList]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "lockin_activity",
+      JSON.stringify(activity)
+    );
+  }, [activity]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "lockin_mission_date",
+      JSON.stringify(missionDate)
+    );
+  }, [missionDate]);
+
+  // =========================================================
+  // NOTIFICATIONS
+  // =========================================================
+
+  const addNotification = (
+    message,
+    type = "info"
+  ) => {
+    const notification = {
+      id: makeId(),
+      message,
+      type,
+      createdAt:
+        new Date().toISOString(),
+      read: false,
+    };
+
+    setNotificationsList(
+      (previous) => [
+        notification,
+        ...previous,
+      ]
+    );
+  };
+
+  const markNotificationRead = (id) => {
+    setNotificationsList(
+      (previous) =>
+        previous.map(
+          (notification) =>
+            notification.id === id
+              ? {
+                  ...notification,
+                  read: true,
+                }
+              : notification
+        )
+    );
+  };
+
+  const markAllNotificationsRead =
+    () => {
+      setNotificationsList(
+        (previous) =>
+          previous.map(
+            (notification) => ({
+              ...notification,
+              read: true,
+            })
+          )
+      );
+    };
+
+  const clearNotifications = () => {
+    setNotificationsList([]);
+  };
+
+  // =========================================================
+  // ACTIVITY
+  // =========================================================
+
+  const addActivity = (
+    message,
+    type = "info"
+  ) => {
+    const item = {
+      id: makeId(),
+      message,
+      type,
+      createdAt:
+        new Date().toISOString(),
+    };
+
+    setActivity((previous) =>
+      [item, ...previous].slice(
+        0,
+        100
+      )
+    );
+  };
+
+  // =========================================================
+  // XP
+  // =========================================================
+
+  const addXp = (amount) => {
+    const safeAmount =
+      Number(amount) || 0;
+
+    if (safeAmount <= 0) {
+      return;
+    }
+
+    setXp(
+      (previous) =>
+        previous + safeAmount
+    );
+  };
+
+  const level = Math.max(
+    1,
+    Math.floor(xp / 100) + 1
+  );
+
+  const xpInsideLevel =
+    xp % 100;
+
+  const xpProgress = Math.min(
+    100,
+    Math.max(
+      0,
+      xpInsideLevel
+    )
+  );
+
+  // =========================================================
+  // STREAK
+  // =========================================================
+
+  const updateStreak = () => {
+    const today = getToday();
+
+    setStreak((previous) => {
+      if (
+        previous.lastCompletedDate ===
+        today
+      ) {
+        return previous;
+      }
+
+      let current =
+        previous.current || 0;
+
+      if (
+        !previous.lastCompletedDate
+      ) {
+        current = 1;
+      } else {
+        const previousDate =
+          new Date(
+            `${previous.lastCompletedDate}T00:00:00`
+          );
+
+        const todayDate =
+          new Date(
+            `${today}T00:00:00`
+          );
+
+        const difference =
+          Math.round(
+            (todayDate -
+              previousDate) /
+              (1000 *
+                60 *
+                60 *
+                24)
+          );
+
+        if (difference === 1) {
+          current += 1;
+        } else {
+          current = 1;
+        }
+      }
+
+      return {
+        current,
+        best: Math.max(
+          previous.best || 0,
+          current
+        ),
+        lastCompletedDate:
+          today,
+      };
+    });
+  };
+
+  // =========================================================
+  // ADD TASK
+  // =========================================================
+
+  const addTask = (
+    taskData = {}
+  ) => {
     const newTask = {
-      ...task,
-      id: crypto.randomUUID(),
+      id: makeId(),
+      title:
+        taskData.title ||
+        "New task",
+      description:
+        taskData.description ||
+        "",
+      priority:
+        taskData.priority ||
+        "Medium",
+      dueDate:
+        taskData.dueDate || "",
+      dueTime:
+        taskData.dueTime || "",
+      tags: Array.isArray(
+        taskData.tags
+      )
+        ? taskData.tags
+        : [],
+      recurring:
+        taskData.recurring ||
+        "None",
+      energy:
+        taskData.energy ||
+        "Medium",
+      progress:
+        Number(
+          taskData.progress
+        ) || 0,
+      subtasks:
+        Array.isArray(
+          taskData.subtasks
+        )
+          ? taskData.subtasks
+          : [],
+      projectId:
+        taskData.projectId ||
+        null,
+      category:
+        taskData.category ||
+        "",
+      status:
+        taskData.status ||
+        "backlog",
+      dependencies:
+        Array.isArray(
+          taskData.dependencies
+        )
+          ? taskData.dependencies
+          : [],
+      archived:
+        taskData.archived === true,
       completed: false,
-      createdAt: new Date().toISOString(),
+      createdAt:
+        new Date().toISOString(),
       completedAt: null,
     };
 
-    setTasks((current) => [
+    setTasks((previous) => [
       newTask,
-      ...current,
+      ...previous,
     ]);
 
-    addNotification(
-      "Task created",
-      `"${newTask.title}" was added to your tasks.`,
+    addActivity(
+      `Created task "${newTask.title}"`,
       "task"
     );
-  };
-
-  // ==========================================
-  // DELETE TASK
-  // ==========================================
-
-  const deleteTask = (id) => {
-    const task = tasks.find(
-      (item) => item.id === id
-    );
-
-    setTasks((current) =>
-      current.filter(
-        (item) => item.id !== id
-      )
-    );
-
-    if (task) {
-      addNotification(
-        "Task deleted",
-        `"${task.title}" was removed.`,
-        "delete"
-      );
-    }
-  };
-
-  // ==========================================
-  // TOGGLE TASK
-  // ==========================================
-
-  const toggleTask = (id) => {
-    const task = tasks.find(
-      (item) => item.id === id
-    );
-
-    if (!task) return;
-
-    // ========================================
-    // REOPEN TASK
-    // ========================================
-
-    if (task.completed) {
-      setTasks((current) =>
-        current.map(
-          (item) =>
-            item.id === id
-              ? {
-                  ...item,
-                  completed: false,
-                  completedAt: null,
-                }
-              : item
-        )
-      );
-
-      const deductedXP =
-        task.priority === "High"
-          ? 15
-          : 10;
-
-      setXp((currentXP) =>
-        Math.max(
-          0,
-          currentXP - deductedXP
-        )
-      );
-
-      addNotification(
-        "Task reopened",
-        `"${task.title}" is active again.`,
-        "task"
-      );
-
-      addNotification(
-        "XP deducted",
-        `-${deductedXP} XP because the task was reopened.`,
-        "xp"
-      );
-
-      return;
-    }
-
-    // ========================================
-    // COMPLETE TASK
-    // ========================================
-
-    setTasks((current) =>
-      current.map(
-        (item) =>
-          item.id === id
-            ? {
-                ...item,
-                completed: true,
-                completedAt:
-                  new Date().toISOString(),
-              }
-            : item
-      )
-    );
-
-    const earnedXP =
-      task.priority === "High"
-        ? 15
-        : 10;
-
-    setXp(
-      (currentXP) =>
-        currentXP + earnedXP
-    );
-
-    setEnergy((current) =>
-      Math.max(0, current - 5)
-    );
-
-    recordCompletionDay();
-
-    playCompletionSound();
 
     addNotification(
-      "Task completed",
-      `"${task.title}" completed. +${earnedXP} XP`,
+      `Task "${newTask.title}" was created.`,
       "success"
     );
 
-    // ========================================
-    // DAILY MISSION
-    // ========================================
+    return newTask;
+  };
 
-    if (!missionCompleted) {
-      setMissionCompleted(true);
+  // =========================================================
+  // UPDATE TASK
+  // =========================================================
 
-      setXp(
-        (currentXP) =>
-          currentXP + 25
-      );
+  const updateTask = (
+    taskId,
+    updates = {}
+  ) => {
+    setTasks((previous) =>
+      previous.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              ...updates,
+            }
+          : task
+      )
+    );
+  };
 
-      addNotification(
-        "Daily mission completed",
-        "+25 bonus XP earned.",
-        "mission"
+  // =========================================================
+  // DELETE TASK
+  // =========================================================
+
+  const deleteTask = (
+    taskId
+  ) => {
+    const task = tasks.find(
+      (item) =>
+        item.id === taskId
+    );
+
+    setTasks((previous) =>
+      previous.filter(
+        (item) =>
+          item.id !== taskId
+      )
+    );
+
+    setSelectedTasks(
+      (previous) =>
+        previous.filter(
+          (id) =>
+            id !== taskId
+        )
+    );
+
+    if (task) {
+      addActivity(
+        `Deleted task "${task.title}"`,
+        "task"
       );
     }
   };
 
-  // ==========================================
-  // UPDATE TASK
-  // ==========================================
+  // =========================================================
+  // TOGGLE TASK
+  // =========================================================
 
-  const updateTask = (updatedTask) => {
-    setTasks((current) =>
-      current.map(
-        (task) =>
-          task.id === updatedTask.id
-            ? {
-                ...task,
-                ...updatedTask,
-              }
-            : task
+  const toggleTask = (
+    taskId
+  ) => {
+    const task = tasks.find(
+      (item) =>
+        item.id === taskId
+    );
+
+    if (!task) {
+      return;
+    }
+
+    const completed =
+      !task.completed;
+
+    setTasks((previous) =>
+      previous.map((item) =>
+        item.id === taskId
+          ? {
+              ...item,
+              completed,
+              status: completed
+                ? "done"
+                : item.status ===
+                  "done"
+                ? "backlog"
+                : item.status ||
+                  "backlog",
+              completedAt:
+                completed
+                  ? new Date().toISOString()
+                  : null,
+              progress:
+                completed
+                  ? 100
+                  : item.progress,
+            }
+          : item
       )
     );
 
-    addNotification(
-      "Task updated",
-      `"${updatedTask.title}" was updated.`,
-      "task"
-    );
+    if (completed) {
+      addXp(10);
+      updateStreak();
+
+      setEnergy(
+        (previous) =>
+          Math.min(
+            100,
+            previous + 5
+          )
+      );
+
+      addActivity(
+        `Completed task "${task.title}"`,
+        "success"
+      );
+
+      addNotification(
+        `Nice work! "${task.title}" completed.`,
+        "success"
+      );
+    }
   };
 
-  // ==========================================
-  // CHANGE ENERGY
-  // ==========================================
+  // =========================================================
+  // CHANGE TASK ENERGY
+  // =========================================================
 
   const changeTaskEnergy = (
     taskId,
     newEnergy
   ) => {
+    updateTask(taskId, {
+      energy: newEnergy,
+    });
+  };
+
+  // =========================================================
+  // ARCHIVE TASK
+  // =========================================================
+
+  const archiveTask = (
+    taskId
+  ) => {
     const task = tasks.find(
-      (item) => item.id === taskId
+      (item) =>
+        item.id === taskId
     );
 
-    setTasks((current) =>
-      current.map(
-        (item) =>
-          item.id === taskId
-            ? {
-                ...item,
-                energy: newEnergy,
-              }
-            : item
+    setTasks((previous) =>
+      previous.map((item) =>
+        item.id === taskId
+          ? {
+              ...item,
+              archived: true,
+            }
+          : item
       )
+    );
+
+    setSelectedTasks(
+      (previous) =>
+        previous.filter(
+          (id) =>
+            id !== taskId
+        )
     );
 
     if (task) {
-      addNotification(
-        "Task energy changed",
-        `"${task.title}" is now ${newEnergy}.`,
-        "energy"
+      addActivity(
+        `Archived task "${task.title}"`,
+        "task"
       );
     }
   };
 
-  // ==========================================
-  // START FOCUS
-  // ==========================================
+  // =========================================================
+  // CLEAR COMPLETED
+  // =========================================================
 
-  const startFocus = (
-    task,
-    minutes = 25
+  const clearCompleted =
+    () => {
+      setTasks((previous) =>
+        previous.filter(
+          (task) =>
+            !task.completed
+        )
+      );
+
+      setSelectedTasks(
+        (previous) =>
+          previous.filter(
+            (id) =>
+              tasks.some(
+                (task) =>
+                  task.id === id &&
+                  !task.completed
+              )
+          )
+      );
+
+      addActivity(
+        "Cleared completed tasks",
+        "task"
+      );
+    };
+
+  // =========================================================
+  // CLEAR ALL
+  // =========================================================
+
+  const clearAllTasks =
+    () => {
+      setTasks([]);
+      setSelectedTasks([]);
+
+      addActivity(
+        "Cleared all tasks",
+        "task"
+      );
+
+      addNotification(
+        "All tasks were cleared.",
+        "info"
+      );
+    };
+
+  // =========================================================
+  // DEPENDENCIES
+  // =========================================================
+
+  const getTaskDependencies =
+    (task) => {
+      if (!task) {
+        return [];
+      }
+
+      const dependencyIds =
+        Array.isArray(
+          task.dependencies
+        )
+          ? task.dependencies
+          : [];
+
+      return dependencyIds
+        .map((id) =>
+          tasks.find(
+            (item) =>
+              item.id === id
+          )
+        )
+        .filter(Boolean);
+    };
+
+  const hasBlockedDependencies =
+    (task) => {
+      const dependencies =
+        getTaskDependencies(
+          task
+        );
+
+      return dependencies.some(
+        (dependency) =>
+          !dependency.completed
+      );
+    };
+
+  // =========================================================
+  // FILTERING
+  // =========================================================
+
+  const filteredTasks =
+    useMemo(() => {
+      const today =
+        getToday();
+
+      const search =
+        globalSearch
+          .trim()
+          .toLowerCase();
+
+      return tasks.filter(
+        (task) => {
+          if (task.archived) {
+            return false;
+          }
+
+          if (search) {
+            const matchesSearch =
+              [
+                task.title,
+                task.description,
+                task.priority,
+                task.energy,
+                task.category,
+              ]
+                .filter(Boolean)
+                .some((value) =>
+                  String(value)
+                    .toLowerCase()
+                    .includes(
+                      search
+                    )
+                );
+
+            if (!matchesSearch) {
+              return false;
+            }
+          }
+
+          if (
+            taskFilter ===
+              "active" &&
+            task.completed
+          ) {
+            return false;
+          }
+
+          if (
+            taskFilter ===
+              "completed" &&
+            !task.completed
+          ) {
+            return false;
+          }
+
+          if (
+            taskFilter ===
+              "today" &&
+            task.dueDate !== today
+          ) {
+            return false;
+          }
+
+          if (
+            taskFilter ===
+            "overdue"
+          ) {
+            if (
+              !task.dueDate ||
+              task.dueDate >=
+                today ||
+              task.completed
+            ) {
+              return false;
+            }
+          }
+
+          if (
+            taskFilter ===
+              "in-progress" &&
+            task.status !==
+              "in-progress"
+          ) {
+            return false;
+          }
+
+          if (
+            taskFilter ===
+              "review" &&
+            task.status !==
+              "review"
+          ) {
+            return false;
+          }
+
+          if (
+            priorityFilter !==
+              "all" &&
+            task.priority !==
+              priorityFilter
+          ) {
+            return false;
+          }
+
+          if (
+            categoryFilter !==
+              "all" &&
+            task.category !==
+              categoryFilter
+          ) {
+            return false;
+          }
+
+          if (
+            energyFilter !==
+              "all" &&
+            task.energy !==
+              energyFilter
+          ) {
+            return false;
+          }
+
+          if (
+            projectFilter !==
+              "all" &&
+            task.projectId !==
+              projectFilter
+          ) {
+            return false;
+          }
+
+          return true;
+        }
+      );
+    }, [
+      tasks,
+      globalSearch,
+      taskFilter,
+      priorityFilter,
+      categoryFilter,
+      energyFilter,
+      projectFilter,
+    ]);
+
+  // =========================================================
+  // TASK SELECTION
+  // =========================================================
+
+  const toggleTaskSelection =
+    (taskId) => {
+      setSelectedTasks(
+        (previous) =>
+          previous.includes(
+            taskId
+          )
+            ? previous.filter(
+                (id) =>
+                  id !== taskId
+              )
+            : [
+                ...previous,
+                taskId,
+              ]
+      );
+    };
+
+  const selectAllVisibleTasks =
+    () => {
+      const visibleIds =
+        filteredTasks.map(
+          (task) => task.id
+        );
+
+      setSelectedTasks(
+        (previous) => {
+          const allSelected =
+            visibleIds.length >
+              0 &&
+            visibleIds.every(
+              (id) =>
+                previous.includes(
+                  id
+                )
+            );
+
+          if (allSelected) {
+            return previous.filter(
+              (id) =>
+                !visibleIds.includes(
+                  id
+                )
+            );
+          }
+
+          return Array.from(
+            new Set([
+              ...previous,
+              ...visibleIds,
+            ])
+          );
+        }
+      );
+    };
+
+  const clearTaskSelection =
+    () => {
+      setSelectedTasks([]);
+    };
+
+  // =========================================================
+  // BULK COMPLETE
+  // =========================================================
+
+  const completeSelectedTasks =
+    () => {
+      if (
+        selectedTasks.length ===
+        0
+      ) {
+        return;
+      }
+
+      let completedCount = 0;
+
+      setTasks((previous) =>
+        previous.map((task) => {
+          if (
+            selectedTasks.includes(
+              task.id
+            ) &&
+            !task.completed
+          ) {
+            completedCount += 1;
+
+            return {
+              ...task,
+              completed: true,
+              status: "done",
+              progress: 100,
+              completedAt:
+                new Date().toISOString(),
+            };
+          }
+
+          return task;
+        })
+      );
+
+      if (completedCount > 0) {
+        addXp(
+          completedCount * 10
+        );
+
+        updateStreak();
+
+        setEnergy(
+          (previous) =>
+            Math.min(
+              100,
+              previous +
+                completedCount *
+                  5
+            )
+        );
+
+        addActivity(
+          `Completed ${completedCount} selected task${
+            completedCount === 1
+              ? ""
+              : "s"
+          }`,
+          "success"
+        );
+      }
+
+      setSelectedTasks([]);
+    };
+
+  // =========================================================
+  // BULK ARCHIVE
+  // =========================================================
+
+  const archiveSelectedTasks =
+    () => {
+      if (
+        selectedTasks.length ===
+        0
+      ) {
+        return;
+      }
+
+      setTasks((previous) =>
+        previous.map((task) =>
+          selectedTasks.includes(
+            task.id
+          )
+            ? {
+                ...task,
+                archived: true,
+              }
+            : task
+        )
+      );
+
+      addActivity(
+        `Archived ${selectedTasks.length} selected task${
+          selectedTasks.length ===
+          1
+            ? ""
+            : "s"
+        }`,
+        "task"
+      );
+
+      setSelectedTasks([]);
+    };
+
+  // =========================================================
+  // BULK DELETE
+  // =========================================================
+
+  const deleteSelectedTasks =
+    () => {
+      if (
+        selectedTasks.length ===
+        0
+      ) {
+        return;
+      }
+
+      setTasks((previous) =>
+        previous.filter(
+          (task) =>
+            !selectedTasks.includes(
+              task.id
+            )
+        )
+      );
+
+      addActivity(
+        `Deleted ${selectedTasks.length} selected task${
+          selectedTasks.length ===
+          1
+            ? ""
+            : "s"
+        }`,
+        "task"
+      );
+
+      setSelectedTasks([]);
+    };
+
+  // =========================================================
+  // PROJECTS
+  // =========================================================
+
+  const addProject = (
+    projectData = {}
   ) => {
-    setFocusTask({
-      ...task,
-      focusMinutes: minutes,
-    });
+    const newProject = {
+      id: makeId(),
 
-    setFocusMode(true);
+      name:
+        projectData.name ||
+        projectData.title ||
+        "New Project",
+
+      description:
+        projectData.description ||
+        "",
+
+      status:
+        projectData.status ||
+        "Not Started",
+
+      priority:
+        projectData.priority ||
+        "Medium",
+
+      dueDate:
+        projectData.dueDate ||
+        "",
+
+      color:
+        projectData.color ||
+        "#765b6b",
+
+      createdAt:
+        new Date().toISOString(),
+    };
+
+    setProjects(
+      (previous) => [
+        newProject,
+        ...previous,
+      ]
+    );
+
+    addActivity(
+      `Created project "${newProject.name}"`,
+      "project"
+    );
 
     addNotification(
-      "Focus mode started",
-      `"${task.title}" — ${minutes} minute session.`,
-      "focus"
+      `Project "${newProject.name}" was created.`,
+      "success"
+    );
+
+    return newProject;
+  };
+
+  const updateProject = (
+    projectId,
+    updates = {}
+  ) => {
+    setProjects(
+      (previous) =>
+        previous.map(
+          (project) =>
+            project.id ===
+            projectId
+              ? {
+                  ...project,
+                  ...updates,
+                }
+              : project
+        )
     );
   };
 
-  // ==========================================
-  // STOP FOCUS
-  // ==========================================
-
-  const stopFocus = () => {
-    if (focusTask) {
-      addNotification(
-        "Focus mode stopped",
-        `Focus session for "${focusTask.title}" ended.`,
-        "focus"
+  const deleteProject = (
+    projectId
+  ) => {
+    const project =
+      projects.find(
+        (item) =>
+          item.id ===
+          projectId
       );
-    }
 
-    setFocusMode(false);
-    setFocusTask(null);
-  };
+    setProjects(
+      (previous) =>
+        previous.filter(
+          (item) =>
+            item.id !==
+            projectId
+        )
+    );
 
-  // ==========================================
-  // CLEAR COMPLETED
-  // ==========================================
-
-  const clearCompleted = () => {
-    const completedCount =
-      tasks.filter(
-        (task) => task.completed
-      ).length;
-
-    setTasks((current) =>
-      current.filter(
-        (task) => !task.completed
+    setTasks((previous) =>
+      previous.map((task) =>
+        task.projectId ===
+        projectId
+          ? {
+              ...task,
+              projectId: null,
+            }
+          : task
       )
     );
 
-    if (completedCount > 0) {
-      addNotification(
-        "Completed tasks cleared",
-        `${completedCount} completed ${
-          completedCount === 1
-            ? "task"
-            : "tasks"
-        } removed.`,
-        "delete"
+    if (project) {
+      addActivity(
+        `Deleted project "${project.name}"`,
+        "project"
       );
     }
   };
 
-  // ==========================================
-  // CLEAR ALL TASKS
-  // ==========================================
+  // =========================================================
+  // FOCUS
+  // =========================================================
 
-  const clearAllTasks = () => {
-    const count = tasks.length;
+  const startFocus = () => {
+    setFocusMode(true);
+    setFocusPaused(false);
 
-    setTasks([]);
-
-    addNotification(
-      "All tasks cleared",
-      `${count} ${
-        count === 1
-          ? "task"
-          : "tasks"
-      } removed from Lockin.`,
-      "delete"
-    );
-  };
-
-  // ==========================================
-  // ANTI PROCRASTINATION
-  // ==========================================
-
-  const antiProcrastination = () => {
-    const nextTask = tasks.find(
-      (task) => !task.completed
-    );
-
-    if (!nextTask) {
-      addNotification(
-        "Nothing to do",
-        "All your tasks are completed.",
-        "success"
+    if (
+      focusSeconds <= 0
+    ) {
+      setFocusSeconds(
+        5 * 60
       );
-
-      return null;
     }
 
-    startFocus(nextTask, 5);
+    addActivity(
+      "Started a focus session",
+      "focus"
+    );
 
-    return nextTask;
-  };
-
-  // ==========================================
-  // RESET PROGRESS
-  // ==========================================
-
-  const resetAllProgress = () => {
-    setXp(0);
-
-    setCompletionDays([]);
-
-    setBadges([]);
-
-    setEnergy(100);
-
-    setMissionCompleted(false);
-
-    setMissionDate(getToday());
-
-    addNotification(
-      "Progress reset",
-      "XP, streaks, badges and energy were reset.",
-      "reset"
+    setEnergy(
+      (previous) =>
+        Math.max(
+          0,
+          previous - 5
+        )
     );
   };
 
-  // ==========================================
-  // RESET EVERYTHING
-  // ==========================================
-
-  const resetEverything = () => {
-    setTasks([]);
-
-    setXp(0);
-
-    setCompletionDays([]);
-
-    setBadges([]);
-
-    setEnergy(100);
-
-    setMissionCompleted(false);
-
-    setMissionDate(getToday());
-
+  const stopFocus = () => {
     setFocusMode(false);
-
-    setFocusTask(null);
-
-    setGlobalSearch("");
-
-    setDarkMode(false);
-
-    // Remove stored data
-
-    localStorage.removeItem("lockin_tasks");
-
-    localStorage.removeItem("lockin_xp");
-
-    localStorage.removeItem(
-      "lockin_completion_days"
-    );
-
-    localStorage.removeItem("lockin_badges");
-
-    localStorage.removeItem("lockin_energy");
-
-    localStorage.removeItem(
-      "lockin_focus_mode"
-    );
-
-    localStorage.removeItem(
-      "lockin_notifications"
-    );
-
-    localStorage.removeItem(
-      "lockin_notifications_read"
-    );
-
-    localStorage.setItem(
-      "lockin_theme",
-      "light"
-    );
-
-    document.documentElement.classList.remove(
-      "dark"
-    );
-
-    setNotificationsList([
-      {
-        id: crypto.randomUUID(),
-
-        title: "Lockin reset",
-
-        message:
-          "Everything has been reset to default.",
-
-        type: "reset",
-
-        createdAt:
-          new Date().toISOString(),
-
-        read: false,
-      },
-    ]);
-
-    setNotificationsRead(false);
+    setFocusPaused(false);
   };
 
-  // ==========================================
-  // NOTIFICATION CONTROLS
-  // ==========================================
+  const pauseFocus = () => {
+    setFocusPaused(
+      (previous) =>
+        !previous
+    );
+  };
 
-  const markNotificationsRead = () => {
-    setNotificationsList(
-      (current) => {
-        const safeCurrent =
-          Array.isArray(current)
-            ? current
-            : [];
+  const resetFocus = () => {
+    setFocusSeconds(
+      5 * 60
+    );
+    setFocusPaused(false);
+  };
 
-        return safeCurrent.map(
-          (notification) => ({
-            ...notification,
-            read: true,
-          })
+  const completeFocus = () => {
+    setFocusMode(false);
+    setFocusPaused(false);
+    setFocusSeconds(
+      5 * 60
+    );
+
+    addXp(25);
+
+    addActivity(
+      "Completed a focus session",
+      "focus"
+    );
+
+    addNotification(
+      "Focus session completed. +25 XP!",
+      "success"
+    );
+  };
+
+  // =========================================================
+  // FOCUS TIMER
+  // =========================================================
+
+  useEffect(() => {
+    if (
+      !focusMode ||
+      focusPaused
+    ) {
+      return undefined;
+    }
+
+    if (
+      focusSeconds <= 0
+    ) {
+      completeFocus();
+      return undefined;
+    }
+
+    const timer =
+      setInterval(() => {
+        setFocusSeconds(
+          (previous) =>
+            Math.max(
+              0,
+              previous - 1
+            )
         );
-      }
-    );
+      }, 1000);
 
-    setNotificationsRead(true);
+    return () =>
+      clearInterval(timer);
+  }, [
+    focusMode,
+    focusPaused,
+    focusSeconds,
+  ]);
+
+  const formattedFocusTime =
+    useMemo(() => {
+      const minutes =
+        Math.floor(
+          focusSeconds / 60
+        );
+
+      const seconds =
+        focusSeconds % 60;
+
+      return `${String(
+        minutes
+      ).padStart(
+        2,
+        "0"
+      )}:${String(
+        seconds
+      ).padStart(
+        2,
+        "0"
+      )}`;
+    }, [focusSeconds]);
+
+  // =========================================================
+  // STATUS
+  // =========================================================
+
+  const tasksByStatus =
+    useMemo(() => {
+      const result = {
+        backlog: [],
+        "in-progress": [],
+        review: [],
+        done: [],
+      };
+
+      filteredTasks.forEach(
+        (task) => {
+          let status =
+            task.status;
+
+          if (task.completed) {
+            status = "done";
+          }
+
+          if (!result[status]) {
+            status = "backlog";
+          }
+
+          result[status].push(
+            task
+          );
+        }
+      );
+
+      return result;
+    }, [filteredTasks]);
+
+  // =========================================================
+  // STATS
+  // =========================================================
+
+  const stats = useMemo(
+    () => {
+      const today =
+        getToday();
+
+      const completed =
+        tasks.filter(
+          (task) =>
+            task.completed
+        );
+
+      const pending =
+        tasks.filter(
+          (task) =>
+            !task.completed
+        );
+
+      const todayTasks =
+        tasks.filter(
+          (task) =>
+            task.dueDate ===
+              today &&
+            !task.completed
+        );
+
+      const overdueTasks =
+        tasks.filter(
+          (task) =>
+            task.dueDate &&
+            task.dueDate <
+              today &&
+            !task.completed
+        );
+
+      const highPriorityTasks =
+        tasks.filter(
+          (task) =>
+            task.priority ===
+              "High" &&
+            !task.completed
+        );
+
+      return {
+        total: tasks.length,
+        completed:
+          completed.length,
+        pending:
+          pending.length,
+        today:
+          todayTasks.length,
+        overdue:
+          overdueTasks.length,
+        highPriority:
+          highPriorityTasks.length,
+
+        completionRate:
+          tasks.length === 0
+            ? 0
+            : Math.round(
+                (completed.length /
+                  tasks.length) *
+                  100
+              ),
+      };
+    },
+    [tasks]
+  );
+
+  // =========================================================
+  // RESET EVERYTHING
+  // =========================================================
+
+  const resetEverything =
+    () => {
+      setTasks([]);
+      setProjects([]);
+      setXp(0);
+      setEnergy(100);
+
+      setStreak({
+        current: 0,
+        best: 0,
+        lastCompletedDate:
+          null,
+      });
+
+      setBadges([]);
+      setNotificationsList(
+        []
+      );
+      setActivity([]);
+      setGlobalSearch("");
+      setSelectedTasks([]);
+
+      setTaskFilter("all");
+      setPriorityFilter(
+        "all"
+      );
+      setCategoryFilter(
+        "all"
+      );
+      setEnergyFilter("all");
+      setProjectFilter("all");
+      setTaskView("list");
+
+      setFocusMode(false);
+      setFocusPaused(false);
+      setFocusSeconds(
+        5 * 60
+      );
+
+      setMissionDate(
+        getToday()
+      );
+
+      setTheme("light");
+      setDarkModeState(false);
+
+      document.documentElement.classList.remove(
+        "dark"
+      );
+
+      const keys = [
+        "lockin_tasks",
+        "lockin_projects",
+        "lockin_xp",
+        "lockin_energy",
+        "lockin_streak",
+        "lockin_badges",
+        "lockin_notifications",
+        "lockin_activity",
+        "lockin_mission_date",
+        "lockin_dark_mode",
+        "lockin_theme",
+      ];
+
+      keys.forEach((key) => {
+        localStorage.removeItem(
+          key
+        );
+      });
+
+      localStorage.setItem(
+        "lockin_theme",
+        "light"
+      );
+
+      localStorage.setItem(
+        "lockin_dark_mode",
+        "false"
+      );
+    };
+
+  // =========================================================
+  // OUTLET CONTEXT
+  // =========================================================
+
+  const outletContext = {
+    tasks,
+    filteredTasks,
+    tasksByStatus,
+
+    addTask,
+    updateTask,
+    deleteTask,
+    toggleTask,
+    archiveTask,
+    clearCompleted,
+    clearAllTasks,
+    changeTaskEnergy,
+
+    getTaskDependencies,
+    hasBlockedDependencies,
+
+    selectedTasks,
+    toggleTaskSelection,
+    selectAllVisibleTasks,
+    clearTaskSelection,
+    completeSelectedTasks,
+    archiveSelectedTasks,
+    deleteSelectedTasks,
+
+    taskView,
+    setTaskView,
+
+    taskFilter,
+    setTaskFilter,
+
+    priorityFilter,
+    setPriorityFilter,
+
+    categoryFilter,
+    setCategoryFilter,
+
+    energyFilter,
+    setEnergyFilter,
+
+    projectFilter,
+    setProjectFilter,
+
+    projects,
+    addProject,
+    updateProject,
+    deleteProject,
+
+    stats,
+
+    xp,
+    level,
+    xpProgress,
+    addXp,
+
+    streak,
+
+    energy,
+    setEnergy,
+
+    badges,
+    setBadges,
+
+    focusMode,
+    setFocusMode,
+    focusSeconds,
+    formattedFocusTime,
+    focusPaused,
+    startFocus,
+    stopFocus,
+    pauseFocus,
+    resetFocus,
+    completeFocus,
+
+    notificationsList,
+    addNotification,
+    markNotificationRead,
+    markAllNotificationsRead,
+    clearNotifications,
+
+    activity,
+    addActivity,
+
+    globalSearch,
+    setGlobalSearch,
+
+    theme,
+    darkMode,
+    setDarkMode,
+    setTheme,
+    changeTheme,
+
+    missionDate,
+    setMissionDate,
+
+    resetEverything,
   };
 
-  const clearNotifications = () => {
-    setNotificationsList([]);
-
-    setNotificationsRead(true);
-  };
-
-  // ==========================================
-  // MAIN LAYOUT
-  // ==========================================
+  // =========================================================
+  // APP
+  // =========================================================
 
   return (
-    <div className="min-h-screen bg-[#f4f5f2] text-[#292725] dark:bg-[#101310] dark:text-[#f5f7f5]">
+    <div
+      className={`
+        min-h-screen
+        w-full
+        overflow-x-hidden
+        transition-colors
+        duration-300
+        ${
+          darkMode
+            ? "bg-[#111411] text-white"
+            : "bg-[#f6f4ef] text-[#292725]"
+        }
+      `}
+    >
+      <div className="flex min-h-screen w-full">
+        {/* ===================================================
+            SIDEBAR
+        =================================================== */}
 
-      {/* SIDEBAR */}
-
-      <Sidebar tasks={tasks} />
-
-      {/* MAIN */}
-
-      <div className="relative min-h-screen pb-24 lg:ml-72 lg:pb-0">
-
-        {/* NAVBAR */}
-
-        <Navbar
-          darkMode={darkMode}
-          setDarkMode={setDarkMode}
-          globalSearch={globalSearch}
-          setGlobalSearch={setGlobalSearch}
-          focusTask={focusTask}
-          onStopFocus={stopFocus}
-          notifications={
-            Array.isArray(
-              notificationsList
-            )
-              ? notificationsList
-              : []
-          }
-          notificationsRead={
-            notificationsRead
-          }
-          onMarkNotificationsRead={
-            markNotificationsRead
-          }
-          onClearNotifications={
-            clearNotifications
-          }
+        <Sidebar
+          tasks={tasks}
+          projects={projects}
         />
 
-        {/* CONTENT */}
+        {/* ===================================================
+            MAIN CONTENT AREA
+        =================================================== */}
 
-        <main className="min-h-[calc(100vh-76px)] p-4 sm:p-6 lg:p-8">
+        <div
+          className="
+            flex
+            min-w-0
+            flex-1
+            flex-col
+            md:ml-72
+          "
+        >
+          {/* NAVBAR */}
 
-          <Outlet
-            context={{
-              tasks,
-
-              stats,
-
-              addTask,
-
-              deleteTask,
-
-              toggleTask,
-
-              updateTask,
-
-              clearCompleted,
-
-              clearAllTasks,
-
-              globalSearch,
-
-              setGlobalSearch,
-
-              darkMode,
-
-              setDarkMode,
-
-              notifications:
-                Array.isArray(
-                  notificationsList
-                )
-                  ? notificationsList
-                  : [],
-
-              notificationsRead,
-
-              addNotification,
-
-              markNotificationsRead,
-
-              clearNotifications,
-
-              streak,
-
-              completionDays,
-
-              xp,
-
-              setXp,
-
-              level,
-
-              xpProgress,
-
-              xpNeeded,
-
-              focusMode,
-
-              setFocusMode,
-
-              focusTask,
-
-              startFocus,
-
-              stopFocus,
-
-              changeTaskEnergy,
-
-              energy,
-
-              setEnergy,
-
-              missionCompleted,
-
-              setMissionCompleted,
-
-              badges,
-
-              unlockBadge,
-
-              antiProcrastination,
-
-              resetAllProgress,
-
-              resetEverything,
-            }}
+          <Navbar
+            darkMode={darkMode}
+            theme={theme}
+            changeTheme={changeTheme}
+            globalSearch={globalSearch}
+            setGlobalSearch={
+              setGlobalSearch
+            }
+            notificationsList={
+              notificationsList
+            }
+            markNotificationRead={
+              markNotificationRead
+            }
+            markAllNotificationsRead={
+              markAllNotificationsRead
+            }
+            clearNotifications={
+              clearNotifications
+            }
           />
 
-        </main>
+          {/* PAGE CONTENT */}
 
+          <main
+            className="
+              min-w-0
+              w-full
+              flex-1
+              overflow-x-hidden
+              p-3
+              pb-24
+              sm:p-5
+              sm:pb-24
+              md:p-6
+              md:pb-8
+              lg:p-8
+              xl:p-10
+            "
+          >
+            <div className="mx-auto w-full max-w-[1600px] min-w-0">
+              <Outlet
+                context={
+                  outletContext
+                }
+              />
+            </div>
+          </main>
+        </div>
       </div>
+
+      {/* =====================================================
+          FOCUS MODE
+      ===================================================== */}
+
+      {focusMode && (
+        <div
+          className="
+            fixed
+            inset-0
+            z-[100]
+            flex
+            items-center
+            justify-center
+            overflow-y-auto
+            bg-black/50
+            p-3
+            backdrop-blur-sm
+            sm:p-5
+          "
+        >
+          <div
+            className="
+              my-auto
+              w-full
+              max-w-md
+              rounded-[28px]
+              border
+              border-[#e0dcd5]
+              bg-white
+              p-5
+              text-center
+              shadow-2xl
+              sm:rounded-[32px]
+              sm:p-7
+              dark:border-[#343934]
+              dark:bg-[#1b1f1c]
+            "
+          >
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#918b82] sm:text-xs">
+              Focus mode
+            </p>
+
+            <h2 className="mt-3 text-2xl font-black text-[#292725] sm:text-3xl dark:text-white">
+              Stay locked in.
+            </h2>
+
+            <div className="my-6 break-all text-5xl font-black tracking-tight text-[#765b6b] sm:my-8 sm:text-6xl">
+              {formattedFocusTime}
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={
+                  pauseFocus
+                }
+                className="
+                  min-w-[90px]
+                  rounded-xl
+                  bg-[#765b6b]
+                  px-4
+                  py-3
+                  text-xs
+                  font-black
+                  text-white
+                  transition
+                  hover:bg-[#674e5e]
+                  sm:px-5
+                  sm:text-sm
+                "
+              >
+                {focusPaused
+                  ? "Resume"
+                  : "Pause"}
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  resetFocus
+                }
+                className="
+                  min-w-[90px]
+                  rounded-xl
+                  bg-[#eeeae4]
+                  px-4
+                  py-3
+                  text-xs
+                  font-black
+                  text-[#292725]
+                  transition
+                  hover:bg-[#e2ddd5]
+                  sm:px-5
+                  sm:text-sm
+                  dark:bg-[#303530]
+                  dark:text-white
+                "
+              >
+                Reset
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  completeFocus
+                }
+                className="
+                  min-w-[90px]
+                  rounded-xl
+                  bg-emerald-600
+                  px-4
+                  py-3
+                  text-xs
+                  font-black
+                  text-white
+                  transition
+                  hover:bg-emerald-700
+                  sm:px-5
+                  sm:text-sm
+                "
+              >
+                Complete
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  stopFocus
+                }
+                className="
+                  min-w-[90px]
+                  rounded-xl
+                  bg-rose-50
+                  px-4
+                  py-3
+                  text-xs
+                  font-black
+                  text-rose-600
+                  transition
+                  hover:bg-rose-100
+                  sm:px-5
+                  sm:text-sm
+                  dark:bg-rose-950/30
+                  dark:text-rose-400
+                "
+              >
+                Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
