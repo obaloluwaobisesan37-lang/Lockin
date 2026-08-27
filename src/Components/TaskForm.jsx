@@ -12,29 +12,33 @@ import {
   FolderKanban,
 } from "lucide-react";
 
-function TaskForm({
-  onAdd,
-  projects = [],
-  tasks = [],
-}) {
+const EMPTY_FORM = {
+  title: "",
+  description: "",
+  priority: "Medium",
+  category: "General",
+  status: "backlog",
+  dueDate: "",
+  estimatedMinutes: 30,
+  energy: "Medium",
+  projectId: "",
+  tags: "",
+  dependencies: [],
+};
+
+function TaskForm({ onAdd, projects = [], tasks = [] }) {
   const [open, setOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showProjectMenu, setShowProjectMenu] = useState(false);
 
   const [calendarDate, setCalendarDate] = useState(new Date());
 
+  // =========================================================
+  // FORM
+  // =========================================================
+
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    priority: "Medium",
-    category: "General",
-    status: "backlog",
-    dueDate: "",
-    estimatedMinutes: 30,
-    energy: "Medium",
-    projectId: "",
-    tags: "",
-    dependencies: [],
+    ...EMPTY_FORM,
   });
 
   const update = (key, value) => {
@@ -42,6 +46,17 @@ function TaskForm({
       ...current,
       [key]: value,
     }));
+  };
+
+  const resetForm = () => {
+    setForm({
+      ...EMPTY_FORM,
+      title: "",
+    });
+
+    setCalendarDate(new Date());
+    setShowCalendar(false);
+    setShowProjectMenu(false);
   };
 
   const closeForm = () => {
@@ -69,15 +84,7 @@ function TaskForm({
     "December",
   ];
 
-  const weekDays = [
-    "Sun",
-    "Mon",
-    "Tue",
-    "Wed",
-    "Thu",
-    "Fri",
-    "Sat",
-  ];
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const getDateKey = (date) => {
     return [
@@ -92,27 +99,16 @@ function TaskForm({
     const month = calendarDate.getMonth();
 
     const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(
-      year,
-      month + 1,
-      0
-    ).getDate();
 
-    const previousMonthDays = new Date(
-      year,
-      month,
-      0
-    ).getDate();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const previousMonthDays = new Date(year, month, 0).getDate();
 
     const days = [];
 
     for (let i = firstDay - 1; i >= 0; i--) {
       days.push({
-        date: new Date(
-          year,
-          month - 1,
-          previousMonthDays - i
-        ),
+        date: new Date(year, month - 1, previousMonthDays - i),
         currentMonth: false,
       });
     }
@@ -128,11 +124,7 @@ function TaskForm({
 
     while (days.length < 42) {
       days.push({
-        date: new Date(
-          year,
-          month + 1,
-          nextDay
-        ),
+        date: new Date(year, month + 1, nextDay),
         currentMonth: false,
       });
 
@@ -150,23 +142,13 @@ function TaskForm({
 
   const goPreviousMonth = () => {
     setCalendarDate(
-      (current) =>
-        new Date(
-          current.getFullYear(),
-          current.getMonth() - 1,
-          1
-        )
+      (current) => new Date(current.getFullYear(), current.getMonth() - 1, 1),
     );
   };
 
   const goNextMonth = () => {
     setCalendarDate(
-      (current) =>
-        new Date(
-          current.getFullYear(),
-          current.getMonth() + 1,
-          1
-        )
+      (current) => new Date(current.getFullYear(), current.getMonth() + 1, 1),
     );
   };
 
@@ -190,11 +172,7 @@ function TaskForm({
 
     const [year, month, day] = form.dueDate.split("-");
 
-    const date = new Date(
-      Number(year),
-      Number(month) - 1,
-      Number(day)
-    );
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
 
     return date.toLocaleDateString([], {
       weekday: "short",
@@ -211,14 +189,11 @@ function TaskForm({
   // =========================================================
 
   const selectedProject = projects.find(
-    (project) =>
-      String(project.id) === String(form.projectId)
+    (project) => String(project.id) === String(form.projectId),
   );
 
   const selectedProjectName = selectedProject
-    ? selectedProject.name ||
-      selectedProject.title ||
-      "Untitled Project"
+    ? selectedProject.name || selectedProject.title || "Untitled Project"
     : "No project";
 
   // =========================================================
@@ -230,6 +205,7 @@ function TaskForm({
 
     const title = form.title.trim();
 
+    // Do not create a task without a title.
     if (!title) {
       return;
     }
@@ -241,12 +217,10 @@ function TaskForm({
       category: form.category.trim() || "General",
       status: form.status,
       dueDate: form.dueDate,
-      estimatedMinutes:
-        Number(form.estimatedMinutes) || 0,
+      estimatedMinutes: Number(form.estimatedMinutes) || 0,
       energy: form.energy,
-      projectId: form.projectId
-        ? String(form.projectId)
-        : null,
+
+      projectId: form.projectId ? String(form.projectId) : null,
 
       tags: form.tags
         .split(",")
@@ -262,22 +236,8 @@ function TaskForm({
       onAdd(cleanTask);
     }
 
-    setForm({
-      title: "",
-      description: "",
-      priority: "Medium",
-      category: "General",
-      status: "backlog",
-      dueDate: "",
-      estimatedMinutes: 30,
-      energy: "Medium",
-      projectId: "",
-      tags: "",
-      dependencies: [],
-    });
-
-    setCalendarDate(new Date());
-    closeForm();
+    resetForm();
+    setOpen(false);
   };
 
   // =========================================================
@@ -289,8 +249,10 @@ function TaskForm({
       <button
         type="button"
         onClick={() => {
+          // IMPORTANT:
+          // Every time the form opens, the title is EMPTY.
+          resetForm();
           setOpen(true);
-          setCalendarDate(new Date());
         }}
         className="
           group flex items-center gap-2 rounded-2xl
@@ -303,7 +265,6 @@ function TaskForm({
         <span className="flex h-5 w-5 items-center justify-center rounded-lg bg-white/15">
           <Plus size={15} />
         </span>
-
         New Task
       </button>
     );
@@ -327,10 +288,11 @@ function TaskForm({
     >
       <div
         className="
-          mx-auto mt-[4vh] flex max-h-[92vh] w-full max-w-3xl
-          flex-col overflow-hidden rounded-[28px]
-          border border-black/10 bg-[#faf9f6]
-          shadow-2xl dark:border-white/10 dark:bg-[#171a17]
+          mx-auto mt-[4vh] flex max-h-[92vh] w-full
+          max-w-3xl flex-col overflow-hidden
+          rounded-[28px] border border-black/10
+          bg-[#faf9f6] shadow-2xl
+          dark:border-white/10 dark:bg-[#171a17]
         "
         onMouseDown={(event) => event.stopPropagation()}
       >
@@ -338,16 +300,19 @@ function TaskForm({
 
         <div
           className="
-            flex items-center justify-between border-b
-            border-black/5 px-6 py-5 dark:border-white/10
+            flex items-center justify-between
+            border-b border-black/5 px-6 py-5
+            dark:border-white/10
           "
         >
           <div className="flex items-center gap-3">
             <div
               className="
-                flex h-11 w-11 items-center justify-center
-                rounded-2xl bg-[#4f6f52]/10 text-[#4f6f52]
-                dark:bg-[#6f9473]/10 dark:text-[#8faf91]
+                flex h-11 w-11 items-center
+                justify-center rounded-2xl
+                bg-[#4f6f52]/10 text-[#4f6f52]
+                dark:bg-[#6f9473]/10
+                dark:text-[#8faf91]
               "
             >
               <Plus size={21} />
@@ -358,9 +323,7 @@ function TaskForm({
                 Task management
               </p>
 
-              <h2 className="mt-0.5 text-xl font-black">
-                Create new task
-              </h2>
+              <h2 className="mt-0.5 text-xl font-black">Create new task</h2>
             </div>
           </div>
 
@@ -368,9 +331,10 @@ function TaskForm({
             type="button"
             onClick={closeForm}
             className="
-              rounded-xl p-2 text-black/35 transition
-              hover:bg-black/5 hover:text-black
-              dark:text-white/35 dark:hover:bg-white/10
+              rounded-xl p-2 text-black/35
+              transition hover:bg-black/5
+              hover:text-black dark:text-white/35
+              dark:hover:bg-white/10
               dark:hover:text-white
             "
           >
@@ -382,7 +346,6 @@ function TaskForm({
 
         <div className="overflow-y-auto px-6 py-5">
           <form onSubmit={submit} className="space-y-5">
-
             {/* TITLE */}
 
             <div>
@@ -392,18 +355,20 @@ function TaskForm({
 
               <input
                 value={form.title}
-                onChange={(event) =>
-                  update("title", event.target.value)
-                }
+                onChange={(event) => update("title", event.target.value)}
                 placeholder="What needs to be done?"
                 autoFocus
                 className="
-                  w-full rounded-2xl border border-black/10
-                  bg-white px-4 py-3.5 text-sm font-bold
-                  outline-none transition placeholder:text-black/25
-                  focus:border-[#6f9473] focus:ring-4
+                  w-full rounded-2xl border
+                  border-black/10 bg-white px-4
+                  py-3.5 text-sm font-bold
+                  outline-none transition
+                  placeholder:text-black/25
+                  focus:border-[#6f9473]
+                  focus:ring-4
                   focus:ring-[#6f9473]/10
-                  dark:border-white/10 dark:bg-[#1d211e]
+                  dark:border-white/10
+                  dark:bg-[#1d211e]
                   dark:placeholder:text-white/20
                 "
               />
@@ -418,18 +383,20 @@ function TaskForm({
 
               <textarea
                 value={form.description}
-                onChange={(event) =>
-                  update("description", event.target.value)
-                }
+                onChange={(event) => update("description", event.target.value)}
                 placeholder="Add some details about this task..."
                 rows={3}
                 className="
-                  w-full resize-none rounded-2xl border
-                  border-black/10 bg-white px-4 py-3 text-sm
-                  outline-none transition placeholder:text-black/25
-                  focus:border-[#6f9473] focus:ring-4
+                  w-full resize-none rounded-2xl
+                  border border-black/10
+                  bg-white px-4 py-3 text-sm
+                  outline-none transition
+                  placeholder:text-black/25
+                  focus:border-[#6f9473]
+                  focus:ring-4
                   focus:ring-[#6f9473]/10
-                  dark:border-white/10 dark:bg-[#1d211e]
+                  dark:border-white/10
+                  dark:bg-[#1d211e]
                   dark:placeholder:text-white/20
                 "
               />
@@ -438,35 +405,24 @@ function TaskForm({
             {/* OPTIONS */}
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-
               <Select
                 label="Priority"
                 value={form.priority}
-                onChange={(value) =>
-                  update("priority", value)
-                }
+                onChange={(value) => update("priority", value)}
                 options={["Low", "Medium", "High"]}
               />
 
               <Select
                 label="Status"
                 value={form.status}
-                onChange={(value) =>
-                  update("status", value)
-                }
-                options={[
-                  "backlog",
-                  "in-progress",
-                  "review",
-                ]}
+                onChange={(value) => update("status", value)}
+                options={["backlog", "in-progress", "review"]}
               />
 
               <Select
                 label="Energy"
                 value={form.energy}
-                onChange={(value) =>
-                  update("energy", value)
-                }
+                onChange={(value) => update("energy", value)}
                 options={["Low", "Medium", "High"]}
               />
 
@@ -484,11 +440,14 @@ function TaskForm({
                     setShowProjectMenu(false);
                   }}
                   className="
-                    flex min-h-[46px] w-full items-center gap-3
-                    rounded-xl border border-black/10 bg-white
-                    px-3 text-left text-sm outline-none transition
+                    flex min-h-[46px] w-full
+                    items-center gap-3 rounded-xl
+                    border border-black/10
+                    bg-white px-3 text-left
+                    text-sm outline-none transition
                     hover:border-[#6f9473]
-                    dark:border-white/10 dark:bg-[#1d211e]
+                    dark:border-white/10
+                    dark:bg-[#1d211e]
                   "
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#6f9473]/10 text-[#6f9473]">
@@ -509,9 +468,11 @@ function TaskForm({
                 {showCalendar && (
                   <div
                     className="
-                      absolute left-0 top-full z-[120] mt-2 w-[320px]
-                      rounded-3xl border border-black/10 bg-[#faf9f6]
-                      p-4 shadow-2xl dark:border-white/10
+                      absolute left-0 top-full z-[120]
+                      mt-2 w-[320px] max-w-[calc(100vw-2rem)]
+                      rounded-3xl border border-black/10
+                      bg-[#faf9f6] p-4 shadow-2xl
+                      dark:border-white/10
                       dark:bg-[#1b1f1c]
                     "
                   >
@@ -520,8 +481,10 @@ function TaskForm({
                         type="button"
                         onClick={goPreviousMonth}
                         className="
-                          rounded-xl p-2 text-black/45 transition
-                          hover:bg-black/5 dark:text-white/45
+                          rounded-xl p-2
+                          text-black/45 transition
+                          hover:bg-black/5
+                          dark:text-white/45
                           dark:hover:bg-white/10
                         "
                       >
@@ -542,8 +505,10 @@ function TaskForm({
                         type="button"
                         onClick={goNextMonth}
                         className="
-                          rounded-xl p-2 text-black/45 transition
-                          hover:bg-black/5 dark:text-white/45
+                          rounded-xl p-2
+                          text-black/45 transition
+                          hover:bg-black/5
+                          dark:text-white/45
                           dark:hover:bg-white/10
                         "
                       >
@@ -556,10 +521,12 @@ function TaskForm({
                         <div
                           key={day}
                           className="
-                            py-2 text-center text-[9px] font-black
-                            uppercase tracking-wider text-black/30
-                            dark:text-white/30
-                          "
+                              py-2 text-center
+                              text-[9px] font-black
+                              uppercase tracking-wider
+                              text-black/30
+                              dark:text-white/30
+                            "
                         >
                           {day.charAt(0)}
                         </div>
@@ -567,24 +534,23 @@ function TaskForm({
                     </div>
 
                     <div className="grid grid-cols-7 gap-1">
-                      {getCalendarDays().map(
-                        ({ date, currentMonth }) => {
-                          const dateKey = getDateKey(date);
-                          const selected =
-                            dateKey === form.dueDate;
-                          const isToday =
-                            dateKey === todayKey;
+                      {getCalendarDays().map(({ date, currentMonth }) => {
+                        const dateKey = getDateKey(date);
 
-                          return (
-                            <button
-                              type="button"
-                              key={dateKey}
-                              onClick={() =>
-                                selectDate(date)
-                              }
-                              className={`
-                                relative flex h-9 items-center
-                                justify-center rounded-xl text-xs
+                        const selected = dateKey === form.dueDate;
+
+                        const isToday = dateKey === todayKey;
+
+                        return (
+                          <button
+                            type="button"
+                            key={`${dateKey}-${currentMonth}`}
+                            onClick={() => selectDate(date)}
+                            className={`
+                                relative flex h-9
+                                items-center
+                                justify-center
+                                rounded-xl text-xs
                                 font-bold transition
                                 ${
                                   currentMonth
@@ -597,23 +563,22 @@ function TaskForm({
                                     : ""
                                 }
                               `}
-                            >
-                              {date.getDate()}
+                          >
+                            {date.getDate()}
 
-                              {isToday && !selected && (
-                                <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#6f9473]" />
-                              )}
+                            {isToday && !selected && (
+                              <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#6f9473]" />
+                            )}
 
-                              {selected && (
-                                <Check
-                                  size={9}
-                                  className="absolute right-1 top-1"
-                                />
-                              )}
-                            </button>
-                          );
-                        }
-                      )}
+                            {selected && (
+                              <Check
+                                size={9}
+                                className="absolute right-1 top-1"
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
 
                     <div className="mt-4 flex items-center justify-between border-t border-black/5 pt-3 dark:border-white/10">
@@ -621,9 +586,12 @@ function TaskForm({
                         type="button"
                         onClick={clearDate}
                         className="
-                          rounded-xl px-3 py-2 text-xs font-black
-                          text-black/40 hover:bg-black/5
-                          dark:text-white/40 dark:hover:bg-white/10
+                          rounded-xl px-3 py-2
+                          text-xs font-black
+                          text-black/40
+                          hover:bg-black/5
+                          dark:text-white/40
+                          dark:hover:bg-white/10
                         "
                       >
                         Clear
@@ -633,8 +601,11 @@ function TaskForm({
                         type="button"
                         onClick={goToday}
                         className="
-                          rounded-xl bg-[#6f9473]/10 px-3 py-2
-                          text-xs font-black text-[#5f8263]
+                          rounded-xl
+                          bg-[#6f9473]/10
+                          px-3 py-2 text-xs
+                          font-black
+                          text-[#5f8263]
                           hover:bg-[#6f9473]/20
                         "
                       >
@@ -655,7 +626,11 @@ function TaskForm({
                 <div className="relative">
                   <Clock3
                     size={15}
-                    className="absolute left-3 top-3.5 text-black/25 dark:text-white/25"
+                    className="
+                      absolute left-3 top-3.5
+                      text-black/25
+                      dark:text-white/25
+                    "
                   />
 
                   <input
@@ -663,17 +638,19 @@ function TaskForm({
                     min="0"
                     value={form.estimatedMinutes}
                     onChange={(event) =>
-                      update(
-                        "estimatedMinutes",
-                        event.target.value
-                      )
+                      update("estimatedMinutes", event.target.value)
                     }
                     className="
-                      w-full rounded-xl border border-black/10
-                      bg-white py-3 pl-9 pr-3 text-sm font-bold
-                      outline-none transition focus:border-[#6f9473]
-                      focus:ring-4 focus:ring-[#6f9473]/10
-                      dark:border-white/10 dark:bg-[#1d211e]
+                      w-full rounded-xl border
+                      border-black/10 bg-white
+                      py-3 pl-9 pr-3
+                      text-sm font-bold
+                      outline-none transition
+                      focus:border-[#6f9473]
+                      focus:ring-4
+                      focus:ring-[#6f9473]/10
+                      dark:border-white/10
+                      dark:bg-[#1d211e]
                     "
                   />
                 </div>
@@ -688,17 +665,19 @@ function TaskForm({
 
                 <input
                   value={form.category}
-                  onChange={(event) =>
-                    update("category", event.target.value)
-                  }
+                  onChange={(event) => update("category", event.target.value)}
                   placeholder="School, work..."
                   className="
-                    w-full rounded-xl border border-black/10
-                    bg-white px-3 py-3 text-sm outline-none
-                    transition placeholder:text-black/25
+                    w-full rounded-xl border
+                    border-black/10 bg-white
+                    px-3 py-3 text-sm
+                    outline-none transition
+                    placeholder:text-black/25
                     focus:border-[#6f9473]
-                    focus:ring-4 focus:ring-[#6f9473]/10
-                    dark:border-white/10 dark:bg-[#1d211e]
+                    focus:ring-4
+                    focus:ring-[#6f9473]/10
+                    dark:border-white/10
+                    dark:bg-[#1d211e]
                     dark:placeholder:text-white/20
                   "
                 />
@@ -720,11 +699,14 @@ function TaskForm({
                   setShowCalendar(false);
                 }}
                 className="
-                  flex min-h-[50px] w-full items-center
-                  justify-between rounded-2xl border
-                  border-black/10 bg-white px-3 transition
+                  flex min-h-[50px] w-full
+                  items-center justify-between
+                  rounded-2xl border
+                  border-black/10 bg-white px-3
+                  transition
                   hover:border-[#6f9473]
-                  dark:border-white/10 dark:bg-[#1d211e]
+                  dark:border-white/10
+                  dark:bg-[#1d211e]
                 "
               >
                 <div className="flex items-center gap-3">
@@ -749,18 +731,20 @@ function TaskForm({
                   </div>
                 </div>
 
-                <span className="text-black/30 dark:text-white/30">
-                  ▾
-                </span>
+                <span className="text-black/30 dark:text-white/30">▾</span>
               </button>
 
               {showProjectMenu && (
                 <div
                   className="
-                    absolute left-0 right-0 top-full z-[110] mt-2
-                    max-h-60 overflow-y-auto rounded-2xl
-                    border border-black/10 bg-[#faf9f6] p-1.5
-                    shadow-2xl dark:border-white/10
+                    absolute left-0 right-0
+                    top-full z-[110] mt-2
+                    max-h-60 overflow-y-auto
+                    rounded-2xl border
+                    border-black/10
+                    bg-[#faf9f6] p-1.5
+                    shadow-2xl
+                    dark:border-white/10
                     dark:bg-[#1b1f1c]
                   "
                 >
@@ -771,24 +755,21 @@ function TaskForm({
                       setShowProjectMenu(false);
                     }}
                     className="
-                      flex w-full items-center gap-3 rounded-xl
-                      px-3 py-3 text-left transition
-                      hover:bg-black/5 dark:hover:bg-white/10
+                      flex w-full items-center
+                      gap-3 rounded-xl px-3
+                      py-3 text-left
+                      transition hover:bg-black/5
+                      dark:hover:bg-white/10
                     "
                   >
                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/5 text-black/35 dark:bg-white/10 dark:text-white/35">
                       <X size={14} />
                     </span>
 
-                    <span className="text-sm font-bold">
-                      No project
-                    </span>
+                    <span className="text-sm font-bold">No project</span>
 
                     {!form.projectId && (
-                      <Check
-                        size={15}
-                        className="ml-auto text-[#4f6f52]"
-                      />
+                      <Check size={15} className="ml-auto text-[#4f6f52]" />
                     )}
                   </button>
 
@@ -806,40 +787,42 @@ function TaskForm({
                   ) : (
                     projects.map((project) => {
                       const name =
-                        project.name ||
-                        project.title ||
-                        "Untitled Project";
+                        project.name || project.title || "Untitled Project";
 
                       const selected =
-                        String(form.projectId) ===
-                        String(project.id);
+                        String(form.projectId) === String(project.id);
 
                       return (
                         <button
                           type="button"
                           key={project.id}
                           onClick={() => {
-                            update(
-                              "projectId",
-                              String(project.id)
-                            );
+                            update("projectId", String(project.id));
+
                             setShowProjectMenu(false);
                           }}
                           className="
-                            flex w-full items-center gap-3
-                            rounded-xl px-3 py-3 text-left
-                            transition hover:bg-black/5
-                            dark:hover:bg-white/10
-                          "
+                              flex w-full
+                              items-center gap-3
+                              rounded-xl px-3
+                              py-3 text-left
+                              transition
+                              hover:bg-black/5
+                              dark:hover:bg-white/10
+                            "
                         >
                           <span
-                            className="flex h-8 w-8 items-center justify-center rounded-lg"
+                            className="
+                                flex h-8 w-8
+                                items-center
+                                justify-center
+                                rounded-lg
+                              "
                             style={{
                               backgroundColor: `${
                                 project.color || "#765b6b"
                               }18`,
-                              color:
-                                project.color || "#765b6b",
+                              color: project.color || "#765b6b",
                             }}
                           >
                             <FolderKanban size={15} />
@@ -858,10 +841,7 @@ function TaskForm({
                           </div>
 
                           {selected && (
-                            <Check
-                              size={15}
-                              className="text-[#4f6f52]"
-                            />
+                            <Check size={15} className="text-[#4f6f52]" />
                           )}
                         </button>
                       );
@@ -881,17 +861,19 @@ function TaskForm({
 
               <input
                 value={form.tags}
-                onChange={(event) =>
-                  update("tags", event.target.value)
-                }
+                onChange={(event) => update("tags", event.target.value)}
                 placeholder="frontend, urgent, school"
                 className="
-                  w-full rounded-xl border border-black/10
-                  bg-white px-3 py-3 text-sm outline-none
-                  transition placeholder:text-black/25
+                  w-full rounded-xl border
+                  border-black/10 bg-white
+                  px-3 py-3 text-sm
+                  outline-none transition
+                  placeholder:text-black/25
                   focus:border-[#6f9473]
-                  focus:ring-4 focus:ring-[#6f9473]/10
-                  dark:border-white/10 dark:bg-[#1d211e]
+                  focus:ring-4
+                  focus:ring-[#6f9473]/10
+                  dark:border-white/10
+                  dark:bg-[#1d211e]
                   dark:placeholder:text-white/20
                 "
               />
@@ -914,28 +896,25 @@ function TaskForm({
                       "dependencies",
                       Array.from(
                         event.target.selectedOptions,
-                        (option) => option.value
-                      )
+                        (option) => option.value,
+                      ),
                     )
                   }
                   className="
-                    min-h-24 w-full rounded-xl border
-                    border-black/10 bg-white px-3 py-2
-                    text-sm outline-none focus:border-[#6f9473]
-                    dark:border-white/10 dark:bg-[#1d211e]
+                    min-h-24 w-full
+                    rounded-xl border
+                    border-black/10 bg-white
+                    px-3 py-2 text-sm
+                    outline-none
+                    focus:border-[#6f9473]
+                    dark:border-white/10
+                    dark:bg-[#1d211e]
                   "
                 >
                   {tasks
-                    .filter(
-                      (task) =>
-                        !task.completed &&
-                        !task.archived
-                    )
+                    .filter((task) => !task.completed && !task.archived)
                     .map((task) => (
-                      <option
-                        key={task.id}
-                        value={String(task.id)}
-                      >
+                      <option key={task.id} value={String(task.id)}>
                         {task.title}
                       </option>
                     ))}
@@ -954,9 +933,12 @@ function TaskForm({
                 type="button"
                 onClick={closeForm}
                 className="
-                  rounded-xl px-5 py-3 text-sm font-black
-                  text-black/45 transition hover:bg-black/5
-                  dark:text-white/45 dark:hover:bg-white/10
+                  rounded-xl px-5 py-3
+                  text-sm font-black
+                  text-black/45 transition
+                  hover:bg-black/5
+                  dark:text-white/45
+                  dark:hover:bg-white/10
                 "
               >
                 Cancel
@@ -964,11 +946,20 @@ function TaskForm({
 
               <button
                 type="submit"
+                disabled={!form.title.trim()}
                 className="
-                  flex items-center justify-center gap-2 rounded-xl
-                  bg-[#4f6f52] px-6 py-3 text-sm font-black
-                  text-white shadow-lg shadow-[#4f6f52]/15
-                  transition hover:bg-[#3f5d43] hover:shadow-xl
+                  flex items-center
+                  justify-center gap-2
+                  rounded-xl
+                  bg-[#4f6f52] px-6 py-3
+                  text-sm font-black text-white
+                  shadow-lg
+                  shadow-[#4f6f52]/15
+                  transition
+                  hover:bg-[#3f5d43]
+                  hover:shadow-xl
+                  disabled:cursor-not-allowed
+                  disabled:opacity-40
                 "
               >
                 <Check size={17} />
@@ -986,12 +977,7 @@ function TaskForm({
 // STYLED SELECT
 // =========================================================
 
-function Select({
-  label,
-  value,
-  onChange,
-  options = [],
-}) {
+function Select({ label, value, onChange, options = [] }) {
   const [open, setOpen] = useState(false);
 
   const formatOption = (option) => {
@@ -1034,34 +1020,40 @@ function Select({
         type="button"
         onClick={() => setOpen((current) => !current)}
         className="
-          flex min-h-[46px] w-full items-center
-          justify-between rounded-xl border border-black/10
-          bg-white px-3 text-sm font-bold outline-none
-          transition hover:border-[#6f9473]
-          dark:border-white/10 dark:bg-[#1d211e]
+          flex min-h-[46px] w-full
+          items-center justify-between
+          rounded-xl border border-black/10
+          bg-white px-3 text-sm font-bold
+          outline-none transition
+          hover:border-[#6f9473]
+          dark:border-white/10
+          dark:bg-[#1d211e]
         "
       >
         <span
           className={`
-            rounded-lg px-2 py-1 text-xs font-black
+            rounded-lg px-2 py-1
+            text-xs font-black
             ${getOptionStyle(value)}
           `}
         >
           {formatOption(value)}
         </span>
 
-        <span className="text-black/30 dark:text-white/30">
-          ▾
-        </span>
+        <span className="text-black/30 dark:text-white/30">▾</span>
       </button>
 
       {open && (
         <div
           className="
-            absolute left-0 right-0 top-full z-[130] mt-2
-            overflow-hidden rounded-2xl border border-black/10
-            bg-[#faf9f6] p-1.5 shadow-2xl
-            dark:border-white/10 dark:bg-[#1b1f1c]
+            absolute left-0 right-0
+            top-full z-[130] mt-2
+            overflow-hidden rounded-2xl
+            border border-black/10
+            bg-[#faf9f6] p-1.5
+            shadow-2xl
+            dark:border-white/10
+            dark:bg-[#1b1f1c]
           "
         >
           {options.map((option) => (
@@ -1073,14 +1065,17 @@ function Select({
                 setOpen(false);
               }}
               className="
-                flex w-full items-center rounded-xl px-2 py-2
-                text-left transition hover:bg-black/5
+                flex w-full items-center
+                rounded-xl px-2 py-2
+                text-left transition
+                hover:bg-black/5
                 dark:hover:bg-white/10
               "
             >
               <span
                 className={`
-                  rounded-lg px-2 py-1 text-xs font-black
+                  rounded-lg px-2 py-1
+                  text-xs font-black
                   ${getOptionStyle(option)}
                 `}
               >
@@ -1088,10 +1083,7 @@ function Select({
               </span>
 
               {value === option && (
-                <Check
-                  size={15}
-                  className="ml-auto text-[#4f6f52]"
-                />
+                <Check size={15} className="ml-auto text-[#4f6f52]" />
               )}
             </button>
           ))}
