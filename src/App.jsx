@@ -41,24 +41,19 @@ function App() {
 
   const playNotificationSound = () => {
     try {
-      // IMPORTANT:
-      // Check the user's sound setting every time a sound
-      // is about to play.
       const soundEnabled =
         localStorage.getItem("lockin_sound") !== "false";
 
       const notificationsEnabled =
-        localStorage.getItem(
-          "lockin_notifications_enabled"
-        ) !== "false";
+        localStorage.getItem("lockin_notifications_enabled") !==
+        "false";
 
       if (!soundEnabled || !notificationsEnabled) {
         return;
       }
 
       const AudioContext =
-        window.AudioContext ||
-        window.webkitAudioContext;
+        window.AudioContext || window.webkitAudioContext;
 
       if (!AudioContext) {
         return;
@@ -72,11 +67,8 @@ function App() {
         duration,
         volume
       ) => {
-        const oscillator =
-          audioContext.createOscillator();
-
-        const gainNode =
-          audioContext.createGain();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
 
         oscillator.type = "sine";
 
@@ -109,19 +101,8 @@ function App() {
 
       const now = audioContext.currentTime;
 
-      playTone(
-        880,
-        now,
-        0.18,
-        0.45
-      );
-
-      playTone(
-        1174.66,
-        now + 0.16,
-        0.25,
-        0.5
-      );
+      playTone(880, now, 0.18, 0.45);
+      playTone(1174.66, now + 0.16, 0.25, 0.5);
 
       setTimeout(() => {
         audioContext.close().catch(() => {});
@@ -189,23 +170,17 @@ function App() {
 
   const [focusMode, setFocusMode] = useState(false);
 
-  const [focusSeconds, setFocusSeconds] =
-    useState(25 * 60);
+  const [focusSeconds, setFocusSeconds] = useState(25 * 60);
 
-  const [focusPaused, setFocusPaused] =
-    useState(false);
+  const [focusPaused, setFocusPaused] = useState(false);
 
-  const [focusDuration, setFocusDuration] =
-    useState(25 * 60);
+  const [focusDuration, setFocusDuration] = useState(25 * 60);
 
-  const [customFocusMinutes, setCustomFocusMinutes] =
-    useState(25);
+  const [customFocusMinutes, setCustomFocusMinutes] = useState(25);
 
-  const [focusTask, setFocusTask] =
-    useState(null);
+  const [focusTask, setFocusTask] = useState(null);
 
-  const [miniFocusVisible, setMiniFocusVisible] =
-    useState(false);
+  const [miniFocusVisible, setMiniFocusVisible] = useState(false);
 
   // =========================================================
   // THEME
@@ -213,8 +188,7 @@ function App() {
   // =========================================================
 
   const [theme, setTheme] = useState(() => {
-    const savedTheme =
-      localStorage.getItem("lockin_theme");
+    const savedTheme = localStorage.getItem("lockin_theme");
 
     if (
       savedTheme === "light" ||
@@ -228,8 +202,7 @@ function App() {
   });
 
   const [darkMode, setDarkModeState] = useState(() => {
-    const savedTheme =
-      localStorage.getItem("lockin_theme");
+    const savedTheme = localStorage.getItem("lockin_theme");
 
     if (savedTheme === "dark") {
       return true;
@@ -239,9 +212,7 @@ function App() {
       return false;
     }
 
-    return window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
   // =========================================================
@@ -271,10 +242,7 @@ function App() {
         isDark
       );
 
-      localStorage.setItem(
-        "lockin_theme",
-        theme
-      );
+      localStorage.setItem("lockin_theme", theme);
 
       localStorage.setItem(
         "lockin_dark_mode",
@@ -304,10 +272,7 @@ function App() {
       );
     };
 
-    mediaQuery.addEventListener(
-      "change",
-      handleSystemTheme
-    );
+    mediaQuery.addEventListener("change", handleSystemTheme);
 
     return () => {
       mediaQuery.removeEventListener(
@@ -347,11 +312,7 @@ function App() {
       setDarkModeState((current) => {
         const nextValue = value(current);
 
-        setTheme(
-          nextValue
-            ? "dark"
-            : "light"
-        );
+        setTheme(nextValue ? "dark" : "light");
 
         return nextValue;
       });
@@ -363,93 +324,67 @@ function App() {
 
     setDarkModeState(nextValue);
 
-    setTheme(
-      nextValue
-        ? "dark"
-        : "light"
-    );
+    setTheme(nextValue ? "dark" : "light");
   };
 
   // =========================================================
   // SEARCH
   // =========================================================
 
-  const [globalSearch, setGlobalSearch] =
-    useState("");
+  const [globalSearch, setGlobalSearch] = useState("");
 
   // =========================================================
   // NOTIFICATIONS
   // =========================================================
 
-  const [notificationsList, setNotificationsList] =
-    useState(() =>
-      getStorage(
-        "lockin_notifications",
-        []
-      )
-    );
+  const [notificationsList, setNotificationsList] = useState(() =>
+    getStorage("lockin_notifications", [])
+  );
 
   // =========================================================
   // ACTIVITY
   // =========================================================
 
   const [activity, setActivity] = useState(() =>
-    getStorage(
-      "lockin_activity",
-      []
-    )
+    getStorage("lockin_activity", [])
   );
 
   // =========================================================
   // MISSION
   // =========================================================
 
-  const [missionDate, setMissionDate] =
-    useState(() =>
-      getStorage(
-        "lockin_mission_date",
-        getToday()
-      )
-    );
+  const [missionDate, setMissionDate] = useState(() =>
+    getStorage("lockin_mission_date", getToday())
+  );
 
   // =========================================================
   // TODO FILTERS
   // =========================================================
 
-  const [taskView, setTaskView] =
-    useState("list");
+  const [taskView, setTaskView] = useState("list");
 
-  const [taskFilter, setTaskFilter] =
-    useState("all");
+  const [taskFilter, setTaskFilter] = useState("all");
 
-  const [priorityFilter, setPriorityFilter] =
-    useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
 
-  const [categoryFilter, setCategoryFilter] =
-    useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const [energyFilter, setEnergyFilter] =
-    useState("all");
+  const [energyFilter, setEnergyFilter] = useState("all");
 
-  const [projectFilter, setProjectFilter] =
-    useState("all");
+  const [projectFilter, setProjectFilter] = useState("all");
 
   // =========================================================
   // TASK SELECTION
   // =========================================================
 
-  const [selectedTasks, setSelectedTasks] =
-    useState([]);
+  const [selectedTasks, setSelectedTasks] = useState([]);
 
   // =========================================================
   // SAVE DATA
   // =========================================================
 
   useEffect(() => {
-    localStorage.setItem(
-      "lockin_tasks",
-      JSON.stringify(tasks)
-    );
+    localStorage.setItem("lockin_tasks", JSON.stringify(tasks));
   }, [tasks]);
 
   useEffect(() => {
@@ -460,10 +395,7 @@ function App() {
   }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem(
-      "lockin_xp",
-      JSON.stringify(xp)
-    );
+    localStorage.setItem("lockin_xp", JSON.stringify(xp));
   }, [xp]);
 
   useEffect(() => {
@@ -490,9 +422,7 @@ function App() {
   useEffect(() => {
     localStorage.setItem(
       "lockin_notifications",
-      JSON.stringify(
-        notificationsList
-      )
+      JSON.stringify(notificationsList)
     );
   }, [notificationsList]);
 
@@ -514,10 +444,7 @@ function App() {
   // NOTIFICATIONS
   // =========================================================
 
-  const addNotification = (
-    message,
-    type = "info"
-  ) => {
+  const addNotification = (message, type = "info") => {
     const notificationsEnabled =
       localStorage.getItem(
         "lockin_notifications_enabled"
@@ -531,47 +458,55 @@ function App() {
       id: makeId(),
       message,
       type,
-      createdAt:
-        new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       read: false,
     };
 
-    setNotificationsList(
-      (previous) => [
-        notification,
-        ...previous,
-      ]
-    );
+    setNotificationsList((previous) => [
+      notification,
+      ...previous,
+    ]);
 
     playNotificationSound();
   };
 
   const markNotificationRead = (id) => {
-    setNotificationsList(
-      (previous) =>
-        previous.map(
-          (notification) =>
-            notification.id === id
-              ? {
-                  ...notification,
-                  read: true,
-                }
-              : notification
-        )
+    setNotificationsList((previous) =>
+      previous.map((notification) =>
+        notification.id === id
+          ? {
+              ...notification,
+              read: true,
+            }
+          : notification
+      )
     );
   };
 
   const markAllNotificationsRead = () => {
-    setNotificationsList(
-      (previous) =>
-        previous.map(
-          (notification) => ({
-            ...notification,
-            read: true,
-          })
-        )
+    setNotificationsList((previous) =>
+      previous.map((notification) => ({
+        ...notification,
+        read: true,
+      }))
     );
   };
+
+  // =========================================================
+  // DELETE ONE NOTIFICATION
+  // =========================================================
+
+  const deleteNotification = (id) => {
+    setNotificationsList((previous) =>
+      previous.filter(
+        (notification) => notification.id !== id
+      )
+    );
+  };
+
+  // =========================================================
+  // CLEAR ALL NOTIFICATIONS
+  // =========================================================
 
   const clearNotifications = () => {
     setNotificationsList([]);
@@ -581,24 +516,16 @@ function App() {
   // ACTIVITY
   // =========================================================
 
-  const addActivity = (
-    message,
-    type = "info"
-  ) => {
+  const addActivity = (message, type = "info") => {
     const item = {
       id: makeId(),
       message,
       type,
-      createdAt:
-        new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
 
-    setActivity(
-      (previous) =>
-        [item, ...previous].slice(
-          0,
-          100
-        )
+    setActivity((previous) =>
+      [item, ...previous].slice(0, 100)
     );
   };
 
@@ -607,17 +534,13 @@ function App() {
   // =========================================================
 
   const addXp = (amount) => {
-    const safeAmount =
-      Number(amount) || 0;
+    const safeAmount = Number(amount) || 0;
 
     if (safeAmount <= 0) {
       return;
     }
 
-    setXp(
-      (previous) =>
-        previous + safeAmount
-    );
+    setXp((previous) => previous + safeAmount);
   };
 
   const level = Math.max(
@@ -625,15 +548,11 @@ function App() {
     Math.floor(xp / 100) + 1
   );
 
-  const xpInsideLevel =
-    xp % 100;
+  const xpInsideLevel = xp % 100;
 
   const xpProgress = Math.min(
     100,
-    Math.max(
-      0,
-      xpInsideLevel
-    )
+    Math.max(0, xpInsideLevel)
   );
 
   // =========================================================
@@ -644,40 +563,27 @@ function App() {
     const today = getToday();
 
     setStreak((previous) => {
-      if (
-        previous.lastCompletedDate ===
-        today
-      ) {
+      if (previous.lastCompletedDate === today) {
         return previous;
       }
 
-      let current =
-        previous.current || 0;
+      let current = previous.current || 0;
 
-      if (
-        !previous.lastCompletedDate
-      ) {
+      if (!previous.lastCompletedDate) {
         current = 1;
       } else {
-        const previousDate =
-          new Date(
-            `${previous.lastCompletedDate}T00:00:00`
-          );
+        const previousDate = new Date(
+          `${previous.lastCompletedDate}T00:00:00`
+        );
 
-        const todayDate =
-          new Date(
-            `${today}T00:00:00`
-          );
+        const todayDate = new Date(
+          `${today}T00:00:00`
+        );
 
-        const difference =
-          Math.round(
-            (todayDate -
-              previousDate) /
-              (1000 *
-                60 *
-                60 *
-                24)
-          );
+        const difference = Math.round(
+          (todayDate - previousDate) /
+            (1000 * 60 * 60 * 24)
+        );
 
         if (difference === 1) {
           current += 1;
@@ -692,8 +598,7 @@ function App() {
           previous.best || 0,
           current
         ),
-        lastCompletedDate:
-          today,
+        lastCompletedDate: today,
       };
     });
   };
@@ -702,9 +607,7 @@ function App() {
   // ADD TASK
   // =========================================================
 
-  const addTask = (
-    taskData = {}
-  ) => {
+  const addTask = (taskData = {}) => {
     const title = String(
       taskData.title || ""
     ).trim();
@@ -718,84 +621,53 @@ function App() {
 
       title,
 
-      description:
-        taskData.description ||
-        "",
+      description: taskData.description || "",
 
-      priority:
-        taskData.priority ||
-        "Medium",
+      priority: taskData.priority || "Medium",
 
-      dueDate:
-        taskData.dueDate ||
-        "",
+      dueDate: taskData.dueDate || "",
 
-      dueTime:
-        taskData.dueTime ||
-        "",
+      dueTime: taskData.dueTime || "",
 
-      tags: Array.isArray(
-        taskData.tags
-      )
+      tags: Array.isArray(taskData.tags)
         ? taskData.tags
         : [],
 
-      recurring:
-        taskData.recurring ||
-        "None",
+      recurring: taskData.recurring || "None",
 
-      energy:
-        taskData.energy ||
-        "Medium",
+      energy: taskData.energy || "Medium",
 
-      progress:
-        Number(
-          taskData.progress
-        ) || 0,
+      progress: Number(taskData.progress) || 0,
 
-      subtasks:
-        Array.isArray(
-          taskData.subtasks
-        )
-          ? taskData.subtasks
-          : [],
+      subtasks: Array.isArray(taskData.subtasks)
+        ? taskData.subtasks
+        : [],
 
-      projectId:
-        taskData.projectId ||
-        null,
+      projectId: taskData.projectId || null,
 
-      category:
-        taskData.category ||
-        "",
+      category: taskData.category || "",
 
-      status:
-        taskData.status ||
-        "backlog",
+      status: taskData.status || "backlog",
 
-      dependencies:
-        Array.isArray(
-          taskData.dependencies
-        )
-          ? taskData.dependencies
-          : [],
+      dependencies: Array.isArray(
+        taskData.dependencies
+      )
+        ? taskData.dependencies
+        : [],
 
-      archived:
-        taskData.archived === true,
+      archived: taskData.archived === true,
 
       completed: false,
 
-      createdAt:
-        new Date().toISOString(),
+      createdAt: new Date().toISOString(),
 
       completedAt: null,
     };
 
-    setTasks(
-      (previous) => [
-        newTask,
-        ...previous,
-      ]
-    );
+    setTasks((previous) => [
+      newTask,
+      ...previous,
+    ]);
 
     addActivity(
       `Created task "${newTask.title}"`,
@@ -818,17 +690,15 @@ function App() {
     taskId,
     updates = {}
   ) => {
-    setTasks(
-      (previous) =>
-        previous.map(
-          (task) =>
-            task.id === taskId
-              ? {
-                  ...task,
-                  ...updates,
-                }
-              : task
-        )
+    setTasks((previous) =>
+      previous.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              ...updates,
+            }
+          : task
+      )
     );
   };
 
@@ -836,28 +706,21 @@ function App() {
   // DELETE TASK
   // =========================================================
 
-  const deleteTask = (
-    taskId
-  ) => {
+  const deleteTask = (taskId) => {
     const task = tasks.find(
-      (item) =>
-        item.id === taskId
+      (item) => item.id === taskId
     );
 
-    setTasks(
-      (previous) =>
-        previous.filter(
-          (item) =>
-            item.id !== taskId
-        )
+    setTasks((previous) =>
+      previous.filter(
+        (item) => item.id !== taskId
+      )
     );
 
-    setSelectedTasks(
-      (previous) =>
-        previous.filter(
-          (id) =>
-            id !== taskId
-        )
+    setSelectedTasks((previous) =>
+      previous.filter(
+        (id) => id !== taskId
+      )
     );
 
     if (task) {
@@ -872,48 +735,37 @@ function App() {
   // TOGGLE TASK
   // =========================================================
 
-  const toggleTask = (
-    taskId
-  ) => {
+  const toggleTask = (taskId) => {
     const task = tasks.find(
-      (item) =>
-        item.id === taskId
+      (item) => item.id === taskId
     );
 
     if (!task) {
       return;
     }
 
-    const completed =
-      !task.completed;
+    const completed = !task.completed;
 
-    setTasks(
-      (previous) =>
-        previous.map(
-          (item) =>
-            item.id === taskId
-              ? {
-                  ...item,
-                  completed,
-                  status:
-                    completed
-                      ? "done"
-                      : item.status ===
-                        "done"
-                      ? "backlog"
-                      : item.status ||
-                        "backlog",
-                  completedAt:
-                    completed
-                      ? new Date().toISOString()
-                      : null,
-                  progress:
-                    completed
-                      ? 100
-                      : item.progress,
-                }
-              : item
-        )
+    setTasks((previous) =>
+      previous.map((item) =>
+        item.id === taskId
+          ? {
+              ...item,
+              completed,
+              status: completed
+                ? "done"
+                : item.status === "done"
+                ? "backlog"
+                : item.status || "backlog",
+              completedAt: completed
+                ? new Date().toISOString()
+                : null,
+              progress: completed
+                ? 100
+                : item.progress,
+            }
+          : item
+      )
     );
 
     if (completed) {
@@ -921,12 +773,8 @@ function App() {
 
       updateStreak();
 
-      setEnergy(
-        (previous) =>
-          Math.min(
-            100,
-            previous + 5
-          )
+      setEnergy((previous) =>
+        Math.min(100, previous + 5)
       );
 
       addActivity(
@@ -949,45 +797,35 @@ function App() {
     taskId,
     newEnergy
   ) => {
-    updateTask(
-      taskId,
-      {
-        energy: newEnergy,
-      }
-    );
+    updateTask(taskId, {
+      energy: newEnergy,
+    });
   };
 
   // =========================================================
   // ARCHIVE TASK
   // =========================================================
 
-  const archiveTask = (
-    taskId
-  ) => {
+  const archiveTask = (taskId) => {
     const task = tasks.find(
-      (item) =>
+      (item) => item.id === taskId
+    );
+
+    setTasks((previous) =>
+      previous.map((item) =>
         item.id === taskId
+          ? {
+              ...item,
+              archived: true,
+            }
+          : item
+      )
     );
 
-    setTasks(
-      (previous) =>
-        previous.map(
-          (item) =>
-            item.id === taskId
-              ? {
-                  ...item,
-                  archived: true,
-                }
-              : item
-        )
-    );
-
-    setSelectedTasks(
-      (previous) =>
-        previous.filter(
-          (id) =>
-            id !== taskId
-        )
+    setSelectedTasks((previous) =>
+      previous.filter(
+        (id) => id !== taskId
+      )
     );
 
     if (task) {
@@ -1003,24 +841,20 @@ function App() {
   // =========================================================
 
   const clearCompleted = () => {
-    setTasks(
-      (previous) =>
-        previous.filter(
-          (task) =>
-            !task.completed
-        )
+    setTasks((previous) =>
+      previous.filter(
+        (task) => !task.completed
+      )
     );
 
-    setSelectedTasks(
-      (previous) =>
-        previous.filter(
-          (id) =>
-            tasks.some(
-              (task) =>
-                task.id === id &&
-                !task.completed
-            )
+    setSelectedTasks((previous) =>
+      previous.filter((id) =>
+        tasks.some(
+          (task) =>
+            task.id === id &&
+            !task.completed
         )
+      )
     );
 
     addActivity(
@@ -1052,33 +886,27 @@ function App() {
   // DEPENDENCIES
   // =========================================================
 
-  const getTaskDependencies = (
-    task
-  ) => {
+  const getTaskDependencies = (task) => {
     if (!task) {
       return [];
     }
 
-    const dependencyIds =
-      Array.isArray(
-        task.dependencies
-      )
-        ? task.dependencies
-        : [];
+    const dependencyIds = Array.isArray(
+      task.dependencies
+    )
+      ? task.dependencies
+      : [];
 
     return dependencyIds
       .map((id) =>
         tasks.find(
-          (item) =>
-            item.id === id
+          (item) => item.id === id
         )
       )
       .filter(Boolean);
   };
 
-  const hasBlockedDependencies = (
-    task
-  ) => {
+  const hasBlockedDependencies = (task) => {
     const dependencies =
       getTaskDependencies(task);
 
@@ -1092,387 +920,297 @@ function App() {
   // FILTERING
   // =========================================================
 
-  const filteredTasks = useMemo(
-    () => {
-      const today =
-        getToday();
+  const filteredTasks = useMemo(() => {
+    const today = getToday();
 
-      const search =
-        globalSearch
-          .trim()
-          .toLowerCase();
+    const search = globalSearch
+      .trim()
+      .toLowerCase();
 
-      return tasks.filter(
-        (task) => {
-          if (task.archived) {
-            return false;
-          }
+    return tasks.filter((task) => {
+      if (task.archived) {
+        return false;
+      }
 
-          if (search) {
-            const matchesSearch = [
-              task.title,
-              task.description,
-              task.priority,
-              task.energy,
-              task.category,
-            ]
-              .filter(Boolean)
-              .some(
-                (value) =>
-                  String(value)
-                    .toLowerCase()
-                    .includes(
-                      search
-                    )
-              );
+      if (search) {
+        const matchesSearch = [
+          task.title,
+          task.description,
+          task.priority,
+          task.energy,
+          task.category,
+        ]
+          .filter(Boolean)
+          .some((value) =>
+            String(value)
+              .toLowerCase()
+              .includes(search)
+          );
 
-            if (!matchesSearch) {
-              return false;
-            }
-          }
-
-          if (
-            taskFilter ===
-              "active" &&
-            task.completed
-          ) {
-            return false;
-          }
-
-          if (
-            taskFilter ===
-              "completed" &&
-            !task.completed
-          ) {
-            return false;
-          }
-
-          if (
-            taskFilter ===
-              "today" &&
-            task.dueDate !== today
-          ) {
-            return false;
-          }
-
-          if (
-            taskFilter ===
-            "overdue"
-          ) {
-            if (
-              !task.dueDate ||
-              task.dueDate >=
-                today ||
-              task.completed
-            ) {
-              return false;
-            }
-          }
-
-          if (
-            taskFilter ===
-              "in-progress" &&
-            task.status !==
-              "in-progress"
-          ) {
-            return false;
-          }
-
-          if (
-            taskFilter ===
-              "review" &&
-            task.status !==
-              "review"
-          ) {
-            return false;
-          }
-
-          if (
-            priorityFilter !==
-              "all" &&
-            task.priority !==
-              priorityFilter
-          ) {
-            return false;
-          }
-
-          if (
-            categoryFilter !==
-              "all" &&
-            task.category !==
-              categoryFilter
-          ) {
-            return false;
-          }
-
-          if (
-            energyFilter !==
-              "all" &&
-            task.energy !==
-              energyFilter
-          ) {
-            return false;
-          }
-
-          if (
-            projectFilter !==
-              "all" &&
-            task.projectId !==
-              projectFilter
-          ) {
-            return false;
-          }
-
-          return true;
+        if (!matchesSearch) {
+          return false;
         }
-      );
-    },
-    [
-      tasks,
-      globalSearch,
-      taskFilter,
-      priorityFilter,
-      categoryFilter,
-      energyFilter,
-      projectFilter,
-    ]
-  );
+      }
+
+      if (
+        taskFilter === "active" &&
+        task.completed
+      ) {
+        return false;
+      }
+
+      if (
+        taskFilter === "completed" &&
+        !task.completed
+      ) {
+        return false;
+      }
+
+      if (
+        taskFilter === "today" &&
+        task.dueDate !== today
+      ) {
+        return false;
+      }
+
+      if (taskFilter === "overdue") {
+        if (
+          !task.dueDate ||
+          task.dueDate >= today ||
+          task.completed
+        ) {
+          return false;
+        }
+      }
+
+      if (
+        taskFilter === "in-progress" &&
+        task.status !== "in-progress"
+      ) {
+        return false;
+      }
+
+      if (
+        taskFilter === "review" &&
+        task.status !== "review"
+      ) {
+        return false;
+      }
+
+      if (
+        priorityFilter !== "all" &&
+        task.priority !== priorityFilter
+      ) {
+        return false;
+      }
+
+      if (
+        categoryFilter !== "all" &&
+        task.category !== categoryFilter
+      ) {
+        return false;
+      }
+
+      if (
+        energyFilter !== "all" &&
+        task.energy !== energyFilter
+      ) {
+        return false;
+      }
+
+      if (
+        projectFilter !== "all" &&
+        task.projectId !== projectFilter
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [
+    tasks,
+    globalSearch,
+    taskFilter,
+    priorityFilter,
+    categoryFilter,
+    energyFilter,
+    projectFilter,
+  ]);
 
   // =========================================================
   // TASK SELECTION
   // =========================================================
 
-  const toggleTaskSelection = (
-    taskId
-  ) => {
-    setSelectedTasks(
-      (previous) =>
-        previous.includes(taskId)
-          ? previous.filter(
-              (id) =>
-                id !== taskId
-            )
-          : [
-              ...previous,
-              taskId,
-            ]
+  const toggleTaskSelection = (taskId) => {
+    setSelectedTasks((previous) =>
+      previous.includes(taskId)
+        ? previous.filter(
+            (id) => id !== taskId
+          )
+        : [...previous, taskId]
     );
   };
 
-  const selectAllVisibleTasks =
-    () => {
-      const visibleIds =
-        filteredTasks.map(
-          (task) =>
-            task.id
+  const selectAllVisibleTasks = () => {
+    const visibleIds = filteredTasks.map(
+      (task) => task.id
+    );
+
+    setSelectedTasks((previous) => {
+      const allSelected =
+        visibleIds.length > 0 &&
+        visibleIds.every((id) =>
+          previous.includes(id)
         );
 
-      setSelectedTasks(
-        (previous) => {
-          const allSelected =
-            visibleIds.length >
-              0 &&
-            visibleIds.every(
-              (id) =>
-                previous.includes(
-                  id
-                )
-            );
+      if (allSelected) {
+        return previous.filter(
+          (id) =>
+            !visibleIds.includes(id)
+        );
+      }
 
-          if (allSelected) {
-            return previous.filter(
-              (id) =>
-                !visibleIds.includes(
-                  id
-                )
-            );
-          }
-
-          return Array.from(
-            new Set([
-              ...previous,
-              ...visibleIds,
-            ])
-          );
-        }
+      return Array.from(
+        new Set([
+          ...previous,
+          ...visibleIds,
+        ])
       );
-    };
+    });
+  };
 
-  const clearTaskSelection =
-    () => {
-      setSelectedTasks([]);
-    };
+  const clearTaskSelection = () => {
+    setSelectedTasks([]);
+  };
 
   // =========================================================
   // BULK COMPLETE
   // =========================================================
 
-  const completeSelectedTasks =
-    () => {
-      if (
-        selectedTasks.length ===
-        0
-      ) {
-        return;
-      }
+  const completeSelectedTasks = () => {
+    if (selectedTasks.length === 0) {
+      return;
+    }
 
-      let completedCount = 0;
+    let completedCount = 0;
 
-      setTasks(
-        (previous) =>
-          previous.map(
-            (task) => {
-              if (
-                selectedTasks.includes(
-                  task.id
-                ) &&
-                !task.completed
-              ) {
-                completedCount += 1;
+    setTasks((previous) =>
+      previous.map((task) => {
+        if (
+          selectedTasks.includes(task.id) &&
+          !task.completed
+        ) {
+          completedCount += 1;
 
-                return {
-                  ...task,
-                  completed: true,
-                  status: "done",
-                  progress: 100,
-                  completedAt:
-                    new Date().toISOString(),
-                };
-              }
+          return {
+            ...task,
+            completed: true,
+            status: "done",
+            progress: 100,
+            completedAt:
+              new Date().toISOString(),
+          };
+        }
 
-              return task;
-            }
-          )
+        return task;
+      })
+    );
+
+    if (completedCount > 0) {
+      addXp(completedCount * 10);
+
+      updateStreak();
+
+      setEnergy((previous) =>
+        Math.min(
+          100,
+          previous + completedCount * 5
+        )
       );
 
-      if (
-        completedCount > 0
-      ) {
-        addXp(
-          completedCount * 10
-        );
+      addActivity(
+        `Completed ${completedCount} selected task${
+          completedCount === 1 ? "" : "s"
+        }`,
+        "success"
+      );
 
-        updateStreak();
+      addNotification(
+        `Completed ${completedCount} selected task${
+          completedCount === 1 ? "" : "s"
+        }.`,
+        "success"
+      );
+    }
 
-        setEnergy(
-          (previous) =>
-            Math.min(
-              100,
-              previous +
-                completedCount *
-                  5
-            )
-        );
-
-        addActivity(
-          `Completed ${completedCount} selected task${
-            completedCount ===
-            1
-              ? ""
-              : "s"
-          }`,
-          "success"
-        );
-
-        addNotification(
-          `Completed ${completedCount} selected task${
-            completedCount ===
-            1
-              ? ""
-              : "s"
-          }.`,
-          "success"
-        );
-      }
-
-      setSelectedTasks([]);
-    };
+    setSelectedTasks([]);
+  };
 
   // =========================================================
   // BULK ARCHIVE
   // =========================================================
 
-  const archiveSelectedTasks =
-    () => {
-      if (
-        selectedTasks.length ===
-        0
-      ) {
-        return;
-      }
+  const archiveSelectedTasks = () => {
+    if (selectedTasks.length === 0) {
+      return;
+    }
 
-      setTasks(
-        (previous) =>
-          previous.map(
-            (task) =>
-              selectedTasks.includes(
-                task.id
-              )
-                ? {
-                    ...task,
-                    archived:
-                      true,
-                  }
-                : task
-          )
-      );
+    setTasks((previous) =>
+      previous.map((task) =>
+        selectedTasks.includes(task.id)
+          ? {
+              ...task,
+              archived: true,
+            }
+          : task
+      )
+    );
 
-      addActivity(
-        `Archived ${selectedTasks.length} selected task${
-          selectedTasks.length ===
-          1
-            ? ""
-            : "s"
-        }`,
-        "task"
-      );
+    addActivity(
+      `Archived ${selectedTasks.length} selected task${
+        selectedTasks.length === 1
+          ? ""
+          : "s"
+      }`,
+      "task"
+    );
 
-      setSelectedTasks([]);
-    };
+    setSelectedTasks([]);
+  };
 
   // =========================================================
   // BULK DELETE
   // =========================================================
 
-  const deleteSelectedTasks =
-    () => {
-      if (
-        selectedTasks.length ===
-        0
-      ) {
-        return;
-      }
+  const deleteSelectedTasks = () => {
+    if (selectedTasks.length === 0) {
+      return;
+    }
 
-      setTasks(
-        (previous) =>
-          previous.filter(
-            (task) =>
-              !selectedTasks.includes(
-                task.id
-              )
-          )
-      );
+    setTasks((previous) =>
+      previous.filter(
+        (task) =>
+          !selectedTasks.includes(task.id)
+      )
+    );
 
-      addActivity(
-        `Deleted ${selectedTasks.length} selected task${
-          selectedTasks.length ===
-          1
-            ? ""
-            : "s"
-        }`,
-        "task"
-      );
+    addActivity(
+      `Deleted ${selectedTasks.length} selected task${
+        selectedTasks.length === 1
+          ? ""
+          : "s"
+      }`,
+      "task"
+    );
 
-      setSelectedTasks([]);
-    };
+    setSelectedTasks([]);
+  };
 
   // =========================================================
   // PROJECTS
   // =========================================================
 
-  const addProject = (
-    projectData = {}
-  ) => {
+  const addProject = (projectData = {}) => {
     const newProject = {
       id: makeId(),
 
@@ -1482,8 +1220,7 @@ function App() {
         "New Project",
 
       description:
-        projectData.description ||
-        "",
+        projectData.description || "",
 
       status:
         projectData.status ||
@@ -1494,23 +1231,19 @@ function App() {
         "Medium",
 
       dueDate:
-        projectData.dueDate ||
-        "",
+        projectData.dueDate || "",
 
       color:
-        projectData.color ||
-        "#765b6b",
+        projectData.color || "#765b6b",
 
       createdAt:
         new Date().toISOString(),
     };
 
-    setProjects(
-      (previous) => [
-        newProject,
-        ...previous,
-      ]
-    );
+    setProjects((previous) => [
+      newProject,
+      ...previous,
+    ]);
 
     addActivity(
       `Created project "${newProject.name}"`,
@@ -1529,51 +1262,38 @@ function App() {
     projectId,
     updates = {}
   ) => {
-    setProjects(
-      (previous) =>
-        previous.map(
-          (project) =>
-            project.id ===
-            projectId
-              ? {
-                  ...project,
-                  ...updates,
-                }
-              : project
-        )
+    setProjects((previous) =>
+      previous.map((project) =>
+        project.id === projectId
+          ? {
+              ...project,
+              ...updates,
+            }
+          : project
+      )
     );
   };
 
-  const deleteProject = (
-    projectId
-  ) => {
-    const project =
-      projects.find(
-        (item) =>
-          item.id === projectId
-      );
-
-    setProjects(
-      (previous) =>
-        previous.filter(
-          (item) =>
-            item.id !== projectId
-        )
+  const deleteProject = (projectId) => {
+    const project = projects.find(
+      (item) => item.id === projectId
     );
 
-    setTasks(
-      (previous) =>
-        previous.map(
-          (task) =>
-            task.projectId ===
-            projectId
-              ? {
-                  ...task,
-                  projectId:
-                    null,
-                }
-              : task
-        )
+    setProjects((previous) =>
+      previous.filter(
+        (item) => item.id !== projectId
+      )
+    );
+
+    setTasks((previous) =>
+      previous.map((task) =>
+        task.projectId === projectId
+          ? {
+              ...task,
+              projectId: null,
+            }
+          : task
+      )
     );
 
     if (project) {
@@ -1583,13 +1303,8 @@ function App() {
       );
     }
 
-    if (
-      projectFilter ===
-      projectId
-    ) {
-      setProjectFilter(
-        "all"
-      );
+    if (projectFilter === projectId) {
+      setProjectFilter("all");
     }
   };
 
@@ -1597,87 +1312,70 @@ function App() {
   // PROJECT STATS
   // =========================================================
 
-  const projectStats = useMemo(
-    () => {
-      const today =
-        getToday();
+  const projectStats = useMemo(() => {
+    const today = getToday();
 
-      return projects.map(
-        (project) => {
-          const projectTasks =
-            tasks.filter(
-              (task) =>
-                task.projectId ===
-                  project.id &&
-                !task.archived
+    return projects.map((project) => {
+      const projectTasks = tasks.filter(
+        (task) =>
+          task.projectId === project.id &&
+          !task.archived
+      );
+
+      const total = projectTasks.length;
+
+      const completed = projectTasks.filter(
+        (task) => task.completed
+      ).length;
+
+      const overdue = projectTasks.filter(
+        (task) =>
+          task.dueDate &&
+          task.dueDate < today &&
+          !task.completed
+      ).length;
+
+      const progress =
+        total === 0
+          ? 0
+          : Math.round(
+              (completed / total) * 100
             );
 
-          const total =
-            projectTasks.length;
-
-          const completed =
-            projectTasks.filter(
-              (task) =>
-                task.completed
-            ).length;
-
-          const overdue =
-            projectTasks.filter(
-              (task) =>
-                task.dueDate &&
-                task.dueDate <
-                  today &&
-                !task.completed
-            ).length;
-
-          const progress =
-            total === 0
-              ? 0
-              : Math.round(
-                  (completed /
-                    total) *
-                    100
-                );
-
-          return {
-            ...project,
-            total,
-            completed,
-            overdue,
-            progress,
-          };
-        }
-      );
-    },
-    [projects, tasks]
-  );
+      return {
+        ...project,
+        total,
+        completed,
+        overdue,
+        progress,
+      };
+    });
+  }, [projects, tasks]);
 
   // =========================================================
   // FOCUS HELPERS
   // =========================================================
 
-  const formatFocusTime = (
-    seconds
-  ) => {
-    const safeSeconds =
-      Math.max(
-        0,
-        Number(seconds) || 0
-      );
+  const formatFocusTime = (seconds) => {
+    const safeSeconds = Math.max(
+      0,
+      Number(seconds) || 0
+    );
 
-    const minutes =
-      Math.floor(
-        safeSeconds / 60
-      );
+    const minutes = Math.floor(
+      safeSeconds / 60
+    );
 
     const remainingSeconds =
       safeSeconds % 60;
 
-    return `${String(
-      minutes
-    ).padStart(2, "0")}:${String(
-      remainingSeconds
-    ).padStart(2, "0")}`;
+    return `${String(minutes).padStart(
+      2,
+      "0"
+    )}:${String(remainingSeconds).padStart(
+      2,
+      "0"
+    )}`;
   };
 
   // =========================================================
@@ -1695,22 +1393,14 @@ function App() {
         ? focusDuration
         : 25 * 60;
 
-    setFocusDuration(
-      selectedDuration
-    );
+    setFocusDuration(selectedDuration);
 
-    setFocusSeconds(
-      selectedDuration
-    );
+    setFocusSeconds(selectedDuration);
 
-    setFocusTask(
-      task || null
-    );
+    setFocusTask(task || null);
 
     setFocusMode(true);
-    setMiniFocusVisible(
-      false
-    );
+    setMiniFocusVisible(false);
     setFocusPaused(false);
 
     addActivity(
@@ -1720,12 +1410,8 @@ function App() {
       "focus"
     );
 
-    setEnergy(
-      (previous) =>
-        Math.max(
-          0,
-          previous - 5
-        )
+    setEnergy((previous) =>
+      Math.max(0, previous - 5)
     );
   };
 
@@ -1737,9 +1423,7 @@ function App() {
     setFocusMode(false);
 
     if (focusSeconds > 0) {
-      setMiniFocusVisible(
-        true
-      );
+      setMiniFocusVisible(true);
     }
 
     addActivity(
@@ -1753,16 +1437,13 @@ function App() {
   // =========================================================
 
   const cancelMiniFocus = () => {
-    setMiniFocusVisible(
-      false
-    );
+    setMiniFocusVisible(false);
 
     setFocusMode(false);
     setFocusPaused(false);
 
     setFocusSeconds(
-      focusDuration ||
-        25 * 60
+      focusDuration || 25 * 60
     );
 
     setFocusTask(null);
@@ -1778,15 +1459,11 @@ function App() {
   // =========================================================
 
   const resumeFocus = () => {
-    if (
-      focusSeconds <= 0
-    ) {
+    if (focusSeconds <= 0) {
       return;
     }
 
-    setMiniFocusVisible(
-      false
-    );
+    setMiniFocusVisible(false);
 
     setFocusMode(true);
     setFocusPaused(false);
@@ -1798,8 +1475,7 @@ function App() {
 
   const pauseFocus = () => {
     setFocusPaused(
-      (previous) =>
-        !previous
+      (previous) => !previous
     );
   };
 
@@ -1809,8 +1485,7 @@ function App() {
 
   const resetFocus = () => {
     setFocusSeconds(
-      focusDuration ||
-        25 * 60
+      focusDuration || 25 * 60
     );
 
     setFocusPaused(false);
@@ -1822,14 +1497,11 @@ function App() {
 
   const completeFocus = () => {
     setFocusMode(false);
-    setMiniFocusVisible(
-      false
-    );
+    setMiniFocusVisible(false);
     setFocusPaused(false);
 
     setFocusSeconds(
-      focusDuration ||
-        25 * 60
+      focusDuration || 25 * 60
     );
 
     addXp(25);
@@ -1851,32 +1523,21 @@ function App() {
   // CHANGE FOCUS DURATION
   // =========================================================
 
-  const chooseFocusDuration = (
-    minutes
-  ) => {
-    const seconds =
-      Number(minutes) * 60;
+  const chooseFocusDuration = (minutes) => {
+    const seconds = Number(minutes) * 60;
 
     if (
-      !Number.isFinite(
-        seconds
-      ) ||
+      !Number.isFinite(seconds) ||
       seconds <= 0
     ) {
       return;
     }
 
-    setFocusDuration(
-      seconds
-    );
+    setFocusDuration(seconds);
 
-    setFocusSeconds(
-      seconds
-    );
+    setFocusSeconds(seconds);
 
-    setCustomFocusMinutes(
-      Number(minutes)
-    );
+    setCustomFocusMinutes(Number(minutes));
 
     setFocusPaused(false);
   };
@@ -1886,20 +1547,15 @@ function App() {
   // =========================================================
 
   const applyCustomFocus = () => {
-    const minutes =
-      Math.min(
-        180,
-        Math.max(
-          1,
-          Number(
-            customFocusMinutes
-          ) || 25
-        )
-      );
-
-    chooseFocusDuration(
-      minutes
+    const minutes = Math.min(
+      180,
+      Math.max(
+        1,
+        Number(customFocusMinutes) || 25
+      )
     );
+
+    chooseFocusDuration(minutes);
   };
 
   // =========================================================
@@ -1908,49 +1564,38 @@ function App() {
 
   useEffect(() => {
     if (
-      (!focusMode &&
-        !miniFocusVisible) ||
+      (!focusMode && !miniFocusVisible) ||
       focusPaused
     ) {
       return undefined;
     }
 
-    if (
-      focusSeconds <= 0
-    ) {
-      completeFocus();
+    if (focusSeconds <= 0) {
       return undefined;
     }
 
-    const timer =
-      setInterval(() => {
-        setFocusSeconds(
-          (previous) =>
-            Math.max(
-              0,
-              previous - 1
-            )
-        );
-      }, 1000);
+    const timer = setInterval(() => {
+      setFocusSeconds((previous) =>
+        Math.max(0, previous - 1)
+      );
+    }, 1000);
 
-    return () =>
-      clearInterval(timer);
+    return () => clearInterval(timer);
   }, [
     focusMode,
     miniFocusVisible,
     focusPaused,
-    focusSeconds,
   ]);
 
   // =========================================================
-  // AUTO COMPLETE
+  // AUTO COMPLETE FOCUS
   // =========================================================
 
   useEffect(() => {
     if (
       focusSeconds === 0 &&
-      (focusMode ||
-        miniFocusVisible)
+      (focusMode || miniFocusVisible) &&
+      !focusPaused
     ) {
       completeFocus();
     }
@@ -1958,132 +1603,102 @@ function App() {
     focusSeconds,
     focusMode,
     miniFocusVisible,
+    focusPaused,
   ]);
 
-  const formattedFocusTime =
-    useMemo(
-      () =>
-        formatFocusTime(
-          focusSeconds
-        ),
-      [focusSeconds]
-    );
+  const formattedFocusTime = useMemo(
+    () => formatFocusTime(focusSeconds),
+    [focusSeconds]
+  );
 
   // =========================================================
   // STATUS
   // =========================================================
 
-  const tasksByStatus =
-    useMemo(() => {
-      const result = {
-        backlog: [],
-        "in-progress": [],
-        review: [],
-        done: [],
-      };
+  const tasksByStatus = useMemo(() => {
+    const result = {
+      backlog: [],
+      "in-progress": [],
+      review: [],
+      done: [],
+    };
 
-      filteredTasks.forEach(
-        (task) => {
-          let status =
-            task.status;
+    filteredTasks.forEach((task) => {
+      let status = task.status;
 
-          if (
-            task.completed
-          ) {
-            status = "done";
-          }
+      if (task.completed) {
+        status = "done";
+      }
 
-          if (!result[status]) {
-            status =
-              "backlog";
-          }
+      if (!result[status]) {
+        status = "backlog";
+      }
 
-          result[status].push(
-            task
-          );
-        }
-      );
+      result[status].push(task);
+    });
 
-      return result;
-    }, [filteredTasks]);
+    return result;
+  }, [filteredTasks]);
 
   // =========================================================
   // STATS
   // =========================================================
 
-  const stats = useMemo(
-    () => {
-      const today =
-        getToday();
+  const stats = useMemo(() => {
+    const today = getToday();
 
-      const completed =
-        tasks.filter(
-          (task) =>
-            task.completed
-        );
+    const completed = tasks.filter(
+      (task) => task.completed
+    );
 
-      const pending =
-        tasks.filter(
-          (task) =>
-            !task.completed
-        );
+    const pending = tasks.filter(
+      (task) => !task.completed
+    );
 
-      const todayTasks =
-        tasks.filter(
-          (task) =>
-            task.dueDate ===
-              today &&
-            !task.completed
-        );
+    const todayTasks = tasks.filter(
+      (task) =>
+        task.dueDate === today &&
+        !task.completed
+    );
 
-      const overdueTasks =
-        tasks.filter(
-          (task) =>
-            task.dueDate &&
-            task.dueDate <
-              today &&
-            !task.completed
-        );
+    const overdueTasks = tasks.filter(
+      (task) =>
+        task.dueDate &&
+        task.dueDate < today &&
+        !task.completed
+    );
 
-      const highPriorityTasks =
-        tasks.filter(
-          (task) =>
-            task.priority ===
-              "High" &&
-            !task.completed
-        );
+    const highPriorityTasks =
+      tasks.filter(
+        (task) =>
+          task.priority === "High" &&
+          !task.completed
+      );
 
-      return {
-        total:
-          tasks.length,
+    return {
+      total: tasks.length,
 
-        completed:
-          completed.length,
+      completed: completed.length,
 
-        pending:
-          pending.length,
+      pending: pending.length,
 
-        today:
-          todayTasks.length,
+      today: todayTasks.length,
 
-        overdue:
-          overdueTasks.length,
+      overdue: overdueTasks.length,
 
-        highPriority:
-          highPriorityTasks.length,
+      highPriority:
+        highPriorityTasks.length,
 
-        completionRate:
-          tasks.length === 0
-            ? 0
-            : Math.round(
-                (completed.length /
-                  tasks.length) *
-                  100
-              ),
-      };
-    },
-    [tasks]
-  );
+      completionRate:
+        tasks.length === 0
+          ? 0
+          : Math.round(
+              (completed.length /
+                tasks.length) *
+                100
+            ),
+    };
+  }, [tasks]);
 
   // =========================================================
   // RESET EVERYTHING
@@ -2098,8 +1713,7 @@ function App() {
     setStreak({
       current: 0,
       best: 0,
-      lastCompletedDate:
-        null,
+      lastCompletedDate: null,
     });
 
     setBadges([]);
@@ -2117,30 +1731,21 @@ function App() {
     setTaskView("list");
 
     setFocusMode(false);
-    setMiniFocusVisible(
-      false
-    );
+    setMiniFocusVisible(false);
     setFocusPaused(false);
 
-    setFocusSeconds(
-      25 * 60
-    );
+    setFocusSeconds(25 * 60);
 
-    setFocusDuration(
-      25 * 60
-    );
+    setFocusDuration(25 * 60);
 
-    setCustomFocusMinutes(
-      25
-    );
+    setCustomFocusMinutes(25);
 
     setFocusTask(null);
 
-    setMissionDate(
-      getToday()
-    );
+    setMissionDate(getToday());
 
     // ALWAYS RESET THEME TO SYSTEM
+
     setTheme("system");
 
     const systemDark =
@@ -2148,9 +1753,7 @@ function App() {
         "(prefers-color-scheme: dark)"
       ).matches;
 
-    setDarkModeState(
-      systemDark
-    );
+    setDarkModeState(systemDark);
 
     document.documentElement.classList.toggle(
       "dark",
@@ -2171,15 +1774,12 @@ function App() {
       "lockin_theme",
     ];
 
-    keys.forEach(
-      (key) => {
-        localStorage.removeItem(
-          key
-        );
-      }
-    );
+    keys.forEach((key) => {
+      localStorage.removeItem(key);
+    });
 
-    // Settings defaults
+    // Restore settings defaults
+
     localStorage.setItem(
       "lockin_theme",
       "system"
@@ -2187,9 +1787,7 @@ function App() {
 
     localStorage.setItem(
       "lockin_dark_mode",
-      JSON.stringify(
-        systemDark
-      )
+      JSON.stringify(systemDark)
     );
 
     localStorage.setItem(
@@ -2209,6 +1807,7 @@ function App() {
 
   const outletContext = {
     // TASKS
+
     tasks,
     filteredTasks,
     tasksByStatus,
@@ -2226,6 +1825,7 @@ function App() {
     hasBlockedDependencies,
 
     // SELECTION
+
     selectedTasks,
     toggleTaskSelection,
     selectAllVisibleTasks,
@@ -2235,6 +1835,7 @@ function App() {
     deleteSelectedTasks,
 
     // FILTERS
+
     taskView,
     setTaskView,
 
@@ -2254,6 +1855,7 @@ function App() {
     setProjectFilter,
 
     // PROJECTS
+
     projects,
     projectStats,
     addProject,
@@ -2261,26 +1863,32 @@ function App() {
     deleteProject,
 
     // STATS
+
     stats,
 
     // XP
+
     xp,
     level,
     xpProgress,
     addXp,
 
     // STREAK
+
     streak,
 
     // ENERGY
+
     energy,
     setEnergy,
 
     // BADGES
+
     badges,
     setBadges,
 
     // FOCUS
+
     focusMode,
     setFocusMode,
     focusSeconds,
@@ -2289,8 +1897,7 @@ function App() {
 
     startFocus,
 
-    stopFocus:
-      exitFocus,
+    stopFocus: exitFocus,
 
     exitFocus,
     pauseFocus,
@@ -2316,21 +1923,32 @@ function App() {
     resumeFocus,
 
     // NOTIFICATIONS
+
     notificationsList,
     addNotification,
     markNotificationRead,
     markAllNotificationsRead,
+
+    // INDIVIDUAL DELETE
+
+    deleteNotification,
+
+    // CLEAR ALL
+
     clearNotifications,
 
     // ACTIVITY
+
     activity,
     addActivity,
 
     // SEARCH
+
     globalSearch,
     setGlobalSearch,
 
     // THEME
+
     theme,
     darkMode,
     setDarkMode,
@@ -2338,10 +1956,12 @@ function App() {
     changeTheme,
 
     // MISSION
+
     missionDate,
     setMissionDate,
 
     // RESET
+
     resetEverything,
   };
 
@@ -2390,17 +2010,16 @@ function App() {
             theme={theme}
             changeTheme={changeTheme}
             globalSearch={globalSearch}
-            setGlobalSearch={
-              setGlobalSearch
-            }
-            notificationsList={
-              notificationsList
-            }
+            setGlobalSearch={setGlobalSearch}
+            notificationsList={notificationsList}
             markNotificationRead={
               markNotificationRead
             }
             markAllNotificationsRead={
               markAllNotificationsRead
+            }
+            deleteNotification={
+              deleteNotification
             }
             clearNotifications={
               clearNotifications
@@ -2433,11 +2052,7 @@ function App() {
                 min-w-0
               "
             >
-              <Outlet
-                context={
-                  outletContext
-                }
-              />
+              <Outlet context={outletContext} />
             </div>
           </main>
         </div>
@@ -2447,154 +2062,143 @@ function App() {
           FLOATING MINI FOCUS COUNTDOWN
       ===================================================== */}
 
-      {miniFocusVisible &&
-        !focusMode && (
+      {miniFocusVisible && !focusMode && (
+        <div
+          className="
+            fixed
+            bottom-3
+            left-3
+            right-3
+            z-[90]
+            sm:left-auto
+            sm:right-5
+            sm:bottom-5
+            md:right-6
+          "
+        >
           <div
             className="
-              fixed
-              bottom-3
-              left-3
-              right-3
-              z-[90]
-              sm:left-auto
-              sm:right-5
-              sm:bottom-5
-              md:right-6
+              mx-auto
+              flex
+              w-full
+              max-w-sm
+              items-center
+              gap-3
+              rounded-2xl
+              border
+              border-[#765b6b]/20
+              bg-white/95
+              p-3
+              shadow-2xl
+              backdrop-blur-xl
+              dark:border-white/10
+              dark:bg-[#1b1f1c]/95
+              sm:w-[360px]
             "
           >
-            <div
+            <button
+              type="button"
+              onClick={resumeFocus}
               className="
-                mx-auto
-                flex
-                w-full
-                max-w-sm
-                items-center
-                gap-3
-                rounded-2xl
-                border
-                border-[#765b6b]/20
-                bg-white/95
-                p-3
-                shadow-2xl
-                backdrop-blur-xl
-                dark:border-white/10
-                dark:bg-[#1b1f1c]/95
-                sm:w-[360px]
+                min-w-0
+                flex-1
+                text-left
               "
             >
-              <button
-                type="button"
-                onClick={
-                  resumeFocus
-                }
+              <p
                 className="
-                  min-w-0
-                  flex-1
-                  text-left
+                  text-[9px]
+                  font-black
+                  uppercase
+                  tracking-[0.18em]
+                  text-[#765b6b]
+                  dark:text-[#c4aebe]
                 "
               >
-                <p
-                  className="
-                    text-[9px]
-                    font-black
-                    uppercase
-                    tracking-[0.18em]
-                    text-[#765b6b]
-                    dark:text-[#c4aebe]
-                  "
-                >
-                  Focus running
-                </p>
+                Focus running
+              </p>
 
-                <div
+              <div
+                className="
+                  mt-0.5
+                  flex
+                  min-w-0
+                  items-center
+                  gap-2
+                "
+              >
+                <span
                   className="
-                    mt-0.5
-                    flex
-                    min-w-0
-                    items-center
-                    gap-2
+                    text-xl
+                    font-black
+                    tracking-tight
+                    text-[#292725]
+                    dark:text-white
                   "
                 >
+                  {formattedFocusTime}
+                </span>
+
+                {focusTask && (
                   <span
                     className="
-                      text-xl
-                      font-black
-                      tracking-tight
-                      text-[#292725]
-                      dark:text-white
+                      hidden
+                      truncate
+                      text-xs
+                      font-bold
+                      text-black/40
+                      sm:block
+                      dark:text-white/40
                     "
                   >
-                    {
-                      formattedFocusTime
-                    }
+                    {focusTask.title}
                   </span>
+                )}
+              </div>
+            </button>
 
-                  {focusTask && (
-                    <span
-                      className="
-                        hidden
-                        truncate
-                        text-xs
-                        font-bold
-                        text-black/40
-                        sm:block
-                        dark:text-white/40
-                      "
-                    >
-                      {
-                        focusTask.title
-                      }
-                    </span>
-                  )}
-                </div>
-              </button>
+            <button
+              type="button"
+              onClick={resumeFocus}
+              className="
+                shrink-0
+                rounded-xl
+                bg-[#765b6b]
+                px-3
+                py-2.5
+                text-[10px]
+                font-black
+                text-white
+                transition
+                hover:bg-[#674e5e]
+                sm:px-4
+              "
+            >
+              Resume
+            </button>
 
-              <button
-                type="button"
-                onClick={
-                  resumeFocus
-                }
-                className="
-                  shrink-0
-                  rounded-xl
-                  bg-[#765b6b]
-                  px-3
-                  py-2.5
-                  text-[10px]
-                  font-black
-                  text-white
-                  transition
-                  hover:bg-[#674e5e]
-                  sm:px-4
-                "
-              >
-                Resume
-              </button>
-
-              <button
-                type="button"
-                onClick={
-                  cancelMiniFocus
-                }
-                className="
-                  shrink-0
-                  rounded-xl
-                  bg-black/5
-                  p-2.5
-                  text-black/40
-                  transition
-                  hover:bg-red-500/10
-                  hover:text-red-500
-                  dark:bg-white/5
-                  dark:text-white/40
-                "
-                title="Cancel countdown"
-              >
-                ×
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={cancelMiniFocus}
+              className="
+                shrink-0
+                rounded-xl
+                bg-black/5
+                p-2.5
+                text-black/40
+                transition
+                hover:bg-red-500/10
+                hover:text-red-500
+                dark:bg-white/5
+                dark:text-white/40
+              "
+              title="Cancel countdown"
+            >
+              ×
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
       {/* =====================================================
           FOCUS MODE
@@ -2728,9 +2332,7 @@ function App() {
             >
               <button
                 type="button"
-                onClick={
-                  pauseFocus
-                }
+                onClick={pauseFocus}
                 className="
                   rounded-xl
                   bg-[#765b6b]
@@ -2752,9 +2354,7 @@ function App() {
 
               <button
                 type="button"
-                onClick={
-                  resetFocus
-                }
+                onClick={resetFocus}
                 className="
                   rounded-xl
                   bg-[#eeeae4]
@@ -2774,9 +2374,7 @@ function App() {
 
               <button
                 type="button"
-                onClick={
-                  completeFocus
-                }
+                onClick={completeFocus}
                 className="
                   rounded-xl
                   bg-emerald-600
@@ -2794,9 +2392,7 @@ function App() {
 
               <button
                 type="button"
-                onClick={
-                  exitFocus
-                }
+                onClick={exitFocus}
                 className="
                   rounded-xl
                   bg-rose-50

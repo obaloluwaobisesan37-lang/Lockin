@@ -18,6 +18,7 @@ function Navbar({
   notificationsList = [],
   markNotificationRead,
   markAllNotificationsRead,
+  deleteNotification,
   clearNotifications,
 }) {
   const [showNotifications, setShowNotifications] =
@@ -41,6 +42,10 @@ function Navbar({
 
   const handleMarkAllRead = () => {
     markAllNotificationsRead?.();
+  };
+
+  const handleDeleteNotification = (id) => {
+    deleteNotification?.(id);
   };
 
   const handleClearNotifications = () => {
@@ -265,10 +270,6 @@ function Navbar({
 
             {/* =================================================
                 NOTIFICATION PANEL
-
-                IMPORTANT:
-                This uses React state instead of hover.
-                Therefore it works on phones.
             ================================================= */}
 
             {showNotifications && (
@@ -311,7 +312,7 @@ function Navbar({
                     sm:left-auto
                     sm:right-0
                     sm:top-[calc(100%+10px)]
-                    sm:w-[360px]
+                    sm:w-[380px]
                     sm:rounded-2xl
                     dark:border-[#343934]
                     dark:bg-[#1b1f1c]
@@ -333,7 +334,14 @@ function Navbar({
                     "
                   >
                     <div>
-                      <p className="text-sm font-black">
+                      <p
+                        className="
+                          text-sm
+                          font-black
+                          text-[#292725]
+                          dark:text-white
+                        "
+                      >
                         Notifications
                       </p>
 
@@ -344,11 +352,14 @@ function Navbar({
 
                     <div className="flex items-center gap-1">
 
+                      {/* MARK ALL READ */}
+
                       {unreadCount > 0 && (
                         <button
                           type="button"
                           onClick={handleMarkAllRead}
                           title="Mark all as read"
+                          aria-label="Mark all as read"
                           className="
                             rounded-lg
                             p-2
@@ -361,13 +372,14 @@ function Navbar({
                         </button>
                       )}
 
+                      {/* CLEAR ALL */}
+
                       {notificationsList.length > 0 && (
                         <button
                           type="button"
-                          onClick={
-                            handleClearNotifications
-                          }
-                          title="Clear notifications"
+                          onClick={handleClearNotifications}
+                          title="Clear all notifications"
+                          aria-label="Clear all notifications"
                           className="
                             rounded-lg
                             p-2
@@ -381,12 +393,15 @@ function Navbar({
                         </button>
                       )}
 
+                      {/* CLOSE */}
+
                       <button
                         type="button"
                         onClick={() =>
                           setShowNotifications(false)
                         }
                         title="Close"
+                        aria-label="Close notifications"
                         className="
                           rounded-lg
                           p-2
@@ -403,7 +418,13 @@ function Navbar({
 
                   {/* NOTIFICATION LIST */}
 
-                  <div className="max-h-[70vh] overflow-y-auto sm:max-h-80">
+                  <div
+                    className="
+                      max-h-[70vh]
+                      overflow-y-auto
+                      sm:max-h-80
+                    "
+                  >
 
                     {notificationsList.length === 0 ? (
                       <div className="px-5 py-10 text-center">
@@ -424,7 +445,15 @@ function Navbar({
                           <Bell size={22} />
                         </div>
 
-                        <p className="mt-3 text-xs font-black">
+                        <p
+                          className="
+                            mt-3
+                            text-xs
+                            font-black
+                            text-[#292725]
+                            dark:text-white
+                          "
+                        >
                           No notifications
                         </p>
 
@@ -436,28 +465,20 @@ function Navbar({
                       notificationsList
                         .slice(0, 20)
                         .map((notification) => (
-                          <button
+                          <div
                             key={notification.id}
-                            type="button"
-                            onClick={() =>
-                              handleMarkNotificationRead(
-                                notification.id
-                              )
-                            }
                             className={`
                               flex
                               w-full
+                              items-start
                               gap-3
                               border-b
                               border-[#eeeae4]
                               px-4
                               py-3.5
-                              text-left
                               transition
                               last:border-b-0
-                              hover:bg-[#f6f4ef]
                               dark:border-[#30352f]
-                              dark:hover:bg-white/[0.03]
                               ${
                                 notification.read
                                   ? "bg-transparent"
@@ -465,6 +486,9 @@ function Navbar({
                               }
                             `}
                           >
+
+                            {/* UNREAD DOT */}
+
                             <span
                               className={`
                                 mt-1.5
@@ -480,7 +504,22 @@ function Navbar({
                               `}
                             />
 
-                            <div className="min-w-0 flex-1">
+                            {/* NOTIFICATION CONTENT */}
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleMarkNotificationRead(
+                                  notification.id
+                                )
+                              }
+                              className="
+                                min-w-0
+                                flex-1
+                                text-left
+                                outline-none
+                              "
+                            >
                               <p
                                 className={`
                                   text-xs
@@ -496,20 +535,65 @@ function Navbar({
                               </p>
 
                               {notification.createdAt && (
-                                <p className="mt-1 text-[9px] font-semibold text-[#aaa49c]">
+                                <p
+                                  className="
+                                    mt-1
+                                    text-[9px]
+                                    font-semibold
+                                    text-[#aaa49c]
+                                  "
+                                >
                                   {new Date(
                                     notification.createdAt
                                   ).toLocaleString()}
                                 </p>
                               )}
-                            </div>
+                            </button>
+
+                            {/* NEW LABEL */}
 
                             {!notification.read && (
-                              <span className="self-center text-[9px] font-black text-[#765b6b]">
+                              <span
+                                className="
+                                  self-center
+                                  text-[9px]
+                                  font-black
+                                  text-[#765b6b]
+                                "
+                              >
                                 NEW
                               </span>
                             )}
-                          </button>
+
+                            {/* =================================================
+                                INDIVIDUAL DELETE BUTTON
+                            ================================================= */}
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDeleteNotification(
+                                  notification.id
+                                )
+                              }
+                              title="Delete notification"
+                              aria-label={`Delete notification: ${notification.message}`}
+                              className="
+                                shrink-0
+                                self-center
+                                rounded-lg
+                                p-2
+                                text-[#aaa49c]
+                                transition
+                                hover:bg-rose-50
+                                hover:text-rose-500
+                                dark:hover:bg-rose-950/20
+                                dark:hover:text-rose-400
+                              "
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         ))
                     )}
                   </div>
