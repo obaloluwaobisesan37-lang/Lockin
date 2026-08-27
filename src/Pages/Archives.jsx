@@ -1,4 +1,11 @@
-import { Archive, Trash2, RotateCcw } from "lucide-react";
+import { useState } from "react";
+import {
+  Archive,
+  Trash2,
+  RotateCcw,
+  X,
+  AlertTriangle,
+} from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import TaskCard from "../Components/TaskCard";
 import EmptyState from "../Components/EmptyState";
@@ -11,11 +18,17 @@ function Archives() {
     updateTask,
   } = useOutletContext();
 
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
   const safeTasks = Array.isArray(tasks) ? tasks : [];
 
   const archivedTasks = safeTasks.filter(
     (task) => task?.archived === true
   );
+
+  // =========================================================
+  // RESTORE
+  // =========================================================
 
   const restoreTask = (taskId) => {
     if (!updateTask) return;
@@ -25,120 +38,358 @@ function Archives() {
     });
   };
 
-  const deleteArchivedTask = (taskId) => {
-    if (window.confirm("Delete this archived task permanently?")) {
-      deleteTask(taskId);
+  // =========================================================
+  // OPEN DELETE CONFIRMATION
+  // =========================================================
+
+  const requestDelete = (task) => {
+    setDeleteTarget(task);
+  };
+
+  // =========================================================
+  // CANCEL DELETE
+  // =========================================================
+
+  const cancelDelete = () => {
+    setDeleteTarget(null);
+  };
+
+  // =========================================================
+  // CONFIRM DELETE
+  // =========================================================
+
+  const confirmDelete = () => {
+    if (!deleteTarget || !deleteTask) {
+      setDeleteTarget(null);
+      return;
     }
+
+    deleteTask(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6">
-      {/* HEADER */}
-      <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-[#765b6b]">
-            Storage
-          </p>
+    <>
+      {/* =====================================================
+          MAIN ARCHIVES PAGE
+      ===================================================== */}
 
-          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-            Archives
-          </h1>
+      <div className="mx-auto w-full max-w-7xl space-y-6">
+        {/* HEADER */}
 
-          <p className="mt-2 text-sm text-[#716d66] dark:text-[#aaa69e]">
-            Keep old tasks out of your workspace without deleting them.
-          </p>
-        </div>
-      </section>
-
-      {/* ARCHIVE COUNT */}
-      <section className="rounded-3xl border border-[#e1dcd4] bg-white p-6 shadow-sm dark:border-[#343934] dark:bg-[#1d211e]">
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#f0e9ee] text-[#765b6b] dark:bg-[#332a30] dark:text-[#c9aebe]">
-            <Archive size={27} />
-          </div>
-
+        <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <p className="text-3xl font-black">
-              {archivedTasks.length}
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#765b6b]">
+              Storage
             </p>
 
-            <p className="text-xs font-semibold text-[#918b82]">
-              archived{" "}
-              {archivedTasks.length === 1
-                ? "task"
-                : "tasks"}
+            <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+              Archives
+            </h1>
+
+            <p className="mt-2 text-sm text-[#716d66] dark:text-[#aaa69e]">
+              Keep old tasks out of your workspace without
+              deleting them.
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ARCHIVED TASKS */}
-      <section className="space-y-3">
-        {archivedTasks.length > 0 ? (
-          archivedTasks.map((task) => (
-            <div
-              key={task.id}
-              className="space-y-2"
-            >
-              <TaskCard
-                task={task}
-                onToggle={toggleTask}
-                onDelete={deleteArchivedTask}
-                onEdit={() => {}}
-              />
+        {/* ARCHIVE COUNT */}
 
-              {/* RESTORE */}
-              <div className="flex justify-end">
+        <section className="rounded-3xl border border-[#e1dcd4] bg-white p-6 shadow-sm dark:border-[#343934] dark:bg-[#1d211e]">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#f0e9ee] text-[#765b6b] dark:bg-[#332a30] dark:text-[#c9aebe]">
+              <Archive size={27} />
+            </div>
+
+            <div>
+              <p className="text-3xl font-black">
+                {archivedTasks.length}
+              </p>
+
+              <p className="text-xs font-semibold text-[#918b82]">
+                archived{" "}
+                {archivedTasks.length === 1
+                  ? "task"
+                  : "tasks"}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ARCHIVED TASKS */}
+
+        <section className="space-y-3">
+          {archivedTasks.length > 0 ? (
+            archivedTasks.map((task) => (
+              <div
+                key={task.id}
+                className="space-y-2"
+              >
+                <TaskCard
+                  task={task}
+                  onToggle={toggleTask}
+                  onDelete={() => requestDelete(task)}
+                  onEdit={() => {}}
+                />
+
+                {/* RESTORE */}
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      restoreTask(task.id)
+                    }
+                    className="
+                      inline-flex
+                      items-center
+                      gap-2
+                      rounded-xl
+                      bg-[#765b6b]/10
+                      px-3
+                      py-2
+                      text-xs
+                      font-black
+                      text-[#765b6b]
+                      transition
+                      hover:bg-[#765b6b]/20
+                      dark:bg-[#765b6b]/20
+                      dark:text-[#c9aebe]
+                    "
+                  >
+                    <RotateCcw size={14} />
+                    Restore task
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <EmptyState
+              title="No archived tasks"
+              description="Tasks you archive will appear here."
+            />
+          )}
+        </section>
+
+        {/* INFO */}
+
+        {archivedTasks.length > 0 && (
+          <div className="flex items-start gap-3 rounded-2xl border border-[#e1dcd4] bg-[#f7f5f0] p-4 dark:border-[#343934] dark:bg-[#1d211e]">
+            <Archive
+              size={17}
+              className="mt-0.5 shrink-0 text-[#765b6b]"
+            />
+
+            <p className="text-xs font-semibold leading-5 text-[#716d66] dark:text-[#aaa69e]">
+              Archived tasks are hidden from My Tasks but are
+              still saved. You can restore them whenever you
+              need them again.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* =====================================================
+          DELETE CONFIRMATION MODAL
+      ===================================================== */}
+
+      {deleteTarget && (
+        <div
+          className="
+            fixed
+            inset-0
+            z-[200]
+            flex
+            items-center
+            justify-center
+            bg-black/40
+            p-4
+            backdrop-blur-[3px]
+            dark:bg-black/65
+          "
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              cancelDelete();
+            }
+          }}
+        >
+          <div
+            className="
+              w-full
+              max-w-md
+              overflow-hidden
+              rounded-[28px]
+              border
+              border-black/10
+              bg-[#faf9f6]
+              shadow-2xl
+              dark:border-white/10
+              dark:bg-[#171a17]
+            "
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
+          >
+            {/* MODAL HEADER */}
+
+            <div className="flex items-start justify-between px-6 pb-2 pt-6">
+              <div
+                className="
+                  flex
+                  h-12
+                  w-12
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  bg-red-500/10
+                  text-red-500
+                  dark:bg-red-500/15
+                  dark:text-red-400
+                "
+              >
+                <AlertTriangle size={22} />
+              </div>
+
+              <button
+                type="button"
+                onClick={cancelDelete}
+                className="
+                  rounded-xl
+                  p-2
+                  text-black/35
+                  transition
+                  hover:bg-black/5
+                  hover:text-black
+                  dark:text-white/35
+                  dark:hover:bg-white/10
+                  dark:hover:text-white
+                "
+                aria-label="Close"
+              >
+                <X size={19} />
+              </button>
+            </div>
+
+            {/* MODAL CONTENT */}
+
+            <div className="px-6 pb-6 pt-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 dark:text-red-400">
+                Permanent deletion
+              </p>
+
+              <h2 className="mt-2 text-xl font-black text-[#292725] dark:text-white">
+                Delete this task?
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[#716d66] dark:text-[#aaa69e]">
+                This will permanently remove the archived
+                task. You won't be able to restore it
+                afterwards.
+              </p>
+
+              {/* TASK PREVIEW */}
+
+              <div
+                className="
+                  mt-5
+                  rounded-2xl
+                  border
+                  border-[#e1dcd4]
+                  bg-[#f7f5f0]
+                  p-4
+                  dark:border-[#343934]
+                  dark:bg-[#1d211e]
+                "
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className="
+                      mt-0.5
+                      flex
+                      h-9
+                      w-9
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      bg-[#765b6b]/10
+                      text-[#765b6b]
+                      dark:bg-[#765b6b]/20
+                      dark:text-[#c9aebe]
+                    "
+                  >
+                    <Archive size={16} />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-[#292725] dark:text-white">
+                      {deleteTarget.title ||
+                        "Untitled task"}
+                    </p>
+
+                    {deleteTarget.description && (
+                      <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-[#918b82]">
+                        {deleteTarget.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ACTIONS */}
+
+              <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <button
                   type="button"
-                  onClick={() => restoreTask(task.id)}
+                  onClick={cancelDelete}
+                  className="
+                    rounded-xl
+                    px-5
+                    py-3
+                    text-sm
+                    font-black
+                    text-black/45
+                    transition
+                    hover:bg-black/5
+                    dark:text-white/45
+                    dark:hover:bg-white/10
+                  "
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={confirmDelete}
                   className="
                     inline-flex
                     items-center
+                    justify-center
                     gap-2
                     rounded-xl
-                    bg-[#765b6b]/10
-                    px-3
-                    py-2
-                    text-xs
+                    bg-red-500
+                    px-5
+                    py-3
+                    text-sm
                     font-black
-                    text-[#765b6b]
+                    text-white
+                    shadow-lg
+                    shadow-red-500/15
                     transition
-                    hover:bg-[#765b6b]/20
-                    dark:bg-[#765b6b]/20
-                    dark:text-[#c9aebe]
+                    hover:bg-red-600
+                    hover:shadow-xl
                   "
                 >
-                  <RotateCcw size={14} />
-                  Restore task
+                  <Trash2 size={16} />
+                  Delete permanently
                 </button>
               </div>
             </div>
-          ))
-        ) : (
-          <EmptyState
-            title="No archived tasks"
-            description="Tasks you archive will appear here."
-          />
-        )}
-      </section>
-
-      {/* INFO */}
-      {archivedTasks.length > 0 && (
-        <div className="flex items-start gap-3 rounded-2xl border border-[#e1dcd4] bg-[#f7f5f0] p-4 dark:border-[#343934] dark:bg-[#1d211e]">
-          <Archive
-            size={17}
-            className="mt-0.5 shrink-0 text-[#765b6b]"
-          />
-
-          <p className="text-xs font-semibold leading-5 text-[#716d66] dark:text-[#aaa69e]">
-            Archived tasks are hidden from My Tasks but are
-            still saved. You can restore them whenever you
-            need them again.
-          </p>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
