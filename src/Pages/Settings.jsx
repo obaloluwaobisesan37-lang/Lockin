@@ -30,7 +30,7 @@ function Settings() {
     badges = [],
     focusMode = false,
     setFocusMode,
-    theme = "light",
+    theme = "system",
     changeTheme,
     resetEverything,
   } = useOutletContext();
@@ -48,23 +48,28 @@ function Settings() {
       );
     });
 
-  const [sound, setSound] = useState(() => {
-    return (
-      localStorage.getItem(
-        "lockin_sound"
-      ) !== "false"
-    );
-  });
+  const [sound, setSound] =
+    useState(() => {
+      return (
+        localStorage.getItem(
+          "lockin_sound"
+        ) !== "false"
+      );
+    });
 
   // =====================================================
   // MODALS
   // =====================================================
 
-  const [resetProgressModal, setResetProgressModal] =
-    useState(false);
+  const [
+    resetProgressModal,
+    setResetProgressModal,
+  ] = useState(false);
 
-  const [deleteTasksModal, setDeleteTasksModal] =
-    useState(false);
+  const [
+    deleteTasksModal,
+    setDeleteTasksModal,
+  ] = useState(false);
 
   const [
     resetEverythingModal,
@@ -94,17 +99,12 @@ function Settings() {
   }, [sound]);
 
   // =====================================================
-  // APPLY THEME FROM SETTINGS
-  //
-  // ONLY SETTINGS CAN SELECT:
-  //
-  // Light
-  // Dark
-  // System
-  //
+  // APPLY THEME
   // =====================================================
 
-  const applyTheme = (selectedTheme) => {
+  const applyTheme = (
+    selectedTheme
+  ) => {
     if (
       selectedTheme !== "light" &&
       selectedTheme !== "dark" &&
@@ -120,49 +120,66 @@ function Settings() {
   // CLEAR COMPLETED
   // =====================================================
 
-  const handleClearCompleted = () => {
-    clearCompleted?.();
-  };
+  const handleClearCompleted =
+    () => {
+      clearCompleted?.();
+    };
 
   // =====================================================
   // RESET PROGRESS
   // =====================================================
 
-  const handleResetProgress = () => {
-    setResetProgressModal(false);
-  };
+  const handleResetProgress =
+    () => {
+      setResetProgressModal(
+        false
+      );
+    };
 
   // =====================================================
   // DELETE ALL TASKS
   // =====================================================
 
-  const handleDeleteAllTasks = () => {
-    clearAllTasks?.();
-    setDeleteTasksModal(false);
-  };
+  const handleDeleteAllTasks =
+    () => {
+      clearAllTasks?.();
+      setDeleteTasksModal(
+        false
+      );
+    };
 
   // =====================================================
   // RESET EVERYTHING
   // =====================================================
 
-  const handleResetEverything = () => {
-    resetEverything?.();
+  const handleResetEverything =
+    () => {
+      resetEverything?.();
 
-    setNotifications(true);
-    setSound(true);
+      // Reset Settings preferences too.
+      setNotifications(true);
+      setSound(true);
 
-    localStorage.setItem(
-      "lockin_notifications_enabled",
-      "true"
-    );
+      localStorage.setItem(
+        "lockin_notifications_enabled",
+        "true"
+      );
 
-    localStorage.setItem(
-      "lockin_sound",
-      "true"
-    );
+      localStorage.setItem(
+        "lockin_sound",
+        "true"
+      );
 
-    setResetEverythingModal(false);
-  };
+      // Default theme is SYSTEM.
+      localStorage.setItem(
+        "lockin_theme",
+        "system"
+      );
+
+      setResetEverythingModal(
+        false
+      );
+    };
 
   // =====================================================
   // THEME OPTIONS
@@ -172,19 +189,22 @@ function Settings() {
     {
       id: "light",
       title: "Light",
-      description: "Bright and clean.",
+      description:
+        "Bright and clean.",
       icon: Sun,
     },
     {
       id: "dark",
       title: "Dark",
-      description: "Easy on the eyes.",
+      description:
+        "Easy on the eyes.",
       icon: Moon,
     },
     {
       id: "system",
       title: "System",
-      description: "Follow your device.",
+      description:
+        "Follow your device.",
       icon: Monitor,
     },
   ];
@@ -195,7 +215,9 @@ function Settings() {
 
   return (
     <div className="mx-auto w-full max-w-5xl pb-10">
-      {/* HEADER */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
       <div className="mb-8">
         <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#765b6b]/10 px-3 py-1.5 text-xs font-black text-[#765b6b] dark:bg-[#765b6b]/20 dark:text-[#c7aebe]">
@@ -209,8 +231,8 @@ function Settings() {
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
           Control your Lockin experience,
-          productivity preferences, appearance and
-          data.
+          productivity preferences, appearance
+          and data.
         </p>
       </div>
 
@@ -243,7 +265,8 @@ function Settings() {
             aria-pressed={focusMode}
             onClick={() =>
               setFocusMode?.(
-                (current) => !current
+                (current) =>
+                  !current
               )
             }
             className={`relative h-7 w-12 shrink-0 rounded-full transition ${
@@ -309,10 +332,13 @@ function Settings() {
             <button
               type="button"
               role="switch"
-              aria-checked={notifications}
+              aria-checked={
+                notifications
+              }
               onClick={() =>
                 setNotifications(
-                  (current) => !current
+                  (current) =>
+                    !current
                 )
               }
               className={`relative h-7 w-12 shrink-0 rounded-full transition ${
@@ -353,7 +379,7 @@ function Settings() {
                 </p>
 
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Play sounds when tasks are completed.
+                  Play sounds when notifications appear.
                 </p>
               </div>
             </div>
@@ -364,7 +390,8 @@ function Settings() {
               aria-checked={sound}
               onClick={() =>
                 setSound(
-                  (current) => !current
+                  (current) =>
+                    !current
                 )
               }
               className={`relative h-7 w-12 shrink-0 rounded-full transition ${
@@ -408,48 +435,60 @@ function Settings() {
 
         <div className="p-5">
           <div className="grid gap-3 sm:grid-cols-3">
-            {themeOptions.map((option) => {
-              const Icon = option.icon;
+            {themeOptions.map(
+              (option) => {
+                const Icon =
+                  option.icon;
 
-              const selected =
-                theme === option.id;
+                const selected =
+                  theme ===
+                  option.id;
 
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() =>
-                    applyTheme(option.id)
-                  }
-                  className={`relative rounded-2xl border p-4 text-left transition-all duration-200 ${
-                    selected
-                      ? "border-[#765b6b] bg-[#765b6b]/10 ring-2 ring-[#765b6b]/20 dark:bg-[#765b6b]/20"
-                      : "border-slate-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 dark:border-[#343a35] dark:hover:bg-[#232823]"
-                  }`}
-                >
-                  {selected && (
-                    <div className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-[#765b6b]" />
-                  )}
-
-                  <Icon
-                    size={21}
-                    className={
-                      selected
-                        ? "text-[#765b6b] dark:text-[#c7aebe]"
-                        : "text-slate-400"
+                return (
+                  <button
+                    key={
+                      option.id
                     }
-                  />
+                    type="button"
+                    onClick={() =>
+                      applyTheme(
+                        option.id
+                      )
+                    }
+                    className={`relative rounded-2xl border p-4 text-left transition-all duration-200 ${
+                      selected
+                        ? "border-[#765b6b] bg-[#765b6b]/10 ring-2 ring-[#765b6b]/20 dark:bg-[#765b6b]/20"
+                        : "border-slate-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 dark:border-[#343a35] dark:hover:bg-[#232823]"
+                    }`}
+                  >
+                    {selected && (
+                      <div className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-[#765b6b]" />
+                    )}
 
-                  <p className="mt-3 text-sm font-black">
-                    {option.title}
-                  </p>
+                    <Icon
+                      size={21}
+                      className={
+                        selected
+                          ? "text-[#765b6b] dark:text-[#c7aebe]"
+                          : "text-slate-400"
+                      }
+                    />
 
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    {option.description}
-                  </p>
-                </button>
-              );
-            })}
+                    <p className="mt-3 text-sm font-black">
+                      {
+                        option.title
+                      }
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      {
+                        option.description
+                      }
+                    </p>
+                  </button>
+                );
+              }
+            )}
           </div>
 
           <div className="mt-4 rounded-2xl bg-slate-50 p-4 dark:bg-[#232823]">
@@ -461,8 +500,8 @@ function Settings() {
             </p>
 
             <p className="mt-1 text-[11px] text-slate-400">
-              Navbar button switches between Light and
-              Dark without changing System selection.
+              System follows your device's
+              light/dark setting automatically.
             </p>
           </div>
         </div>
@@ -484,7 +523,8 @@ function Settings() {
             </h2>
 
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Level {level} · {xp} XP · {energy} energy
+              Level {level} · {xp} XP ·{" "}
+              {energy} energy
             </p>
           </div>
         </div>
@@ -525,7 +565,9 @@ function Settings() {
           <button
             type="button"
             onClick={() =>
-              setResetProgressModal(true)
+              setResetProgressModal(
+                true
+              )
             }
             className="mt-5 inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm font-black text-violet-700 transition hover:bg-violet-50 dark:border-violet-900/50 dark:bg-[#1b1f1c] dark:text-violet-400 dark:hover:bg-violet-950/20"
           >
@@ -563,7 +605,9 @@ function Settings() {
         <div className="divide-y divide-slate-200 dark:divide-[#343a35]">
           <button
             type="button"
-            onClick={handleClearCompleted}
+            onClick={
+              handleClearCompleted
+            }
             className="flex w-full items-center justify-between gap-4 p-5 text-left transition hover:bg-slate-50 dark:hover:bg-[#202521]"
           >
             <div className="flex items-center gap-3">
@@ -596,7 +640,9 @@ function Settings() {
           <button
             type="button"
             onClick={() =>
-              setDeleteTasksModal(true)
+              setDeleteTasksModal(
+                true
+              )
             }
             className="flex w-full items-center justify-between gap-4 p-5 text-left transition hover:bg-rose-50 dark:hover:bg-rose-950/20"
           >
@@ -640,15 +686,17 @@ function Settings() {
             </h2>
 
             <p className="mt-1 max-w-xl text-xs leading-5 text-slate-500 dark:text-slate-400">
-              Reset your entire Lockin workspace. This
-              deletes tasks and projects and resets your
-              productivity progress.
+              Reset your entire Lockin workspace.
+              This deletes tasks and projects and
+              resets your productivity progress.
             </p>
 
             <button
               type="button"
               onClick={() =>
-                setResetEverythingModal(true)
+                setResetEverythingModal(
+                  true
+                )
               }
               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-rose-600/20 transition hover:bg-rose-700"
             >
@@ -667,7 +715,9 @@ function Settings() {
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
           onClick={() =>
-            setResetProgressModal(false)
+            setResetProgressModal(
+              false
+            )
           }
         >
           <div
@@ -695,7 +745,9 @@ function Settings() {
               <div className="mt-6 flex justify-end">
                 <button
                   type="button"
-                  onClick={handleResetProgress}
+                  onClick={
+                    handleResetProgress
+                  }
                   className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white hover:bg-violet-700"
                 >
                   Close
@@ -714,7 +766,9 @@ function Settings() {
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
           onClick={() =>
-            setDeleteTasksModal(false)
+            setDeleteTasksModal(
+              false
+            )
           }
         >
           <div
@@ -754,7 +808,9 @@ function Settings() {
                 <button
                   type="button"
                   onClick={() =>
-                    setDeleteTasksModal(false)
+                    setDeleteTasksModal(
+                      false
+                    )
                   }
                   className="rounded-xl px-5 py-3 text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
@@ -784,7 +840,9 @@ function Settings() {
         <div
           className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
           onClick={() =>
-            setResetEverythingModal(false)
+            setResetEverythingModal(
+              false
+            )
           }
         >
           <div
@@ -817,8 +875,13 @@ function Settings() {
                 </p>
 
                 <p className="mt-1 text-xs text-rose-600/70 dark:text-rose-400/70">
-                  Your theme will also return to Light
+                  Your theme will also return to System
                   mode.
+                </p>
+
+                <p className="mt-1 text-xs text-rose-600/70 dark:text-rose-400/70">
+                  Notifications and notification sounds
+                  will be turned back on.
                 </p>
               </div>
 
@@ -826,7 +889,9 @@ function Settings() {
                 <button
                   type="button"
                   onClick={() =>
-                    setResetEverythingModal(false)
+                    setResetEverythingModal(
+                      false
+                    )
                   }
                   className="rounded-xl px-5 py-3 text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
