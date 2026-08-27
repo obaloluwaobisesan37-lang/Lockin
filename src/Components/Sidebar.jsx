@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import {
@@ -81,6 +81,27 @@ function Sidebar({
     : [];
 
   // =========================================================
+  // CLOSE MORE MENU WHEN SCREEN BECOMES DESKTOP
+  // =========================================================
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setMoreOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener(
+        "resize",
+        handleResize
+      );
+    };
+  }, []);
+
+  // =========================================================
   // TASK STATS
   // =========================================================
 
@@ -120,22 +141,21 @@ function Sidebar({
 
   // =========================================================
   // MOBILE LINKS
-  // These are always visible.
   // =========================================================
 
   const mobileMainLinks = [
-    links[0], // Dashboard
-    links[1], // My Tasks
-    links[2], // Projects
-    links[4], // Completed
-    links[5], // Archives
+    links[0],
+    links[1],
+    links[2],
+    links[4],
+    links[5],
   ];
 
   const mobileMoreLinks = [
-    links[3], // Task Overview
-    links[6], // Calendar
-    links[7], // Profile
-    links[8], // Settings
+    links[3],
+    links[6],
+    links[7],
+    links[8],
   ];
 
   return (
@@ -151,7 +171,7 @@ function Sidebar({
           left-0
           z-40
           hidden
-          w-72
+          w-64
           flex-col
           overflow-hidden
           border-r
@@ -161,20 +181,32 @@ function Sidebar({
           duration-300
           dark:border-[#393a36]
           dark:bg-[#171a17]
+          lg:w-72
           md:flex
         "
       >
-        {/* =====================================================
+        {/* ===================================================
             LOGO
-        ===================================================== */}
+        =================================================== */}
 
-        <div className="shrink-0 px-6 pb-6 pt-7">
+        <div
+          className="
+            shrink-0
+            px-4
+            pb-5
+            pt-6
+            sm:px-5
+            sm:pb-6
+            sm:pt-7
+            lg:px-6
+          "
+        >
           <div className="flex items-center gap-3">
             <div
               className="
                 flex
-                h-11
-                w-11
+                h-10
+                w-10
                 shrink-0
                 items-center
                 justify-center
@@ -183,23 +215,25 @@ function Sidebar({
                 text-white
                 shadow-lg
                 shadow-[#765b6b]/20
+                sm:h-11
+                sm:w-11
               "
             >
               <Sparkles
-                size={20}
+                size={19}
                 strokeWidth={2.2}
               />
             </div>
 
             <div className="min-w-0">
-              <h1 className="text-2xl font-black tracking-tight text-[#292725] dark:text-white">
+              <h1 className="text-xl font-black tracking-tight text-[#292725] sm:text-2xl dark:text-white">
                 Lock
                 <span className="text-[#765b6b]">
                   in
                 </span>
               </h1>
 
-              <p className="truncate text-[9px] font-bold uppercase tracking-[0.22em] text-[#918b82]">
+              <p className="truncate text-[8px] font-bold uppercase tracking-[0.18em] text-[#918b82] sm:text-[9px] sm:tracking-[0.22em]">
                 Task Management
               </p>
             </div>
@@ -208,11 +242,11 @@ function Sidebar({
 
         {/* DIVIDER */}
 
-        <div className="mx-5 h-px shrink-0 bg-[#ddd8cf] dark:bg-[#393a36]" />
+        <div className="mx-4 h-px shrink-0 bg-[#ddd8cf] lg:mx-5 dark:bg-[#393a36]" />
 
-        {/* =====================================================
+        {/* ===================================================
             DESKTOP NAVIGATION
-        ===================================================== */}
+        =================================================== */}
 
         <nav
           className="
@@ -220,15 +254,17 @@ function Sidebar({
             flex-1
             overflow-y-auto
             overflow-x-hidden
-            px-3
-            py-5
+            px-2.5
+            py-4
+            sm:px-3
+            sm:py-5
           "
         >
-          <p className="mb-3 px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[#918b82]">
+          <p className="mb-3 px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-[#918b82] sm:px-4 sm:text-[10px]">
             Workspace
           </p>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {links.map((link) => {
               const Icon = link.icon;
 
@@ -242,14 +278,17 @@ function Sidebar({
                     flex
                     w-full
                     items-center
-                    gap-3
+                    gap-2.5
                     rounded-2xl
-                    px-4
-                    py-3
+                    px-3
+                    py-2.5
                     text-sm
                     font-semibold
                     transition-all
                     duration-200
+                    sm:gap-3
+                    sm:px-4
+                    sm:py-3
                     ${
                       isActive
                         ? "bg-[#765b6b] text-white shadow-lg shadow-[#765b6b]/20"
@@ -260,11 +299,11 @@ function Sidebar({
                   {({ isActive }) => (
                     <>
                       <Icon
-                        size={19}
+                        size={18}
                         strokeWidth={
                           isActive ? 2.4 : 2
                         }
-                        className="shrink-0"
+                        className="shrink-0 sm:h-[19px] sm:w-[19px]"
                       />
 
                       <span className="min-w-0 flex-1 truncate">
@@ -278,6 +317,7 @@ function Sidebar({
                               flex
                               h-5
                               min-w-5
+                              shrink-0
                               items-center
                               justify-center
                               rounded-full
@@ -297,7 +337,7 @@ function Sidebar({
 
                       {isActive && (
                         <ChevronRight
-                          size={16}
+                          size={15}
                           strokeWidth={2.4}
                           className="shrink-0"
                         />
@@ -310,27 +350,28 @@ function Sidebar({
           </div>
         </nav>
 
-        {/* =====================================================
+        {/* ===================================================
             BOTTOM STATS
-        ===================================================== */}
+        =================================================== */}
 
-        <div className="shrink-0 p-4">
+        <div className="shrink-0 p-3 sm:p-4">
           <div
             className="
               rounded-3xl
               border
               border-[#e1dcd4]
               bg-white
-              p-5
+              p-4
               transition-colors
               duration-300
+              sm:p-5
               dark:border-[#343934]
               dark:bg-[#1d211e]
             "
           >
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-wider text-[#918b82]">
+                <p className="text-[9px] font-black uppercase tracking-wider text-[#918b82] sm:text-[10px]">
                   Workspace
                 </p>
 
@@ -342,18 +383,20 @@ function Sidebar({
               <div
                 className="
                   flex
-                  h-9
-                  w-9
+                  h-8
+                  w-8
                   shrink-0
                   items-center
                   justify-center
                   rounded-xl
                   bg-[#f0e9ee]
                   text-[#765b6b]
+                  sm:h-9
+                  sm:w-9
                   dark:bg-[#332a30]
                 "
               >
-                <BarChart3 size={17} />
+                <BarChart3 size={16} />
               </div>
             </div>
 
@@ -383,22 +426,22 @@ function Sidebar({
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <div className="rounded-xl bg-[#f6f4ef] p-3 dark:bg-[#252925]">
-                <p className="text-[9px] font-bold uppercase text-[#918b82]">
+              <div className="rounded-xl bg-[#f6f4ef] p-2.5 sm:p-3 dark:bg-[#252925]">
+                <p className="text-[8px] font-bold uppercase text-[#918b82] sm:text-[9px]">
                   Pending
                 </p>
 
-                <p className="mt-1 text-lg font-black text-[#292725] dark:text-white">
+                <p className="mt-1 text-base font-black text-[#292725] sm:text-lg dark:text-white">
                   {pendingTasks}
                 </p>
               </div>
 
-              <div className="rounded-xl bg-[#f6f4ef] p-3 dark:bg-[#252925]">
-                <p className="text-[9px] font-bold uppercase text-[#918b82]">
+              <div className="rounded-xl bg-[#f6f4ef] p-2.5 sm:p-3 dark:bg-[#252925]">
+                <p className="text-[8px] font-bold uppercase text-[#918b82] sm:text-[9px]">
                   Projects
                 </p>
 
-                <p className="mt-1 text-lg font-black text-[#292725] dark:text-white">
+                <p className="mt-1 text-base font-black text-[#292725] sm:text-lg dark:text-white">
                   {activeProjects}
                 </p>
               </div>
@@ -456,98 +499,142 @@ function Sidebar({
           border-t
           border-[#ddd8cf]
           bg-[#f7f5f0]/95
-          px-2
-          pb-[max(0.5rem,env(safe-area-inset-bottom))]
-          pt-2
+          px-1.5
+          pb-[max(0.4rem,env(safe-area-inset-bottom))]
+          pt-1.5
           shadow-[0_-10px_30px_rgba(0,0,0,0.08)]
           backdrop-blur-xl
           transition-colors
           duration-300
+          sm:px-2
+          sm:pb-[max(0.5rem,env(safe-area-inset-bottom))]
+          sm:pt-2
           dark:border-[#393a36]
           dark:bg-[#171a17]/95
           md:hidden
         "
       >
-        {/* =====================================================
+        {/* ===================================================
             MORE MENU
-        ===================================================== */}
+        =================================================== */}
 
         {moreOpen && (
-          <div
-            className="
-              absolute
-              bottom-[78px]
-              right-3
-              w-56
-              overflow-hidden
-              rounded-3xl
-              border
-              border-[#ddd8cf]
-              bg-[#f7f5f0]
-              p-2
-              shadow-2xl
-              dark:border-[#393a36]
-              dark:bg-[#1d211e]
-            "
-          >
-            <div className="mb-1 flex items-center justify-between px-3 py-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#918b82]">
-                More
-              </p>
+          <>
+            {/* BACKDROP */}
 
-              <button
-                type="button"
-                onClick={() => setMoreOpen(false)}
-                className="rounded-lg p-1 text-[#918b82] hover:bg-black/5 dark:hover:bg-white/10"
-              >
-                <X size={15} />
-              </button>
-            </div>
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setMoreOpen(false)}
+              className="
+                fixed
+                inset-0
+                z-[-1]
+                cursor-default
+                bg-black/10
+                backdrop-blur-[1px]
+              "
+            />
 
-            <div className="space-y-1">
-              {mobileMoreLinks.map((link) => {
-                const Icon = link.icon;
+            <div
+              className="
+                absolute
+                bottom-[72px]
+                right-2
+                max-h-[calc(100vh-100px)]
+                w-[calc(100vw-1rem)]
+                max-w-80
+                overflow-y-auto
+                rounded-3xl
+                border
+                border-[#ddd8cf]
+                bg-[#f7f5f0]
+                p-2
+                shadow-2xl
+                sm:bottom-[78px]
+                sm:right-3
+                sm:w-56
+                dark:border-[#393a36]
+                dark:bg-[#1d211e]
+              "
+            >
+              <div className="mb-1 flex items-center justify-between px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#918b82]">
+                  More
+                </p>
 
-                return (
-                  <NavLink
-                    key={link.path}
-                    to={link.path}
-                    end={link.end}
-                    onClick={() =>
-                      setMoreOpen(false)
-                    }
-                    className={({ isActive }) => `
-                      flex
-                      items-center
-                      gap-3
-                      rounded-2xl
-                      px-3
-                      py-3
-                      text-sm
-                      font-bold
-                      transition
-                      ${
-                        isActive
-                          ? "bg-[#765b6b] text-white"
-                          : "text-[#716d66] hover:bg-[#e9e5de] dark:text-[#aaa69e] dark:hover:bg-[#292b29]"
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMoreOpen(false)
+                  }
+                  className="
+                    rounded-lg
+                    p-1
+                    text-[#918b82]
+                    transition
+                    hover:bg-black/5
+                    dark:hover:bg-white/10
+                  "
+                  aria-label="Close more menu"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                {mobileMoreLinks.map((link) => {
+                  const Icon = link.icon;
+
+                  return (
+                    <NavLink
+                      key={link.path}
+                      to={link.path}
+                      end={link.end}
+                      onClick={() =>
+                        setMoreOpen(false)
                       }
-                    `}
-                  >
-                    <Icon size={18} />
+                      className={({ isActive }) => `
+                        flex
+                        items-center
+                        gap-3
+                        rounded-2xl
+                        px-3
+                        py-3
+                        text-sm
+                        font-bold
+                        transition
+                        ${
+                          isActive
+                            ? "bg-[#765b6b] text-white"
+                            : "text-[#716d66] hover:bg-[#e9e5de] dark:text-[#aaa69e] dark:hover:bg-[#292b29]"
+                        }
+                      `}
+                    >
+                      <Icon size={18} />
 
-                    <span>{link.name}</span>
-                  </NavLink>
-                );
-              })}
+                      <span>{link.name}</span>
+
+                      {link.path ===
+                        "/archives" &&
+                        archivedTasks > 0 && (
+                          <span className="ml-auto rounded-full bg-[#765b6b]/10 px-2 py-1 text-[9px] font-black text-[#765b6b] dark:bg-white/10 dark:text-[#c9aebe]">
+                            {archivedTasks}
+                          </span>
+                        )}
+                    </NavLink>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
-        {/* =====================================================
+        {/* ===================================================
             MAIN MOBILE BUTTONS
-        ===================================================== */}
+        =================================================== */}
 
-        <div className="mx-auto flex w-full max-w-lg items-center gap-1">
+        <div className="mx-auto flex w-full max-w-xl items-center gap-0.5 sm:gap-1">
           {mobileMainLinks.map((link) => {
             const Icon = link.icon;
 
@@ -564,16 +651,19 @@ function Sidebar({
                       relative
                       mx-auto
                       flex
-                      min-h-[58px]
+                      min-h-[54px]
                       w-full
                       max-w-[78px]
                       flex-col
                       items-center
                       justify-center
-                      gap-1
+                      gap-0.5
                       rounded-2xl
+                      px-0.5
                       transition-all
                       duration-200
+                      sm:min-h-[58px]
+                      sm:gap-1
                       ${
                         isActive
                           ? "bg-[#765b6b] text-white shadow-md shadow-[#765b6b]/20"
@@ -582,13 +672,14 @@ function Sidebar({
                     `}
                   >
                     <Icon
-                      size={19}
+                      size={18}
                       strokeWidth={
                         isActive ? 2.4 : 2
                       }
+                      className="sm:h-[19px] sm:w-[19px]"
                     />
 
-                    <span className="max-w-full truncate px-1 text-[8px] font-bold">
+                    <span className="max-w-full truncate px-0.5 text-[7px] font-bold min-[380px]:text-[8px]">
                       {link.name}
                     </span>
 
@@ -599,8 +690,8 @@ function Sidebar({
                         <span
                           className={`
                             absolute
-                            right-1
-                            top-1
+                            right-0.5
+                            top-0.5
                             flex
                             h-4
                             min-w-4
@@ -626,15 +717,19 @@ function Sidebar({
             );
           })}
 
-          {/* ===================================================
+          {/* =================================================
               MORE BUTTON
-          =================================================== */}
+          ================================================= */}
 
           <button
             type="button"
             onClick={() =>
-              setMoreOpen((previous) => !previous)
+              setMoreOpen(
+                (previous) => !previous
+              )
             }
+            aria-expanded={moreOpen}
+            aria-label="More navigation options"
             className={`
               min-w-0
               flex-1
@@ -647,10 +742,12 @@ function Sidebar({
               }
             `}
           >
-            <div className="mx-auto flex min-h-[58px] max-w-[78px] flex-col items-center justify-center gap-1">
-              <MoreHorizontal size={20} />
+            <div className="mx-auto flex min-h-[54px] max-w-[78px] flex-col items-center justify-center gap-0.5 sm:min-h-[58px] sm:gap-1">
+              <MoreHorizontal
+                size={19}
+              />
 
-              <span className="text-[8px] font-bold">
+              <span className="text-[7px] font-bold min-[380px]:text-[8px]">
                 More
               </span>
             </div>

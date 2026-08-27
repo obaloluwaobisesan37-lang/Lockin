@@ -41,75 +41,61 @@ function App() {
 
   const playNotificationSound = () => {
     try {
-      const soundEnabled =
-        localStorage.getItem("lockin_sound") !== "false";
-
-      const notificationsEnabled =
-        localStorage.getItem(
-          "lockin_notifications_enabled"
-        ) !== "false";
-
-      if (!soundEnabled || !notificationsEnabled) {
-        return;
-      }
-
       const AudioContext =
-        window.AudioContext ||
-        window.webkitAudioContext;
+        window.AudioContext || window.webkitAudioContext;
 
-      if (!AudioContext) {
-        return;
-      }
+      if (!AudioContext) return;
 
       const audioContext = new AudioContext();
 
-      const oscillator =
-        audioContext.createOscillator();
+      const playTone = (
+        frequency,
+        startTime,
+        duration,
+        volume
+      ) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
 
-      const gainNode =
-        audioContext.createGain();
+        oscillator.type = "sine";
 
-      oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(
+          frequency,
+          startTime
+        );
 
-      oscillator.frequency.setValueAtTime(
-        660,
-        audioContext.currentTime
-      );
+        gainNode.gain.setValueAtTime(
+          0.0001,
+          startTime
+        );
 
-      oscillator.frequency.setValueAtTime(
-        880,
-        audioContext.currentTime + 0.08
-      );
+        gainNode.gain.exponentialRampToValueAtTime(
+          volume,
+          startTime + 0.02
+        );
 
-      gainNode.gain.setValueAtTime(
-        0,
-        audioContext.currentTime
-      );
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.0001,
+          startTime + duration
+        );
 
-      gainNode.gain.linearRampToValueAtTime(
-        0.12,
-        audioContext.currentTime + 0.02
-      );
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
 
-      gainNode.gain.exponentialRampToValueAtTime(
-        0.001,
-        audioContext.currentTime + 0.25
-      );
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.start();
-
-      oscillator.stop(
-        audioContext.currentTime + 0.25
-      );
-
-      oscillator.onended = () => {
-        audioContext.close().catch(() => {});
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
       };
+
+      const now = audioContext.currentTime;
+
+      playTone(880, now, 0.18, 0.45);
+      playTone(1174.66, now + 0.16, 0.25, 0.5);
+
+      setTimeout(() => {
+        audioContext.close().catch(() => {});
+      }, 700);
     } catch {
-      // Ignore browser audio errors.
+      // Ignore audio errors.
     }
   };
 
@@ -170,8 +156,24 @@ function App() {
   // =========================================================
 
   const [focusMode, setFocusMode] = useState(false);
-  const [focusSeconds, setFocusSeconds] = useState(5 * 60);
+
+  const [focusSeconds, setFocusSeconds] = useState(
+    25 * 60
+  );
+
   const [focusPaused, setFocusPaused] = useState(false);
+
+  const [focusDuration, setFocusDuration] =
+    useState(25 * 60);
+
+  const [customFocusMinutes, setCustomFocusMinutes] =
+    useState(25);
+
+  const [focusTask, setFocusTask] = useState(null);
+
+  // Mini countdown remains visible after exiting focus.
+  const [miniFocusVisible, setMiniFocusVisible] =
+    useState(false);
 
   // =========================================================
   // THEME
@@ -189,7 +191,7 @@ function App() {
       return savedTheme;
     }
 
-    return "light";
+    return "system";
   });
 
   const [darkMode, setDarkModeState] = useState(() => {
@@ -302,15 +304,11 @@ function App() {
       return;
     }
 
-    setTheme(
-      darkMode
-        ? "light"
-        : "dark"
-    );
+    setTheme(darkMode ? "light" : "dark");
   };
 
   // =========================================================
-  // COMPATIBILITY SET DARK MODE
+  // COMPATIBILITY DARK MODE
   // =========================================================
 
   const setDarkMode = (value) => {
@@ -318,11 +316,7 @@ function App() {
       setDarkModeState((current) => {
         const nextValue = value(current);
 
-        setTheme(
-          nextValue
-            ? "dark"
-            : "light"
-        );
+        setTheme(nextValue ? "dark" : "light");
 
         return nextValue;
       });
@@ -334,19 +328,14 @@ function App() {
 
     setDarkModeState(nextValue);
 
-    setTheme(
-      nextValue
-        ? "dark"
-        : "light"
-    );
+    setTheme(nextValue ? "dark" : "light");
   };
 
   // =========================================================
   // SEARCH
   // =========================================================
 
-  const [globalSearch, setGlobalSearch] =
-    useState("");
+  const [globalSearch, setGlobalSearch] = useState("");
 
   // =========================================================
   // NOTIFICATIONS
@@ -354,45 +343,34 @@ function App() {
 
   const [notificationsList, setNotificationsList] =
     useState(() =>
-      getStorage(
-        "lockin_notifications",
-        []
-      )
+      getStorage("lockin_notifications", [])
     );
 
   // =========================================================
   // ACTIVITY
   // =========================================================
 
-  const [activity, setActivity] =
-    useState(() =>
-      getStorage(
-        "lockin_activity",
-        []
-      )
-    );
+  const [activity, setActivity] = useState(() =>
+    getStorage("lockin_activity", [])
+  );
 
   // =========================================================
   // MISSION
   // =========================================================
 
-  const [missionDate, setMissionDate] =
-    useState(() =>
-      getStorage(
-        "lockin_mission_date",
-        getToday()
-      )
-    );
+  const [missionDate, setMissionDate] = useState(() =>
+    getStorage(
+      "lockin_mission_date",
+      getToday()
+    )
+  );
 
   // =========================================================
   // TODO FILTERS
   // =========================================================
 
-  const [taskView, setTaskView] =
-    useState("list");
-
-  const [taskFilter, setTaskFilter] =
-    useState("all");
+  const [taskView, setTaskView] = useState("list");
+  const [taskFilter, setTaskFilter] = useState("all");
 
   const [priorityFilter, setPriorityFilter] =
     useState("all");
@@ -410,8 +388,7 @@ function App() {
   // TASK SELECTION
   // =========================================================
 
-  const [selectedTasks, setSelectedTasks] =
-    useState([]);
+  const [selectedTasks, setSelectedTasks] = useState([]);
 
   // =========================================================
   // SAVE DATA
@@ -499,44 +476,35 @@ function App() {
       read: false,
     };
 
-    setNotificationsList(
-      (previous) => [
-        notification,
-        ...previous,
-      ]
-    );
+    setNotificationsList((previous) => [
+      notification,
+      ...previous,
+    ]);
 
-    // PLAY NOTIFICATION SOUND
     playNotificationSound();
   };
 
   const markNotificationRead = (id) => {
-    setNotificationsList(
-      (previous) =>
-        previous.map(
-          (notification) =>
-            notification.id === id
-              ? {
-                  ...notification,
-                  read: true,
-                }
-              : notification
-        )
+    setNotificationsList((previous) =>
+      previous.map((notification) =>
+        notification.id === id
+          ? {
+              ...notification,
+              read: true,
+            }
+          : notification
+      )
     );
   };
 
-  const markAllNotificationsRead =
-    () => {
-      setNotificationsList(
-        (previous) =>
-          previous.map(
-            (notification) => ({
-              ...notification,
-              read: true,
-            })
-          )
-      );
-    };
+  const markAllNotificationsRead = () => {
+    setNotificationsList((previous) =>
+      previous.map((notification) => ({
+        ...notification,
+        read: true,
+      }))
+    );
+  };
 
   const clearNotifications = () => {
     setNotificationsList([]);
@@ -559,10 +527,7 @@ function App() {
     };
 
     setActivity((previous) =>
-      [item, ...previous].slice(
-        0,
-        100
-      )
+      [item, ...previous].slice(0, 100)
     );
   };
 
@@ -589,15 +554,11 @@ function App() {
     Math.floor(xp / 100) + 1
   );
 
-  const xpInsideLevel =
-    xp % 100;
+  const xpInsideLevel = xp % 100;
 
   const xpProgress = Math.min(
     100,
-    Math.max(
-      0,
-      xpInsideLevel
-    )
+    Math.max(0, xpInsideLevel)
   );
 
   // =========================================================
@@ -618,9 +579,7 @@ function App() {
       let current =
         previous.current || 0;
 
-      if (
-        !previous.lastCompletedDate
-      ) {
+      if (!previous.lastCompletedDate) {
         current = 1;
       } else {
         const previousDate =
@@ -656,8 +615,7 @@ function App() {
           previous.best || 0,
           current
         ),
-        lastCompletedDate:
-          today,
+        lastCompletedDate: today,
       };
     });
   };
@@ -666,85 +624,59 @@ function App() {
   // ADD TASK
   // =========================================================
 
-  const addTask = (
-    taskData = {}
-  ) => {
+  const addTask = (taskData = {}) => {
+    const title = String(
+      taskData.title || ""
+    ).trim();
+
+    if (!title) {
+      return null;
+    }
+
     const newTask = {
       id: makeId(),
-
-      title:
-        taskData.title ||
-        "New task",
-
+      title,
       description:
-        taskData.description ||
-        "",
-
+        taskData.description || "",
       priority:
-        taskData.priority ||
-        "Medium",
-
+        taskData.priority || "Medium",
       dueDate:
-        taskData.dueDate ||
-        "",
-
+        taskData.dueDate || "",
       dueTime:
-        taskData.dueTime ||
-        "",
-
+        taskData.dueTime || "",
       tags: Array.isArray(
         taskData.tags
       )
         ? taskData.tags
         : [],
-
       recurring:
-        taskData.recurring ||
-        "None",
-
+        taskData.recurring || "None",
       energy:
-        taskData.energy ||
-        "Medium",
-
+        taskData.energy || "Medium",
       progress:
-        Number(
-          taskData.progress
-        ) || 0,
-
-      subtasks:
-        Array.isArray(
-          taskData.subtasks
-        )
-          ? taskData.subtasks
-          : [],
-
+        Number(taskData.progress) || 0,
+      subtasks: Array.isArray(
+        taskData.subtasks
+      )
+        ? taskData.subtasks
+        : [],
       projectId:
-        taskData.projectId ||
-        null,
-
+        taskData.projectId || null,
       category:
-        taskData.category ||
-        "",
-
+        taskData.category || "",
       status:
-        taskData.status ||
-        "backlog",
-
+        taskData.status || "backlog",
       dependencies:
         Array.isArray(
           taskData.dependencies
         )
           ? taskData.dependencies
           : [],
-
       archived:
         taskData.archived === true,
-
       completed: false,
-
       createdAt:
         new Date().toISOString(),
-
       completedAt: null,
     };
 
@@ -790,12 +722,9 @@ function App() {
   // DELETE TASK
   // =========================================================
 
-  const deleteTask = (
-    taskId
-  ) => {
+  const deleteTask = (taskId) => {
     const task = tasks.find(
-      (item) =>
-        item.id === taskId
+      (item) => item.id === taskId
     );
 
     setTasks((previous) =>
@@ -805,12 +734,10 @@ function App() {
       )
     );
 
-    setSelectedTasks(
-      (previous) =>
-        previous.filter(
-          (id) =>
-            id !== taskId
-        )
+    setSelectedTasks((previous) =>
+      previous.filter(
+        (id) => id !== taskId
+      )
     );
 
     if (task) {
@@ -825,12 +752,9 @@ function App() {
   // TOGGLE TASK
   // =========================================================
 
-  const toggleTask = (
-    taskId
-  ) => {
+  const toggleTask = (taskId) => {
     const task = tasks.find(
-      (item) =>
-        item.id === taskId
+      (item) => item.id === taskId
     );
 
     if (!task) {
@@ -848,21 +772,16 @@ function App() {
               completed,
               status: completed
                 ? "done"
-                : item.status ===
-                  "done"
+                : item.status === "done"
                 ? "backlog"
                 : item.status ||
                   "backlog",
-
-              completedAt:
-                completed
-                  ? new Date().toISOString()
-                  : null,
-
-              progress:
-                completed
-                  ? 100
-                  : item.progress,
+              completedAt: completed
+                ? new Date().toISOString()
+                : null,
+              progress: completed
+                ? 100
+                : item.progress,
             }
           : item
       )
@@ -870,15 +789,13 @@ function App() {
 
     if (completed) {
       addXp(10);
-
       updateStreak();
 
-      setEnergy(
-        (previous) =>
-          Math.min(
-            100,
-            previous + 5
-          )
+      setEnergy((previous) =>
+        Math.min(
+          100,
+          previous + 5
+        )
       );
 
       addActivity(
@@ -910,12 +827,9 @@ function App() {
   // ARCHIVE TASK
   // =========================================================
 
-  const archiveTask = (
-    taskId
-  ) => {
+  const archiveTask = (taskId) => {
     const task = tasks.find(
-      (item) =>
-        item.id === taskId
+      (item) => item.id === taskId
     );
 
     setTasks((previous) =>
@@ -929,12 +843,10 @@ function App() {
       )
     );
 
-    setSelectedTasks(
-      (previous) =>
-        previous.filter(
-          (id) =>
-            id !== taskId
-        )
+    setSelectedTasks((previous) =>
+      previous.filter(
+        (id) => id !== taskId
+      )
     );
 
     if (task) {
@@ -949,457 +861,411 @@ function App() {
   // CLEAR COMPLETED
   // =========================================================
 
-  const clearCompleted =
-    () => {
-      setTasks((previous) =>
-        previous.filter(
+  const clearCompleted = () => {
+    setTasks((previous) =>
+      previous.filter(
+        (task) => !task.completed
+      )
+    );
+
+    setSelectedTasks((previous) =>
+      previous.filter((id) =>
+        tasks.some(
           (task) =>
+            task.id === id &&
             !task.completed
         )
-      );
+      )
+    );
 
-      setSelectedTasks(
-        (previous) =>
-          previous.filter(
-            (id) =>
-              tasks.some(
-                (task) =>
-                  task.id === id &&
-                  !task.completed
-              )
-          )
-      );
-
-      addActivity(
-        "Cleared completed tasks",
-        "task"
-      );
-    };
+    addActivity(
+      "Cleared completed tasks",
+      "task"
+    );
+  };
 
   // =========================================================
   // CLEAR ALL
   // =========================================================
 
-  const clearAllTasks =
-    () => {
-      setTasks([]);
-      setSelectedTasks([]);
+  const clearAllTasks = () => {
+    setTasks([]);
+    setSelectedTasks([]);
 
-      addActivity(
-        "Cleared all tasks",
-        "task"
-      );
+    addActivity(
+      "Cleared all tasks",
+      "task"
+    );
 
-      addNotification(
-        "All tasks were cleared.",
-        "info"
-      );
-    };
+    addNotification(
+      "All tasks were cleared.",
+      "info"
+    );
+  };
 
   // =========================================================
   // DEPENDENCIES
   // =========================================================
 
-  const getTaskDependencies =
-    (task) => {
-      if (!task) {
-        return [];
-      }
+  const getTaskDependencies = (
+    task
+  ) => {
+    if (!task) {
+      return [];
+    }
 
-      const dependencyIds =
-        Array.isArray(
-          task.dependencies
+    const dependencyIds =
+      Array.isArray(
+        task.dependencies
+      )
+        ? task.dependencies
+        : [];
+
+    return dependencyIds
+      .map((id) =>
+        tasks.find(
+          (item) =>
+            item.id === id
         )
-          ? task.dependencies
-          : [];
+      )
+      .filter(Boolean);
+  };
 
-      return dependencyIds
-        .map((id) =>
-          tasks.find(
-            (item) =>
-              item.id === id
-          )
-        )
-        .filter(Boolean);
-    };
+  const hasBlockedDependencies = (
+    task
+  ) => {
+    const dependencies =
+      getTaskDependencies(task);
 
-  const hasBlockedDependencies =
-    (task) => {
-      const dependencies =
-        getTaskDependencies(
-          task
-        );
-
-      return dependencies.some(
-        (dependency) =>
-          !dependency.completed
-      );
-    };
+    return dependencies.some(
+      (dependency) =>
+        !dependency.completed
+    );
+  };
 
   // =========================================================
   // FILTERING
   // =========================================================
 
-  const filteredTasks =
-    useMemo(() => {
-      const today =
-        getToday();
+  const filteredTasks = useMemo(() => {
+    const today = getToday();
 
-      const search =
-        globalSearch
-          .trim()
-          .toLowerCase();
+    const search =
+      globalSearch
+        .trim()
+        .toLowerCase();
 
-      return tasks.filter(
-        (task) => {
-          if (task.archived) {
-            return false;
-          }
+    return tasks.filter((task) => {
+      if (task.archived) {
+        return false;
+      }
 
-          if (search) {
-            const matchesSearch =
-              [
-                task.title,
-                task.description,
-                task.priority,
-                task.energy,
-                task.category,
-              ]
-                .filter(Boolean)
-                .some((value) =>
-                  String(value)
-                    .toLowerCase()
-                    .includes(
-                      search
-                    )
-                );
+      if (search) {
+        const matchesSearch = [
+          task.title,
+          task.description,
+          task.priority,
+          task.energy,
+          task.category,
+        ]
+          .filter(Boolean)
+          .some((value) =>
+            String(value)
+              .toLowerCase()
+              .includes(search)
+          );
 
-            if (!matchesSearch) {
-              return false;
-            }
-          }
-
-          if (
-            taskFilter ===
-              "active" &&
-            task.completed
-          ) {
-            return false;
-          }
-
-          if (
-            taskFilter ===
-              "completed" &&
-            !task.completed
-          ) {
-            return false;
-          }
-
-          if (
-            taskFilter ===
-              "today" &&
-            task.dueDate !== today
-          ) {
-            return false;
-          }
-
-          if (
-            taskFilter ===
-            "overdue"
-          ) {
-            if (
-              !task.dueDate ||
-              task.dueDate >=
-                today ||
-              task.completed
-            ) {
-              return false;
-            }
-          }
-
-          if (
-            taskFilter ===
-              "in-progress" &&
-            task.status !==
-              "in-progress"
-          ) {
-            return false;
-          }
-
-          if (
-            taskFilter ===
-              "review" &&
-            task.status !==
-              "review"
-          ) {
-            return false;
-          }
-
-          if (
-            priorityFilter !==
-              "all" &&
-            task.priority !==
-              priorityFilter
-          ) {
-            return false;
-          }
-
-          if (
-            categoryFilter !==
-              "all" &&
-            task.category !==
-              categoryFilter
-          ) {
-            return false;
-          }
-
-          if (
-            energyFilter !==
-              "all" &&
-            task.energy !==
-              energyFilter
-          ) {
-            return false;
-          }
-
-          if (
-            projectFilter !==
-              "all" &&
-            task.projectId !==
-              projectFilter
-          ) {
-            return false;
-          }
-
-          return true;
+        if (!matchesSearch) {
+          return false;
         }
-      );
-    }, [
-      tasks,
-      globalSearch,
-      taskFilter,
-      priorityFilter,
-      categoryFilter,
-      energyFilter,
-      projectFilter,
-    ]);
+      }
+
+      if (
+        taskFilter === "active" &&
+        task.completed
+      ) {
+        return false;
+      }
+
+      if (
+        taskFilter === "completed" &&
+        !task.completed
+      ) {
+        return false;
+      }
+
+      if (
+        taskFilter === "today" &&
+        task.dueDate !== today
+      ) {
+        return false;
+      }
+
+      if (
+        taskFilter === "overdue"
+      ) {
+        if (
+          !task.dueDate ||
+          task.dueDate >= today ||
+          task.completed
+        ) {
+          return false;
+        }
+      }
+
+      if (
+        taskFilter ===
+          "in-progress" &&
+        task.status !==
+          "in-progress"
+      ) {
+        return false;
+      }
+
+      if (
+        taskFilter === "review" &&
+        task.status !== "review"
+      ) {
+        return false;
+      }
+
+      if (
+        priorityFilter !== "all" &&
+        task.priority !==
+          priorityFilter
+      ) {
+        return false;
+      }
+
+      if (
+        categoryFilter !== "all" &&
+        task.category !==
+          categoryFilter
+      ) {
+        return false;
+      }
+
+      if (
+        energyFilter !== "all" &&
+        task.energy !==
+          energyFilter
+      ) {
+        return false;
+      }
+
+      if (
+        projectFilter !== "all" &&
+        task.projectId !==
+          projectFilter
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [
+    tasks,
+    globalSearch,
+    taskFilter,
+    priorityFilter,
+    categoryFilter,
+    energyFilter,
+    projectFilter,
+  ]);
 
   // =========================================================
   // TASK SELECTION
   // =========================================================
 
-  const toggleTaskSelection =
-    (taskId) => {
-      setSelectedTasks(
-        (previous) =>
-          previous.includes(
-            taskId
+  const toggleTaskSelection = (
+    taskId
+  ) => {
+    setSelectedTasks((previous) =>
+      previous.includes(taskId)
+        ? previous.filter(
+            (id) => id !== taskId
           )
-            ? previous.filter(
-                (id) =>
-                  id !== taskId
-              )
-            : [
-                ...previous,
-                taskId,
-              ]
-      );
-    };
+        : [
+            ...previous,
+            taskId,
+          ]
+    );
+  };
 
-  const selectAllVisibleTasks =
-    () => {
-      const visibleIds =
-        filteredTasks.map(
-          (task) => task.id
+  const selectAllVisibleTasks = () => {
+    const visibleIds =
+      filteredTasks.map(
+        (task) => task.id
+      );
+
+    setSelectedTasks((previous) => {
+      const allSelected =
+        visibleIds.length > 0 &&
+        visibleIds.every((id) =>
+          previous.includes(id)
         );
 
-      setSelectedTasks(
-        (previous) => {
-          const allSelected =
-            visibleIds.length >
-              0 &&
-            visibleIds.every(
-              (id) =>
-                previous.includes(
-                  id
-                )
-            );
+      if (allSelected) {
+        return previous.filter(
+          (id) =>
+            !visibleIds.includes(id)
+        );
+      }
 
-          if (allSelected) {
-            return previous.filter(
-              (id) =>
-                !visibleIds.includes(
-                  id
-                )
-            );
-          }
-
-          return Array.from(
-            new Set([
-              ...previous,
-              ...visibleIds,
-            ])
-          );
-        }
+      return Array.from(
+        new Set([
+          ...previous,
+          ...visibleIds,
+        ])
       );
-    };
+    });
+  };
 
-  const clearTaskSelection =
-    () => {
-      setSelectedTasks([]);
-    };
+  const clearTaskSelection = () => {
+    setSelectedTasks([]);
+  };
 
   // =========================================================
   // BULK COMPLETE
   // =========================================================
 
-  const completeSelectedTasks =
-    () => {
-      if (
-        selectedTasks.length ===
-        0
-      ) {
-        return;
-      }
+  const completeSelectedTasks = () => {
+    if (
+      selectedTasks.length === 0
+    ) {
+      return;
+    }
 
-      let completedCount = 0;
+    let completedCount = 0;
 
-      setTasks((previous) =>
-        previous.map((task) => {
-          if (
-            selectedTasks.includes(
-              task.id
-            ) &&
-            !task.completed
-          ) {
-            completedCount += 1;
+    setTasks((previous) =>
+      previous.map((task) => {
+        if (
+          selectedTasks.includes(
+            task.id
+          ) &&
+          !task.completed
+        ) {
+          completedCount += 1;
 
-            return {
-              ...task,
-              completed: true,
-              status: "done",
-              progress: 100,
-              completedAt:
-                new Date().toISOString(),
-            };
-          }
+          return {
+            ...task,
+            completed: true,
+            status: "done",
+            progress: 100,
+            completedAt:
+              new Date().toISOString(),
+          };
+        }
 
-          return task;
-        })
+        return task;
+      })
+    );
+
+    if (completedCount > 0) {
+      addXp(
+        completedCount * 10
       );
 
-      if (completedCount > 0) {
-        addXp(
-          completedCount * 10
-        );
+      updateStreak();
 
-        updateStreak();
+      setEnergy((previous) =>
+        Math.min(
+          100,
+          previous +
+            completedCount * 5
+        )
+      );
 
-        setEnergy(
-          (previous) =>
-            Math.min(
-              100,
-              previous +
-                completedCount *
-                  5
-            )
-        );
+      addActivity(
+        `Completed ${completedCount} selected task${
+          completedCount === 1
+            ? ""
+            : "s"
+        }`,
+        "success"
+      );
 
-        addActivity(
-          `Completed ${completedCount} selected task${
-            completedCount === 1
-              ? ""
-              : "s"
-          }`,
-          "success"
-        );
+      addNotification(
+        `Completed ${completedCount} selected task${
+          completedCount === 1
+            ? ""
+            : "s"
+        }.`,
+        "success"
+      );
+    }
 
-        addNotification(
-          `Completed ${completedCount} selected task${
-            completedCount === 1
-              ? ""
-              : "s"
-          }. Nice work!`,
-          "success"
-        );
-      }
-
-      setSelectedTasks([]);
-    };
+    setSelectedTasks([]);
+  };
 
   // =========================================================
   // BULK ARCHIVE
   // =========================================================
 
-  const archiveSelectedTasks =
-    () => {
-      if (
-        selectedTasks.length ===
-        0
-      ) {
-        return;
-      }
+  const archiveSelectedTasks = () => {
+    if (
+      selectedTasks.length === 0
+    ) {
+      return;
+    }
 
-      setTasks((previous) =>
-        previous.map((task) =>
-          selectedTasks.includes(
-            task.id
-          )
-            ? {
-                ...task,
-                archived: true,
-              }
-            : task
+    setTasks((previous) =>
+      previous.map((task) =>
+        selectedTasks.includes(
+          task.id
         )
-      );
+          ? {
+              ...task,
+              archived: true,
+            }
+          : task
+      )
+    );
 
-      addActivity(
-        `Archived ${selectedTasks.length} selected task${
-          selectedTasks.length ===
-          1
-            ? ""
-            : "s"
-        }`,
-        "task"
-      );
+    addActivity(
+      `Archived ${selectedTasks.length} selected task${
+        selectedTasks.length === 1
+          ? ""
+          : "s"
+      }`,
+      "task"
+    );
 
-      setSelectedTasks([]);
-    };
+    setSelectedTasks([]);
+  };
 
   // =========================================================
   // BULK DELETE
   // =========================================================
 
-  const deleteSelectedTasks =
-    () => {
-      if (
-        selectedTasks.length ===
-        0
-      ) {
-        return;
-      }
+  const deleteSelectedTasks = () => {
+    if (
+      selectedTasks.length === 0
+    ) {
+      return;
+    }
 
-      setTasks((previous) =>
-        previous.filter(
-          (task) =>
-            !selectedTasks.includes(
-              task.id
-            )
-        )
-      );
+    setTasks((previous) =>
+      previous.filter(
+        (task) =>
+          !selectedTasks.includes(
+            task.id
+          )
+      )
+    );
 
-      addActivity(
-        `Deleted ${selectedTasks.length} selected task${
-          selectedTasks.length ===
-          1
-            ? ""
-            : "s"
-        }`,
-        "task"
-      );
+    addActivity(
+      `Deleted ${selectedTasks.length} selected task${
+        selectedTasks.length === 1
+          ? ""
+          : "s"
+      }`,
+      "task"
+    );
 
-      setSelectedTasks([]);
-    };
+    setSelectedTasks([]);
+  };
 
   // =========================================================
   // PROJECTS
@@ -1440,12 +1306,10 @@ function App() {
         new Date().toISOString(),
     };
 
-    setProjects(
-      (previous) => [
-        newProject,
-        ...previous,
-      ]
-    );
+    setProjects((previous) => [
+      newProject,
+      ...previous,
+    ]);
 
     addActivity(
       `Created project "${newProject.name}"`,
@@ -1464,38 +1328,31 @@ function App() {
     projectId,
     updates = {}
   ) => {
-    setProjects(
-      (previous) =>
-        previous.map(
-          (project) =>
-            project.id ===
-            projectId
-              ? {
-                  ...project,
-                  ...updates,
-                }
-              : project
-        )
+    setProjects((previous) =>
+      previous.map((project) =>
+        project.id === projectId
+          ? {
+              ...project,
+              ...updates,
+            }
+          : project
+      )
     );
   };
 
   const deleteProject = (
     projectId
   ) => {
-    const project =
-      projects.find(
-        (item) =>
-          item.id ===
-          projectId
-      );
+    const project = projects.find(
+      (item) =>
+        item.id === projectId
+    );
 
-    setProjects(
-      (previous) =>
-        previous.filter(
-          (item) =>
-            item.id !==
-            projectId
-        )
+    setProjects((previous) =>
+      previous.filter(
+        (item) =>
+          item.id !== projectId
+      )
     );
 
     setTasks((previous) =>
@@ -1516,64 +1373,229 @@ function App() {
         "project"
       );
     }
+
+    if (
+      projectFilter === projectId
+    ) {
+      setProjectFilter("all");
+    }
   };
 
   // =========================================================
-  // FOCUS
+  // PROJECT STATS
   // =========================================================
 
-  const startFocus = () => {
+  const projectStats = useMemo(() => {
+    const today = getToday();
+
+    return projects.map(
+      (project) => {
+        const projectTasks =
+          tasks.filter(
+            (task) =>
+              task.projectId ===
+                project.id &&
+              !task.archived
+          );
+
+        const total =
+          projectTasks.length;
+
+        const completed =
+          projectTasks.filter(
+            (task) =>
+              task.completed
+          ).length;
+
+        const overdue =
+          projectTasks.filter(
+            (task) =>
+              task.dueDate &&
+              task.dueDate <
+                today &&
+              !task.completed
+          ).length;
+
+        const progress =
+          total === 0
+            ? 0
+            : Math.round(
+                (completed /
+                  total) *
+                  100
+              );
+
+        return {
+          ...project,
+          total,
+          completed,
+          overdue,
+          progress,
+        };
+      }
+    );
+  }, [projects, tasks]);
+
+  // =========================================================
+  // FOCUS HELPERS
+  // =========================================================
+
+  const formatFocusTime = (
+    seconds
+  ) => {
+    const safeSeconds =
+      Math.max(
+        0,
+        Number(seconds) || 0
+      );
+
+    const minutes = Math.floor(
+      safeSeconds / 60
+    );
+
+    const remainingSeconds =
+      safeSeconds % 60;
+
+    return `${String(
+      minutes
+    ).padStart(2, "0")}:${String(
+      remainingSeconds
+    ).padStart(2, "0")}`;
+  };
+
+  // =========================================================
+  // START FOCUS
+  // =========================================================
+
+  const startFocus = (
+    task = null,
+    duration
+  ) => {
+    const selectedDuration =
+      Number(duration) > 0
+        ? Number(duration)
+        : focusDuration > 0
+        ? focusDuration
+        : 25 * 60;
+
+    setFocusDuration(
+      selectedDuration
+    );
+
+    setFocusSeconds(
+      selectedDuration
+    );
+
+    setFocusTask(
+      task || null
+    );
+
     setFocusMode(true);
+    setMiniFocusVisible(false);
     setFocusPaused(false);
 
-    if (
-      focusSeconds <= 0
-    ) {
-      setFocusSeconds(
-        5 * 60
-      );
-    }
-
     addActivity(
-      "Started a focus session",
+      task
+        ? `Started focus on "${task.title}"`
+        : "Started a focus session",
       "focus"
     );
 
-    setEnergy(
-      (previous) =>
-        Math.max(
-          0,
-          previous - 5
-        )
+    setEnergy((previous) =>
+      Math.max(
+        0,
+        previous - 5
+      )
     );
   };
 
-  const stopFocus = () => {
+  // =========================================================
+  // EXIT FOCUS
+  // =========================================================
+
+  const exitFocus = () => {
+    setFocusMode(false);
+
+    // If there is still time left,
+    // keep the countdown running.
+    if (focusSeconds > 0) {
+      setMiniFocusVisible(true);
+    }
+
+    addActivity(
+      "Exited focus mode",
+      "focus"
+    );
+  };
+
+  // =========================================================
+  // CANCEL MINI COUNTDOWN
+  // =========================================================
+
+  const cancelMiniFocus = () => {
+    setMiniFocusVisible(false);
     setFocusMode(false);
     setFocusPaused(false);
+
+    setFocusSeconds(
+      focusDuration || 25 * 60
+    );
+
+    setFocusTask(null);
+
+    addActivity(
+      "Cancelled focus countdown",
+      "focus"
+    );
   };
+
+  // =========================================================
+  // RESUME MINI COUNTDOWN
+  // =========================================================
+
+  const resumeFocus = () => {
+    if (focusSeconds <= 0) {
+      return;
+    }
+
+    setMiniFocusVisible(false);
+    setFocusMode(true);
+    setFocusPaused(false);
+  };
+
+  // =========================================================
+  // PAUSE FOCUS
+  // =========================================================
 
   const pauseFocus = () => {
     setFocusPaused(
-      (previous) =>
-        !previous
+      (previous) => !previous
     );
   };
+
+  // =========================================================
+  // RESET FOCUS
+  // =========================================================
 
   const resetFocus = () => {
     setFocusSeconds(
-      5 * 60
+      focusDuration || 25 * 60
     );
 
     setFocusPaused(false);
   };
 
+  // =========================================================
+  // COMPLETE FOCUS
+  // =========================================================
+
   const completeFocus = () => {
     setFocusMode(false);
+    setMiniFocusVisible(false);
     setFocusPaused(false);
 
     setFocusSeconds(
-      5 * 60
+      focusDuration || 25 * 60
     );
 
     addXp(25);
@@ -1587,6 +1609,52 @@ function App() {
       "Focus session completed. +25 XP!",
       "success"
     );
+
+    setFocusTask(null);
+  };
+
+  // =========================================================
+  // CHANGE FOCUS DURATION
+  // =========================================================
+
+  const chooseFocusDuration = (
+    minutes
+  ) => {
+    const seconds =
+      Number(minutes) * 60;
+
+    if (
+      !Number.isFinite(seconds) ||
+      seconds <= 0
+    ) {
+      return;
+    }
+
+    setFocusDuration(seconds);
+    setFocusSeconds(seconds);
+    setCustomFocusMinutes(
+      Number(minutes)
+    );
+    setFocusPaused(false);
+  };
+
+  // =========================================================
+  // CUSTOM FOCUS
+  // =========================================================
+
+  const applyCustomFocus = () => {
+    const minutes = Math.min(
+      180,
+      Math.max(
+        1,
+        Number(customFocusMinutes) ||
+          25
+      )
+    );
+
+    chooseFocusDuration(
+      minutes
+    );
   };
 
   // =========================================================
@@ -1595,287 +1663,256 @@ function App() {
 
   useEffect(() => {
     if (
-      !focusMode ||
+      (!focusMode &&
+        !miniFocusVisible) ||
       focusPaused
     ) {
       return undefined;
     }
 
-    if (
-      focusSeconds <= 0
-    ) {
+    if (focusSeconds <= 0) {
       completeFocus();
-
       return undefined;
     }
 
-    const timer =
-      setInterval(() => {
-        setFocusSeconds(
-          (previous) =>
-            Math.max(
-              0,
-              previous - 1
-            )
-        );
-      }, 1000);
+    const timer = setInterval(() => {
+      setFocusSeconds(
+        (previous) =>
+          Math.max(
+            0,
+            previous - 1
+          )
+      );
+    }, 1000);
 
     return () =>
       clearInterval(timer);
   }, [
     focusMode,
+    miniFocusVisible,
     focusPaused,
     focusSeconds,
   ]);
 
+  // =========================================================
+  // AUTO COMPLETE
+  // =========================================================
+
+  useEffect(() => {
+    if (
+      focusSeconds === 0 &&
+      (focusMode ||
+        miniFocusVisible)
+    ) {
+      completeFocus();
+    }
+  }, [
+    focusSeconds,
+    focusMode,
+    miniFocusVisible,
+  ]);
+
   const formattedFocusTime =
-    useMemo(() => {
-      const minutes =
-        Math.floor(
-          focusSeconds / 60
-        );
-
-      const seconds =
-        focusSeconds % 60;
-
-      return `${String(
-        minutes
-      ).padStart(
-        2,
-        "0"
-      )}:${String(
-        seconds
-      ).padStart(
-        2,
-        "0"
-      )}`;
-    }, [focusSeconds]);
+    useMemo(
+      () =>
+        formatFocusTime(
+          focusSeconds
+        ),
+      [focusSeconds]
+    );
 
   // =========================================================
   // STATUS
   // =========================================================
 
-  const tasksByStatus =
-    useMemo(() => {
-      const result = {
-        backlog: [],
-        "in-progress": [],
-        review: [],
-        done: [],
-      };
+  const tasksByStatus = useMemo(() => {
+    const result = {
+      backlog: [],
+      "in-progress": [],
+      review: [],
+      done: [],
+    };
 
-      filteredTasks.forEach(
-        (task) => {
-          let status =
-            task.status;
+    filteredTasks.forEach(
+      (task) => {
+        let status =
+          task.status;
 
-          if (task.completed) {
-            status = "done";
-          }
-
-          if (!result[status]) {
-            status = "backlog";
-          }
-
-          result[status].push(
-            task
-          );
+        if (task.completed) {
+          status = "done";
         }
-      );
 
-      return result;
-    }, [filteredTasks]);
+        if (!result[status]) {
+          status = "backlog";
+        }
+
+        result[status].push(task);
+      }
+    );
+
+    return result;
+  }, [filteredTasks]);
 
   // =========================================================
   // STATS
   // =========================================================
 
-  const stats = useMemo(
-    () => {
-      const today =
-        getToday();
+  const stats = useMemo(() => {
+    const today = getToday();
 
-      const completed =
-        tasks.filter(
-          (task) =>
-            task.completed
-        );
+    const completed =
+      tasks.filter(
+        (task) => task.completed
+      );
 
-      const pending =
-        tasks.filter(
-          (task) =>
-            !task.completed
-        );
+    const pending =
+      tasks.filter(
+        (task) => !task.completed
+      );
 
-      const todayTasks =
-        tasks.filter(
-          (task) =>
-            task.dueDate ===
-              today &&
-            !task.completed
-        );
+    const todayTasks =
+      tasks.filter(
+        (task) =>
+          task.dueDate === today &&
+          !task.completed
+      );
 
-      const overdueTasks =
-        tasks.filter(
-          (task) =>
-            task.dueDate &&
-            task.dueDate <
-              today &&
-            !task.completed
-        );
+    const overdueTasks =
+      tasks.filter(
+        (task) =>
+          task.dueDate &&
+          task.dueDate < today &&
+          !task.completed
+      );
 
-      const highPriorityTasks =
-        tasks.filter(
-          (task) =>
-            task.priority ===
-              "High" &&
-            !task.completed
-        );
+    const highPriorityTasks =
+      tasks.filter(
+        (task) =>
+          task.priority === "High" &&
+          !task.completed
+      );
 
-      return {
-        total: tasks.length,
+    return {
+      total: tasks.length,
+      completed:
+        completed.length,
+      pending: pending.length,
+      today:
+        todayTasks.length,
+      overdue:
+        overdueTasks.length,
+      highPriority:
+        highPriorityTasks.length,
 
-        completed:
-          completed.length,
-
-        pending:
-          pending.length,
-
-        today:
-          todayTasks.length,
-
-        overdue:
-          overdueTasks.length,
-
-        highPriority:
-          highPriorityTasks.length,
-
-        completionRate:
-          tasks.length === 0
-            ? 0
-            : Math.round(
-                (completed.length /
-                  tasks.length) *
-                  100
-              ),
-      };
-    },
-    [tasks]
-  );
+      completionRate:
+        tasks.length === 0
+          ? 0
+          : Math.round(
+              (completed.length /
+                tasks.length) *
+                100
+            ),
+    };
+  }, [tasks]);
 
   // =========================================================
   // RESET EVERYTHING
   // =========================================================
 
-  const resetEverything =
-    () => {
-      setTasks([]);
-      setProjects([]);
-      setXp(0);
-      setEnergy(100);
+  const resetEverything = () => {
+    setTasks([]);
+    setProjects([]);
+    setXp(0);
+    setEnergy(100);
 
-      setStreak({
-        current: 0,
-        best: 0,
-        lastCompletedDate:
-          null,
-      });
+    setStreak({
+      current: 0,
+      best: 0,
+      lastCompletedDate:
+        null,
+    });
 
-      setBadges([]);
+    setBadges([]);
+    setNotificationsList([]);
+    setActivity([]);
 
-      setNotificationsList(
-        []
+    setGlobalSearch("");
+    setSelectedTasks([]);
+
+    setTaskFilter("all");
+    setPriorityFilter("all");
+    setCategoryFilter("all");
+    setEnergyFilter("all");
+    setProjectFilter("all");
+    setTaskView("list");
+
+    setFocusMode(false);
+    setMiniFocusVisible(false);
+    setFocusPaused(false);
+    setFocusSeconds(25 * 60);
+    setFocusDuration(25 * 60);
+    setCustomFocusMinutes(25);
+    setFocusTask(null);
+
+    setMissionDate(getToday());
+
+    // Keep Settings responsible for
+    // the user's theme selection.
+    setTheme("system");
+
+    const systemDark =
+      window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+
+    setDarkModeState(
+      systemDark
+    );
+
+    document.documentElement.classList.toggle(
+      "dark",
+      systemDark
+    );
+
+    const keys = [
+      "lockin_tasks",
+      "lockin_projects",
+      "lockin_xp",
+      "lockin_energy",
+      "lockin_streak",
+      "lockin_badges",
+      "lockin_notifications",
+      "lockin_activity",
+      "lockin_mission_date",
+      "lockin_dark_mode",
+      "lockin_theme",
+    ];
+
+    keys.forEach((key) => {
+      localStorage.removeItem(
+        key
       );
+    });
 
-      setActivity([]);
+    localStorage.setItem(
+      "lockin_theme",
+      "system"
+    );
 
-      setGlobalSearch("");
-
-      setSelectedTasks([]);
-
-      setTaskFilter("all");
-
-      setPriorityFilter(
-        "all"
-      );
-
-      setCategoryFilter(
-        "all"
-      );
-
-      setEnergyFilter("all");
-
-      setProjectFilter("all");
-
-      setTaskView("list");
-
-      setFocusMode(false);
-
-      setFocusPaused(false);
-
-      setFocusSeconds(
-        5 * 60
-      );
-
-      setMissionDate(
-        getToday()
-      );
-
-      setTheme("light");
-
-      setDarkModeState(false);
-
-      document.documentElement.classList.remove(
-        "dark"
-      );
-
-      const keys = [
-        "lockin_tasks",
-        "lockin_projects",
-        "lockin_xp",
-        "lockin_energy",
-        "lockin_streak",
-        "lockin_badges",
-        "lockin_notifications",
-        "lockin_activity",
-        "lockin_mission_date",
-        "lockin_dark_mode",
-        "lockin_theme",
-      ];
-
-      keys.forEach((key) => {
-        localStorage.removeItem(
-          key
-        );
-      });
-
-      localStorage.setItem(
-        "lockin_theme",
-        "light"
-      );
-
-      localStorage.setItem(
-        "lockin_dark_mode",
-        "false"
-      );
-
-      // Reset notification settings too.
-      localStorage.setItem(
-        "lockin_notifications_enabled",
-        "true"
-      );
-
-      localStorage.setItem(
-        "lockin_sound",
-        "true"
-      );
-    };
+    localStorage.setItem(
+      "lockin_dark_mode",
+      JSON.stringify(
+        systemDark
+      )
+    );
+  };
 
   // =========================================================
   // OUTLET CONTEXT
   // =========================================================
 
   const outletContext = {
+    // TASKS
     tasks,
     filteredTasks,
     tasksByStatus,
@@ -1892,6 +1929,7 @@ function App() {
     getTaskDependencies,
     hasBlockedDependencies,
 
+    // SELECTION
     selectedTasks,
     toggleTaskSelection,
     selectAllVisibleTasks,
@@ -1900,6 +1938,7 @@ function App() {
     archiveSelectedTasks,
     deleteSelectedTasks,
 
+    // FILTERS
     taskView,
     setTaskView,
 
@@ -1918,58 +1957,88 @@ function App() {
     projectFilter,
     setProjectFilter,
 
+    // PROJECTS
     projects,
+    projectStats,
     addProject,
     updateProject,
     deleteProject,
 
+    // STATS
     stats,
 
+    // XP
     xp,
     level,
     xpProgress,
     addXp,
 
+    // STREAK
     streak,
 
+    // ENERGY
     energy,
     setEnergy,
 
+    // BADGES
     badges,
     setBadges,
 
+    // FOCUS
     focusMode,
     setFocusMode,
     focusSeconds,
     formattedFocusTime,
     focusPaused,
     startFocus,
-    stopFocus,
+    stopFocus: exitFocus,
+    exitFocus,
     pauseFocus,
     resetFocus,
     completeFocus,
 
+    focusDuration,
+    setFocusDuration,
+    customFocusMinutes,
+    setCustomFocusMinutes,
+    chooseFocusDuration,
+    applyCustomFocus,
+
+    focusTask,
+    setFocusTask,
+
+    miniFocusVisible,
+    setMiniFocusVisible,
+    cancelMiniFocus,
+    resumeFocus,
+
+    // NOTIFICATIONS
     notificationsList,
     addNotification,
     markNotificationRead,
     markAllNotificationsRead,
     clearNotifications,
 
+    // ACTIVITY
     activity,
     addActivity,
 
+    // SEARCH
     globalSearch,
     setGlobalSearch,
 
+    // THEME
     theme,
     darkMode,
     setDarkMode,
     setTheme,
     changeTheme,
 
+    // MISSION
     missionDate,
     setMissionDate,
 
+    // RESET
     resetEverything,
   };
 
@@ -1993,19 +2062,18 @@ function App() {
       `}
     >
       <div className="flex min-h-screen w-full">
-
-        {/* ===================================================
+        {/* =================================================
             SIDEBAR
-        =================================================== */}
+        ================================================= */}
 
         <Sidebar
           tasks={tasks}
           projects={projects}
         />
 
-        {/* ===================================================
-            MAIN CONTENT AREA
-        =================================================== */}
+        {/* =================================================
+            MAIN CONTENT
+        ================================================= */}
 
         <div
           className="
@@ -2016,8 +2084,9 @@ function App() {
             md:ml-72
           "
         >
-
-          {/* NAVBAR */}
+          {/* =================================================
+              NAVBAR
+          ================================================= */}
 
           <Navbar
             darkMode={darkMode}
@@ -2041,7 +2110,9 @@ function App() {
             }
           />
 
-          {/* PAGE CONTENT */}
+          {/* =================================================
+              PAGE CONTENT
+          ================================================= */}
 
           <main
             className="
@@ -2059,7 +2130,14 @@ function App() {
               xl:p-10
             "
           >
-            <div className="mx-auto w-full max-w-[1600px] min-w-0">
+            <div
+              className="
+                mx-auto
+                w-full
+                max-w-[1600px]
+                min-w-0
+              "
+            >
               <Outlet
                 context={
                   outletContext
@@ -2069,6 +2147,163 @@ function App() {
           </main>
         </div>
       </div>
+
+      {/* =====================================================
+          FLOATING MINI FOCUS COUNTDOWN
+      ===================================================== */}
+
+      {miniFocusVisible &&
+        !focusMode && (
+          <div
+            className="
+              fixed
+              bottom-3
+              left-3
+              right-3
+              z-[90]
+              sm:left-auto
+              sm:right-5
+              sm:bottom-5
+              md:right-6
+            "
+          >
+            <div
+              className="
+                mx-auto
+                flex
+                w-full
+                max-w-sm
+                items-center
+                gap-3
+                rounded-2xl
+                border
+                border-[#765b6b]/20
+                bg-white/95
+                p-3
+                shadow-2xl
+                backdrop-blur-xl
+                dark:border-white/10
+                dark:bg-[#1b1f1c]/95
+                sm:w-[360px]
+              "
+            >
+              {/* TIMER */}
+
+              <button
+                type="button"
+                onClick={
+                  resumeFocus
+                }
+                className="
+                  min-w-0
+                  flex-1
+                  text-left
+                "
+              >
+                <p
+                  className="
+                    text-[9px]
+                    font-black
+                    uppercase
+                    tracking-[0.18em]
+                    text-[#765b6b]
+                    dark:text-[#c4aebe]
+                  "
+                >
+                  Focus running
+                </p>
+
+                <div
+                  className="
+                    mt-0.5
+                    flex
+                    min-w-0
+                    items-center
+                    gap-2
+                  "
+                >
+                  <span
+                    className="
+                      text-xl
+                      font-black
+                      tracking-tight
+                      text-[#292725]
+                      dark:text-white
+                    "
+                  >
+                    {
+                      formattedFocusTime
+                    }
+                  </span>
+
+                  {focusTask && (
+                    <span
+                      className="
+                        hidden
+                        truncate
+                        text-xs
+                        font-bold
+                        text-black/40
+                        sm:block
+                        dark:text-white/40
+                      "
+                    >
+                      {focusTask.title}
+                    </span>
+                  )}
+                </div>
+              </button>
+
+              {/* RESUME */}
+
+              <button
+                type="button"
+                onClick={
+                  resumeFocus
+                }
+                className="
+                  shrink-0
+                  rounded-xl
+                  bg-[#765b6b]
+                  px-3
+                  py-2.5
+                  text-[10px]
+                  font-black
+                  text-white
+                  transition
+                  hover:bg-[#674e5e]
+                  sm:px-4
+                "
+              >
+                Resume
+              </button>
+
+              {/* CANCEL */}
+
+              <button
+                type="button"
+                onClick={
+                  cancelMiniFocus
+                }
+                className="
+                  shrink-0
+                  rounded-xl
+                  bg-black/5
+                  p-2.5
+                  text-black/40
+                  transition
+                  hover:bg-red-500/10
+                  hover:text-red-500
+                  dark:bg-white/5
+                  dark:text-white/40
+                "
+                title="Cancel countdown"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
       {/* =====================================================
           FOCUS MODE
@@ -2093,9 +2328,11 @@ function App() {
           <div
             className="
               my-auto
+              max-h-[95vh]
               w-full
               max-w-md
-              rounded-[28px]
+              overflow-y-auto
+              rounded-[26px]
               border
               border-[#e0dcd5]
               bg-white
@@ -2108,38 +2345,121 @@ function App() {
               dark:bg-[#1b1f1c]
             "
           >
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#918b82] sm:text-xs">
+            {/* HEADER */}
+
+            <p
+              className="
+                text-[9px]
+                font-black
+                uppercase
+                tracking-[0.2em]
+                text-[#918b82]
+                sm:text-xs
+              "
+            >
               Focus mode
             </p>
 
-            <h2 className="mt-3 text-2xl font-black text-[#292725] sm:text-3xl dark:text-white">
+            <h2
+              className="
+                mt-2
+                text-xl
+                font-black
+                text-[#292725]
+                sm:mt-3
+                sm:text-3xl
+                dark:text-white
+              "
+            >
               Stay locked in.
             </h2>
 
-            <div className="my-6 break-all text-5xl font-black tracking-tight text-[#765b6b] sm:my-8 sm:text-6xl">
+            {focusTask && (
+              <p
+                className="
+                  mx-auto
+                  mt-2
+                  max-w-xs
+                  truncate
+                  text-xs
+                  font-bold
+                  text-black/40
+                  dark:text-white/40
+                "
+              >
+                {focusTask.title}
+              </p>
+            )}
+
+            {/* TIMER */}
+
+            <div
+              className="
+                my-5
+                text-5xl
+                font-black
+                tracking-tight
+                text-[#765b6b]
+                sm:my-8
+                sm:text-6xl
+              "
+            >
               {formattedFocusTime}
             </div>
 
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+            {/* STATUS */}
 
+            <div
+              className="
+                mb-5
+                inline-flex
+                items-center
+                rounded-full
+                bg-[#765b6b]/10
+                px-3
+                py-1.5
+                text-[10px]
+                font-black
+                uppercase
+                tracking-wider
+                text-[#765b6b]
+              "
+            >
+              {focusPaused
+                ? "Paused"
+                : "Focusing"}
+            </div>
+
+            {/* ACTIONS */}
+
+            <div
+              className="
+                grid
+                grid-cols-2
+                gap-2
+                sm:flex
+                sm:flex-wrap
+                sm:justify-center
+                sm:gap-3
+              "
+            >
               <button
                 type="button"
                 onClick={
                   pauseFocus
                 }
                 className="
-                  min-w-[90px]
                   rounded-xl
                   bg-[#765b6b]
-                  px-4
+                  px-3
                   py-3
                   text-xs
                   font-black
                   text-white
                   transition
                   hover:bg-[#674e5e]
+                  sm:min-w-[90px]
                   sm:px-5
-                  sm:text-sm
                 "
               >
                 {focusPaused
@@ -2153,18 +2473,15 @@ function App() {
                   resetFocus
                 }
                 className="
-                  min-w-[90px]
                   rounded-xl
                   bg-[#eeeae4]
-                  px-4
+                  px-3
                   py-3
                   text-xs
                   font-black
                   text-[#292725]
                   transition
                   hover:bg-[#e2ddd5]
-                  sm:px-5
-                  sm:text-sm
                   dark:bg-[#303530]
                   dark:text-white
                 "
@@ -2178,18 +2495,15 @@ function App() {
                   completeFocus
                 }
                 className="
-                  min-w-[90px]
                   rounded-xl
                   bg-emerald-600
-                  px-4
+                  px-3
                   py-3
                   text-xs
                   font-black
                   text-white
                   transition
                   hover:bg-emerald-700
-                  sm:px-5
-                  sm:text-sm
                 "
               >
                 Complete
@@ -2198,29 +2512,41 @@ function App() {
               <button
                 type="button"
                 onClick={
-                  stopFocus
+                  exitFocus
                 }
                 className="
-                  min-w-[90px]
                   rounded-xl
                   bg-rose-50
-                  px-4
+                  px-3
                   py-3
                   text-xs
                   font-black
                   text-rose-600
                   transition
                   hover:bg-rose-100
-                  sm:px-5
-                  sm:text-sm
                   dark:bg-rose-950/30
                   dark:text-rose-400
                 "
               >
                 Exit
               </button>
-
             </div>
+
+            {/* SMALL EXPLANATION */}
+
+            <p
+              className="
+                mt-4
+                text-[10px]
+                leading-relaxed
+                text-black/30
+                dark:text-white/30
+              "
+            >
+              Exit keeps the countdown running
+              in the corner while you move around
+              Lockin.
+            </p>
           </div>
         </div>
       )}

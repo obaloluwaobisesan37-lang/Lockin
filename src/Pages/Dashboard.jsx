@@ -16,6 +16,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+import TaskForm from "../Components/TaskForm";
+
 function Dashboard() {
   const navigate = useNavigate();
 
@@ -116,35 +118,6 @@ function Dashboard() {
     );
 
   // =====================================================
-  // QUICK ADD
-  // =====================================================
-
-  const createQuickTask = () => {
-    if (!addTask) {
-      return;
-    }
-
-    addTask({
-      title: "New task",
-      description: "",
-      priority: "Medium",
-      dueDate: "",
-      dueTime: "",
-      tags: [],
-      recurring: "None",
-      energy: "Medium",
-      progress: 0,
-      subtasks: [],
-      category: "",
-      projectId: null,
-      status: "backlog",
-      dependencies: [],
-    });
-
-    navigate("/todos");
-  };
-
-  // =====================================================
   // FORMAT DATE
   // =====================================================
 
@@ -208,30 +181,17 @@ function Dashboard() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={createQuickTask}
-          className="
-            inline-flex
-            items-center
-            justify-center
-            gap-2
-            rounded-2xl
-            bg-[#765b6b]
-            px-5
-            py-3.5
-            text-sm
-            font-black
-            text-white
-            shadow-[0_4px_0_#543f4d]
-            transition
-            hover:-translate-y-0.5
-            hover:bg-[#674e5e]
-          "
-        >
-          <Plus size={18} />
-          New Task
-        </button>
+        {/* NEW TASK FORM */}
+
+        <TaskForm
+          onAdd={(task) => {
+            if (addTask) {
+              addTask(task);
+            }
+          }}
+          projects={safeProjects}
+          tasks={safeTasks}
+        />
       </section>
 
       {/* OVERVIEW */}
@@ -330,8 +290,7 @@ function Dashboard() {
             </button>
           </div>
 
-          {upcomingTasks.length ===
-          0 ? (
+          {upcomingTasks.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[#d8d3ca] px-5 py-12 text-center dark:border-[#393d39]">
               <CheckCircle2
                 size={30}
@@ -474,8 +433,7 @@ function Dashboard() {
                 </p>
 
                 <p className="mt-2 text-3xl font-black text-[#292725] dark:text-white">
-                  {streak.current ||
-                    0}
+                  {streak.current || 0}
 
                   <span className="ml-2 text-sm text-[#918b82]">
                     days
@@ -494,9 +452,7 @@ function Dashboard() {
               </span>
 
               <span className="text-sm font-black text-[#292725] dark:text-white">
-                {streak.best ||
-                  0}{" "}
-                days
+                {streak.best || 0} days
               </span>
             </div>
           </div>
@@ -568,8 +524,7 @@ function Dashboard() {
           </button>
         </div>
 
-        {activeProjects.length ===
-        0 ? (
+        {activeProjects.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#d8d3ca] py-10 text-center dark:border-[#393d39]">
             <FolderKanban
               size={28}
@@ -710,8 +665,7 @@ function Dashboard() {
               </p>
 
               <h2 className="mt-1 text-lg font-black text-[#292725] dark:text-white">
-                {todayTasks.length >
-                0
+                {todayTasks.length > 0
                   ? `You have ${todayTasks.length} task${
                       todayTasks.length ===
                       1

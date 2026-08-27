@@ -5,13 +5,11 @@ import {
   ChevronDown,
   Check,
 } from "lucide-react";
-
 import { useOutletContext } from "react-router-dom";
 
 import TaskCard from "../Components/TaskCard";
 import TaskForm from "../Components/TaskForm";
 import EmptyState from "../Components/EmptyState";
-
 
 // =========================================================
 // CUSTOM DROPDOWN
@@ -36,10 +34,7 @@ function StyledDropdown({
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
       document.removeEventListener(
@@ -50,43 +45,25 @@ function StyledDropdown({
   }, []);
 
   const selectedOption = options.find(
-    (option) => option.value === value
+    (option) => String(option.value) === String(value)
   );
 
   return (
-    <div
-      ref={dropdownRef}
-      className="relative w-full"
-    >
-      {/* BUTTON */}
-
+    <div ref={dropdownRef} className="relative w-full">
       <button
         type="button"
         onClick={() => setOpen((previous) => !previous)}
         className={`
-          flex
-          w-full
-          items-center
-          justify-between
-          rounded-2xl
-          border
-          px-4
-          py-3
-          text-left
-          text-xs
-          font-black
-          outline-none
-          transition-all
+          flex w-full items-center justify-between
+          rounded-2xl border px-4 py-3 text-left
+          text-xs font-black outline-none transition-all
           duration-200
-
           ${
             open
               ? "border-[#765b6b] bg-[#765b6b]/5 shadow-[0_0_0_3px_rgba(118,91,107,0.08)]"
               : "border-black/10 bg-[#faf9f6] hover:border-black/20 hover:bg-white dark:border-white/10 dark:bg-[#202420] dark:hover:bg-[#252925]"
           }
-
-          text-[#292725]
-          dark:text-white
+          text-[#292725] dark:text-white
         `}
       >
         <span
@@ -102,9 +79,7 @@ function StyledDropdown({
         <ChevronDown
           size={16}
           className={`
-            shrink-0
-            transition-transform
-            duration-200
+            shrink-0 transition-transform duration-200
             ${
               open
                 ? "rotate-180 text-[#765b6b]"
@@ -114,54 +89,33 @@ function StyledDropdown({
         />
       </button>
 
-      {/* DROPDOWN */}
-
       {open && (
         <div
           className="
-            absolute
-            left-0
-            right-0
-            top-[calc(100%+8px)]
-            z-50
-            overflow-hidden
-            rounded-2xl
-            border
-            border-black/10
-            bg-white
-            p-1.5
-            shadow-[0_15px_40px_rgba(0,0,0,0.12)]
-            dark:border-white/10
-            dark:bg-[#1b1f1c]
+            absolute left-0 right-0 top-[calc(100%+8px)] z-50
+            overflow-hidden rounded-2xl border border-black/10
+            bg-white p-1.5 shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+            dark:border-white/10 dark:bg-[#1b1f1c]
             dark:shadow-[0_15px_40px_rgba(0,0,0,0.35)]
           "
         >
           <div className="max-h-64 overflow-y-auto">
             {options.map((option) => {
               const selected =
-                option.value === value;
+                String(option.value) === String(value);
 
               return (
                 <button
-                  key={option.value}
+                  key={String(option.value)}
                   type="button"
                   onClick={() => {
                     onChange(option.value);
                     setOpen(false);
                   }}
                   className={`
-                    flex
-                    w-full
-                    items-center
-                    justify-between
-                    rounded-xl
-                    px-3
-                    py-2.5
-                    text-left
-                    text-xs
-                    font-black
-                    transition
-
+                    flex w-full items-center justify-between
+                    rounded-xl px-3 py-2.5 text-left text-xs
+                    font-black transition
                     ${
                       selected
                         ? "bg-[#765b6b]/10 text-[#765b6b] dark:bg-[#765b6b]/15 dark:text-[#c4aebe]"
@@ -195,15 +149,15 @@ function StyledDropdown({
   );
 }
 
-
 // =========================================================
 // TODOS
 // =========================================================
 
 function Todos() {
+  const outletContext = useOutletContext() || {};
+
   const {
     tasks = [],
-
     filteredTasks = [],
 
     tasksByStatus = {
@@ -228,55 +182,56 @@ function Todos() {
     archiveSelectedTasks,
     deleteSelectedTasks,
 
-    taskView,
+    taskView = "list",
     setTaskView,
 
-    taskFilter,
+    taskFilter = "all",
     setTaskFilter,
 
-    priorityFilter,
+    priorityFilter = "all",
     setPriorityFilter,
 
-    categoryFilter,
+    categoryFilter = "all",
     setCategoryFilter,
 
-    energyFilter,
+    energyFilter = "all",
     setEnergyFilter,
 
-    projectFilter,
+    projectFilter = "all",
     setProjectFilter,
 
     projects = [],
 
     getTaskDependencies,
     hasBlockedDependencies,
-  } = useOutletContext();
+  } = outletContext;
 
   const safeTasks = Array.isArray(tasks)
     ? tasks
     : [];
 
-  const safeFilteredTasks =
-    Array.isArray(filteredTasks)
-      ? filteredTasks
-      : [];
+  const safeFilteredTasks = Array.isArray(filteredTasks)
+    ? filteredTasks
+    : [];
 
   const safeProjects = Array.isArray(projects)
     ? projects
     : [];
 
+  const safeSelectedTasks = Array.isArray(selectedTasks)
+    ? selectedTasks
+    : [];
+
   const categories = [
     ...new Set(
       safeTasks
-        .map((task) => task.category)
+        .map((task) => task?.category)
         .filter(Boolean)
     ),
   ];
 
   const safeTasksByStatus = {
-    backlog: Array.isArray(
-      tasksByStatus?.backlog
-    )
+    backlog: Array.isArray(tasksByStatus?.backlog)
       ? tasksByStatus.backlog
       : [],
 
@@ -286,19 +241,14 @@ function Todos() {
       ? tasksByStatus["in-progress"]
       : [],
 
-    review: Array.isArray(
-      tasksByStatus?.review
-    )
+    review: Array.isArray(tasksByStatus?.review)
       ? tasksByStatus.review
       : [],
 
-    done: Array.isArray(
-      tasksByStatus?.done
-    )
+    done: Array.isArray(tasksByStatus?.done)
       ? tasksByStatus.done
       : [],
   };
-
 
   // =========================================================
   // DROPDOWN OPTIONS
@@ -366,7 +316,7 @@ function Todos() {
       label: "All projects",
     },
     ...safeProjects.map((project) => ({
-      value: project.id,
+      value: String(project.id),
       label:
         project.name ||
         project.title ||
@@ -375,17 +325,68 @@ function Todos() {
     })),
   ];
 
+  // =========================================================
+  // SAFE HANDLERS
+  // =========================================================
+
+  const handleTaskView = (view) => {
+    if (typeof setTaskView === "function") {
+      setTaskView(view);
+    }
+  };
+
+  const handleTaskFilter = (filter) => {
+    if (typeof setTaskFilter === "function") {
+      setTaskFilter(filter);
+    }
+  };
 
   // =========================================================
-  // VIEW
+  // TASK CARD
+  // =========================================================
+
+  const renderTaskCard = (task) => {
+    if (!task) {
+      return null;
+    }
+
+    const dependencies =
+      typeof getTaskDependencies === "function"
+        ? getTaskDependencies(task)
+        : [];
+
+    const blocked =
+      typeof hasBlockedDependencies === "function"
+        ? hasBlockedDependencies(task)
+        : false;
+
+    return (
+      <TaskCard
+        key={task.id}
+        task={task}
+        projects={safeProjects}
+        onToggle={toggleTask}
+        onDelete={deleteTask}
+        onArchive={archiveTask}
+        onStartFocus={startFocus}
+        onSelect={toggleTaskSelection}
+        selected={safeSelectedTasks.some(
+          (id) => String(id) === String(task.id)
+        )}
+        dependencies={dependencies}
+        blocked={blocked}
+      />
+    );
+  };
+
+  // =========================================================
+  // RENDER
   // =========================================================
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
 
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+      {/* HEADER */}
 
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
@@ -409,26 +410,15 @@ function Todos() {
         />
       </div>
 
-
-      {/* =====================================================
-          FILTER BAR
-      ===================================================== */}
+      {/* FILTER BAR */}
 
       <div
         className="
-          rounded-[28px]
-          border
-          border-black/5
-          bg-white
-          p-4
-          shadow-sm
-          dark:border-white/10
+          rounded-[28px] border border-black/5 bg-white
+          p-4 shadow-sm dark:border-white/10
           dark:bg-[#171a17]
         "
       >
-
-        {/* TASK FILTERS */}
-
         <div className="flex flex-wrap gap-2">
           {[
             ["all", "All"],
@@ -442,18 +432,10 @@ function Todos() {
             <button
               key={value}
               type="button"
-              onClick={() =>
-                setTaskFilter(value)
-              }
+              onClick={() => handleTaskFilter(value)}
               className={`
-                rounded-xl
-                px-3.5
-                py-2
-                text-xs
-                font-black
-                transition-all
-                duration-200
-
+                rounded-xl px-3.5 py-2 text-xs font-black
+                transition-all duration-200
                 ${
                   taskFilter === value
                     ? "bg-[#765b6b] text-white shadow-md shadow-[#765b6b]/20"
@@ -466,21 +448,13 @@ function Todos() {
           ))}
         </div>
 
-
-        {/* CUSTOM DROPDOWNS */}
-
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-
-          {/* PRIORITY */}
-
           <StyledDropdown
             value={priorityFilter}
             onChange={setPriorityFilter}
             options={priorityOptions}
             placeholder="All priorities"
           />
-
-          {/* CATEGORY */}
 
           <StyledDropdown
             value={categoryFilter}
@@ -489,8 +463,6 @@ function Todos() {
             placeholder="All categories"
           />
 
-          {/* ENERGY */}
-
           <StyledDropdown
             value={energyFilter}
             onChange={setEnergyFilter}
@@ -498,22 +470,20 @@ function Todos() {
             placeholder="All energy"
           />
 
-          {/* PROJECT */}
-
           <StyledDropdown
-            value={projectFilter}
+            value={
+              projectFilter == null
+                ? "all"
+                : String(projectFilter)
+            }
             onChange={setProjectFilter}
             options={projectOptions}
             placeholder="All projects"
           />
-
         </div>
       </div>
 
-
-      {/* =====================================================
-          TASK COUNT
-      ===================================================== */}
+      {/* COUNT */}
 
       <div className="flex items-center justify-between">
         <p className="text-xs font-black uppercase tracking-widest text-black/30 dark:text-white/30">
@@ -533,64 +503,40 @@ function Todos() {
         )}
       </div>
 
-
-      {/* =====================================================
-          BULK ACTIONS
-      ===================================================== */}
+      {/* BULK ACTIONS */}
 
       {safeFilteredTasks.length > 0 && (
         <div
           className="
-            flex
-            flex-wrap
-            items-center
-            gap-2
-            rounded-2xl
-            border
-            border-black/5
-            bg-white
-            p-3
-            dark:border-white/10
-            dark:bg-[#171a17]
+            flex flex-wrap items-center gap-2 rounded-2xl
+            border border-black/5 bg-white p-3
+            dark:border-white/10 dark:bg-[#171a17]
           "
         >
-
           <button
             type="button"
             onClick={selectAllVisibleTasks}
             className="
-              rounded-xl
-              px-3
-              py-2
-              text-xs
-              font-black
-              transition
-              hover:bg-black/5
-              dark:hover:bg-white/10
+              rounded-xl px-3 py-2 text-xs font-black
+              transition hover:bg-black/5 dark:hover:bg-white/10
             "
           >
             Select all
           </button>
 
-          {selectedTasks.length > 0 && (
+          {safeSelectedTasks.length > 0 && (
             <>
               <span className="text-xs font-bold text-black/30 dark:text-white/30">
-                {selectedTasks.length} selected
+                {safeSelectedTasks.length} selected
               </span>
 
               <button
                 type="button"
                 onClick={completeSelectedTasks}
                 className="
-                  rounded-xl
-                  bg-[#765b6b]/10
-                  px-3
-                  py-2
-                  text-xs
-                  font-black
-                  text-[#765b6b]
-                  transition
-                  hover:bg-[#765b6b]/15
+                  rounded-xl bg-[#765b6b]/10 px-3 py-2
+                  text-xs font-black text-[#765b6b]
+                  transition hover:bg-[#765b6b]/15
                 "
               >
                 Complete
@@ -600,16 +546,9 @@ function Todos() {
                 type="button"
                 onClick={archiveSelectedTasks}
                 className="
-                  rounded-xl
-                  bg-black/5
-                  px-3
-                  py-2
-                  text-xs
-                  font-black
-                  transition
-                  hover:bg-black/10
-                  dark:bg-white/10
-                  dark:hover:bg-white/15
+                  rounded-xl bg-black/5 px-3 py-2 text-xs
+                  font-black transition hover:bg-black/10
+                  dark:bg-white/10 dark:hover:bg-white/15
                 "
               >
                 Archive
@@ -619,15 +558,9 @@ function Todos() {
                 type="button"
                 onClick={deleteSelectedTasks}
                 className="
-                  rounded-xl
-                  bg-red-500/10
-                  px-3
-                  py-2
-                  text-xs
-                  font-black
-                  text-red-500
-                  transition
-                  hover:bg-red-500/15
+                  rounded-xl bg-red-500/10 px-3 py-2
+                  text-xs font-black text-red-500
+                  transition hover:bg-red-500/15
                 "
               >
                 Delete
@@ -637,15 +570,9 @@ function Todos() {
                 type="button"
                 onClick={clearTaskSelection}
                 className="
-                  rounded-xl
-                  px-3
-                  py-2
-                  text-xs
-                  font-black
-                  text-black/40
-                  hover:bg-black/5
-                  dark:text-white/40
-                  dark:hover:bg-white/5
+                  rounded-xl px-3 py-2 text-xs font-black
+                  text-black/40 hover:bg-black/5
+                  dark:text-white/40 dark:hover:bg-white/5
                 "
               >
                 Clear
@@ -653,20 +580,14 @@ function Todos() {
             </>
           )}
 
-
-          {/* VIEW BUTTONS */}
+          {/* VIEW */}
 
           <div className="ml-auto flex gap-1 rounded-xl bg-black/5 p-1 dark:bg-white/5">
-
             <button
               type="button"
-              onClick={() =>
-                setTaskView("list")
-              }
+              onClick={() => handleTaskView("list")}
               className={`
-                rounded-lg
-                p-2
-                transition
+                rounded-lg p-2 transition
                 ${
                   taskView === "list"
                     ? "bg-white text-[#765b6b] shadow-sm dark:bg-[#252925]"
@@ -679,13 +600,9 @@ function Todos() {
 
             <button
               type="button"
-              onClick={() =>
-                setTaskView("board")
-              }
+              onClick={() => handleTaskView("board")}
               className={`
-                rounded-lg
-                p-2
-                transition
+                rounded-lg p-2 transition
                 ${
                   taskView === "board"
                     ? "bg-white text-[#765b6b] shadow-sm dark:bg-[#252925]"
@@ -695,20 +612,14 @@ function Todos() {
             >
               <Columns3 size={17} />
             </button>
-
           </div>
         </div>
       )}
 
-
-      {/* =====================================================
-          TASK LIST
-      ===================================================== */}
+      {/* TASKS */}
 
       {taskView === "list" ? (
-
         safeFilteredTasks.length === 0 ? (
-
           <EmptyState
             title={
               safeTasks.length === 0
@@ -728,131 +639,47 @@ function Todos() {
               />
             }
           />
-
         ) : (
-
           <div className="space-y-3">
-            {safeFilteredTasks.map((task) => {
-
-              const dependencies =
-                getTaskDependencies
-                  ? getTaskDependencies(task)
-                  : [];
-
-              const blocked =
-                hasBlockedDependencies
-                  ? hasBlockedDependencies(task)
-                  : false;
-
-              return (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  projects={safeProjects}
-                  onToggle={toggleTask}
-                  onDelete={deleteTask}
-                  onArchive={archiveTask}
-                  onStartFocus={startFocus}
-                  onSelect={toggleTaskSelection}
-                  selected={selectedTasks.includes(
-                    task.id
-                  )}
-                  dependencies={dependencies}
-                  blocked={blocked}
-                />
-              );
-            })}
+            {safeFilteredTasks.map(renderTaskCard)}
           </div>
-
         )
-
       ) : (
-
-        /* ===================================================
-           KANBAN
-        =================================================== */
+        /* KANBAN */
 
         <div className="grid gap-4 xl:grid-cols-4">
-
           {[
             ["backlog", "Backlog"],
             ["in-progress", "In Progress"],
             ["review", "Review"],
             ["done", "Done"],
           ].map(([status, title]) => (
-
             <div
               key={status}
               className="
-                min-h-[400px]
-                rounded-3xl
-                bg-black/[0.025]
-                p-3
-                dark:bg-white/[0.025]
+                min-h-[400px] rounded-3xl bg-black/[0.025]
+                p-3 dark:bg-white/[0.025]
               "
             >
-
               <div className="mb-3 flex items-center justify-between px-2">
-
                 <h3 className="text-sm font-black">
                   {title}
                 </h3>
 
                 <span
                   className="
-                    rounded-full
-                    bg-black/5
-                    px-2
-                    py-1
-                    text-[10px]
-                    font-black
-                    dark:bg-white/10
+                    rounded-full bg-black/5 px-2 py-1
+                    text-[10px] font-black dark:bg-white/10
                   "
                 >
-                  {
-                    safeTasksByStatus[
-                      status
-                    ].length
-                  }
+                  {safeTasksByStatus[status].length}
                 </span>
-
               </div>
 
               <div className="space-y-3">
-
-                {safeTasksByStatus[
-                  status
-                ].map((task) => {
-
-                  const dependencies =
-                    getTaskDependencies
-                      ? getTaskDependencies(task)
-                      : [];
-
-                  const blocked =
-                    hasBlockedDependencies
-                      ? hasBlockedDependencies(task)
-                      : false;
-
-                  return (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      projects={safeProjects}
-                      onToggle={toggleTask}
-                      onDelete={deleteTask}
-                      onArchive={archiveTask}
-                      onStartFocus={startFocus}
-                      onSelect={toggleTaskSelection}
-                      selected={selectedTasks.includes(
-                        task.id
-                      )}
-                      dependencies={dependencies}
-                      blocked={blocked}
-                    />
-                  );
-                })}
-
+                {safeTasksByStatus[status].map(
+                  renderTaskCard
+                )}
               </div>
             </div>
           ))}

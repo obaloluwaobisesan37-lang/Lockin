@@ -9,20 +9,30 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =========================================================
-   BASE
+   GLOBAL RESET
 ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 html {
   min-height: 100%;
+  width: 100%;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  width: 100%;
 
   background: #f6f4ef;
   color: #292725;
+
+  overflow-x: hidden;
 
   transition:
     background-color 300ms ease,
@@ -40,6 +50,40 @@ html.dark body {
 
 #root {
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* =========================================================
+   MEDIA
+========================================================= */
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+/* =========================================================
+   TEXT
+========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+a {
+  overflow-wrap: anywhere;
 }
 
 /* =========================================================
@@ -57,6 +101,58 @@ select {
     background-color 300ms ease,
     border-color 300ms ease,
     color 300ms ease;
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+button {
+  max-width: 100%;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+input,
+textarea,
+select {
+  max-width: 100%;
+  color: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #a6a097;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #777d77;
+}
+
+/* =========================================================
+   TABLES
+========================================================= */
+
+table {
+  max-width: 100%;
+}
+
+.table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 /* =========================================================
@@ -94,30 +190,179 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 }
 
 /* =========================================================
-   INPUTS
-========================================================= */
-
-input,
-textarea,
-select {
-  color: inherit;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #a6a097;
-}
-
-html.dark input::placeholder,
-html.dark textarea::placeholder {
-  color: #777d77;
-}
-
-/* =========================================================
    SELECTION
 ========================================================= */
 
 ::selection {
   background: #765b6b;
   color: white;
+}
+
+/* =========================================================
+   MOBILE
+   320px - 767px
+========================================================= */
+
+@media (max-width: 767px) {
+  html,
+  body {
+    width: 100%;
+    min-width: 320px;
+    overflow-x: hidden;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  /* Prevent elements from forcing the page wider */
+  main,
+  section,
+  article,
+  aside,
+  nav,
+  header,
+  footer,
+  div {
+    max-width: 100%;
+  }
+
+  /* Better mobile form controls */
+  input,
+  textarea,
+  select {
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  /* Prevent oversized headings */
+  h1 {
+    max-width: 100%;
+  }
+
+  /* Better mobile scrolling */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Keep fixed mobile navigation above content */
+  main {
+    padding-bottom: 90px;
+  }
+}
+
+/* =========================================================
+   SMALL PHONES
+   320px - 380px
+========================================================= */
+
+@media (max-width: 380px) {
+  body {
+    font-size: 13px;
+  }
+
+  button {
+    min-width: 0;
+  }
+}
+
+/* =========================================================
+   LARGE PHONES
+   381px - 767px
+========================================================= */
+
+@media (min-width: 381px) and (max-width: 767px) {
+  body {
+    font-size: 14px;
+  }
+}
+
+/* =========================================================
+   TABLETS
+   768px - 1023px
+========================================================= */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  html,
+  body {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    font-size: 14px;
+  }
+}
+
+/* =========================================================
+   LAPTOPS
+   1024px - 1279px
+========================================================= */
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  body {
+    font-size: 14px;
+  }
+}
+
+/* =========================================================
+   LARGE SCREENS
+   1280px+
+========================================================= */
+
+@media (min-width: 1280px) {
+  body {
+    font-size: 15px;
+  }
+}
+
+/* =========================================================
+   FOCUS MODE / FIXED ELEMENT PROTECTION
+========================================================= */
+
+.fixed {
+  max-width: 100vw;
+}
+
+.fixed.inset-0 {
+  width: 100vw;
+  max-width: 100vw;
+}
+
+/* =========================================================
+   MOBILE FOCUS MODE
+========================================================= */
+
+@media (max-width: 767px) {
+  /* Make focus modal comfortable on phones */
+  .fixed.inset-0 {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* =========================================================
+   SAFE AREA
+   Useful for phones with gesture navigation
+========================================================= */
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
