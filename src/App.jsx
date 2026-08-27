@@ -171,12 +171,14 @@ function App() {
 
   const [focusTask, setFocusTask] = useState(null);
 
-  // Mini countdown remains visible after exiting focus.
   const [miniFocusVisible, setMiniFocusVisible] =
     useState(false);
 
   // =========================================================
   // THEME
+  // =========================================================
+  // IMPORTANT:
+  // SYSTEM IS THE DEFAULT.
   // =========================================================
 
   const [theme, setTheme] = useState(() => {
@@ -194,6 +196,19 @@ function App() {
     return "system";
   });
 
+  const getSystemDarkMode = () => {
+    if (
+      typeof window === "undefined" ||
+      !window.matchMedia
+    ) {
+      return false;
+    }
+
+    return window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+  };
+
   const [darkMode, setDarkModeState] = useState(() => {
     const savedTheme =
       localStorage.getItem("lockin_theme");
@@ -202,13 +217,12 @@ function App() {
       return true;
     }
 
-    if (savedTheme === "system") {
-      return window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
+    if (savedTheme === "light") {
+      return false;
     }
 
-    return false;
+    // DEFAULT = SYSTEM
+    return getSystemDarkMode();
   });
 
   // =========================================================
@@ -221,12 +235,11 @@ function App() {
 
       if (theme === "dark") {
         isDark = true;
-      }
-
-      if (theme === "system") {
-        isDark = window.matchMedia(
-          "(prefers-color-scheme: dark)"
-        ).matches;
+      } else if (theme === "light") {
+        isDark = false;
+      } else {
+        // SYSTEM
+        isDark = getSystemDarkMode();
       }
 
       setDarkModeState(isDark);
@@ -249,6 +262,8 @@ function App() {
 
     applyTheme();
 
+    // Only listen to system changes
+    // when System theme is selected.
     if (theme !== "system") {
       return undefined;
     }
@@ -304,7 +319,13 @@ function App() {
       return;
     }
 
-    setTheme(darkMode ? "light" : "dark");
+    // Compatibility toggle.
+    // This intentionally switches between
+    // light and dark, while the normal default
+    // remains System.
+    setTheme(
+      darkMode ? "light" : "dark"
+    );
   };
 
   // =========================================================
@@ -316,7 +337,9 @@ function App() {
       setDarkModeState((current) => {
         const nextValue = value(current);
 
-        setTheme(nextValue ? "dark" : "light");
+        setTheme(
+          nextValue ? "dark" : "light"
+        );
 
         return nextValue;
       });
@@ -328,7 +351,9 @@ function App() {
 
     setDarkModeState(nextValue);
 
-    setTheme(nextValue ? "dark" : "light");
+    setTheme(
+      nextValue ? "dark" : "light"
+    );
   };
 
   // =========================================================
@@ -439,9 +464,7 @@ function App() {
   useEffect(() => {
     localStorage.setItem(
       "lockin_notifications",
-      JSON.stringify(
-        notificationsList
-      )
+      JSON.stringify(notificationsList)
     );
   }, [notificationsList]);
 
@@ -471,8 +494,7 @@ function App() {
       id: makeId(),
       message,
       type,
-      createdAt:
-        new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       read: false,
     };
 
@@ -522,8 +544,7 @@ function App() {
       id: makeId(),
       message,
       type,
-      createdAt:
-        new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
 
     setActivity((previous) =>
@@ -570,8 +591,7 @@ function App() {
 
     setStreak((previous) => {
       if (
-        previous.lastCompletedDate ===
-        today
+        previous.lastCompletedDate === today
       ) {
         return previous;
       }
@@ -1014,10 +1034,8 @@ function App() {
       }
 
       if (
-        taskFilter ===
-          "in-progress" &&
-        task.status !==
-          "in-progress"
+        taskFilter === "in-progress" &&
+        task.status !== "in-progress"
       ) {
         return false;
       }
@@ -1031,32 +1049,28 @@ function App() {
 
       if (
         priorityFilter !== "all" &&
-        task.priority !==
-          priorityFilter
+        task.priority !== priorityFilter
       ) {
         return false;
       }
 
       if (
         categoryFilter !== "all" &&
-        task.category !==
-          categoryFilter
+        task.category !== categoryFilter
       ) {
         return false;
       }
 
       if (
         energyFilter !== "all" &&
-        task.energy !==
-          energyFilter
+        task.energy !== energyFilter
       ) {
         return false;
       }
 
       if (
         projectFilter !== "all" &&
-        task.projectId !==
-          projectFilter
+        task.projectId !== projectFilter
       ) {
         return false;
       }
@@ -1357,8 +1371,7 @@ function App() {
 
     setTasks((previous) =>
       previous.map((task) =>
-        task.projectId ===
-        projectId
+        task.projectId === projectId
           ? {
               ...task,
               projectId: null,
@@ -1516,8 +1529,6 @@ function App() {
   const exitFocus = () => {
     setFocusMode(false);
 
-    // If there is still time left,
-    // keep the countdown running.
     if (focusSeconds > 0) {
       setMiniFocusVisible(true);
     }
@@ -1796,7 +1807,8 @@ function App() {
       total: tasks.length,
       completed:
         completed.length,
-      pending: pending.length,
+      pending:
+        pending.length,
       today:
         todayTasks.length,
       overdue:
@@ -1828,8 +1840,7 @@ function App() {
     setStreak({
       current: 0,
       best: 0,
-      lastCompletedDate:
-        null,
+      lastCompletedDate: null,
     });
 
     setBadges([]);
@@ -1856,14 +1867,14 @@ function App() {
 
     setMissionDate(getToday());
 
-    // Keep Settings responsible for
-    // the user's theme selection.
+    // =======================================================
+    // RESET THEME TO SYSTEM
+    // =======================================================
+
     setTheme("system");
 
     const systemDark =
-      window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
+      getSystemDarkMode();
 
     setDarkModeState(
       systemDark
@@ -1889,11 +1900,10 @@ function App() {
     ];
 
     keys.forEach((key) => {
-      localStorage.removeItem(
-        key
-      );
+      localStorage.removeItem(key);
     });
 
+    // System is ALWAYS the default after reset.
     localStorage.setItem(
       "lockin_theme",
       "system"
@@ -1901,9 +1911,7 @@ function App() {
 
     localStorage.setItem(
       "lockin_dark_mode",
-      JSON.stringify(
-        systemDark
-      )
+      JSON.stringify(systemDark)
     );
   };
 
@@ -2062,18 +2070,15 @@ function App() {
       `}
     >
       <div className="flex min-h-screen w-full">
-        {/* =================================================
-            SIDEBAR
-        ================================================= */}
+
+        {/* SIDEBAR */}
 
         <Sidebar
           tasks={tasks}
           projects={projects}
         />
 
-        {/* =================================================
-            MAIN CONTENT
-        ================================================= */}
+        {/* MAIN CONTENT */}
 
         <div
           className="
@@ -2084,9 +2089,8 @@ function App() {
             md:ml-72
           "
         >
-          {/* =================================================
-              NAVBAR
-          ================================================= */}
+
+          {/* NAVBAR */}
 
           <Navbar
             darkMode={darkMode}
@@ -2110,9 +2114,7 @@ function App() {
             }
           />
 
-          {/* =================================================
-              PAGE CONTENT
-          ================================================= */}
+          {/* PAGE CONTENT */}
 
           <main
             className="
@@ -2187,8 +2189,6 @@ function App() {
                 sm:w-[360px]
               "
             >
-              {/* TIMER */}
-
               <button
                 type="button"
                 onClick={
@@ -2254,8 +2254,6 @@ function App() {
                 </div>
               </button>
 
-              {/* RESUME */}
-
               <button
                 type="button"
                 onClick={
@@ -2277,8 +2275,6 @@ function App() {
               >
                 Resume
               </button>
-
-              {/* CANCEL */}
 
               <button
                 type="button"
@@ -2345,8 +2341,6 @@ function App() {
               dark:bg-[#1b1f1c]
             "
           >
-            {/* HEADER */}
-
             <p
               className="
                 text-[9px]
@@ -2391,8 +2385,6 @@ function App() {
               </p>
             )}
 
-            {/* TIMER */}
-
             <div
               className="
                 my-5
@@ -2406,8 +2398,6 @@ function App() {
             >
               {formattedFocusTime}
             </div>
-
-            {/* STATUS */}
 
             <div
               className="
@@ -2429,8 +2419,6 @@ function App() {
                 ? "Paused"
                 : "Focusing"}
             </div>
-
-            {/* ACTIONS */}
 
             <div
               className="
@@ -2531,8 +2519,6 @@ function App() {
                 Exit
               </button>
             </div>
-
-            {/* SMALL EXPLANATION */}
 
             <p
               className="
