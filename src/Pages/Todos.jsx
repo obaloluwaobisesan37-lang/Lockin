@@ -1,19 +1,35 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import {
   LayoutList,
   Columns3,
   ChevronDown,
   Check,
+  ListFilter,
+  CheckCheck,
+  Archive,
+  Trash2,
+  X,
+  Search,
+  CircleDot,
+  SlidersHorizontal,
+  Sparkles,
+  FolderKanban,
+  ArrowDownUp,
 } from "lucide-react";
-import { useOutletContext } from "react-router-dom";
+
+import {
+  useOutletContext,
+  useSearchParams,
+} from "react-router-dom";
 
 import TaskCard from "../Components/TaskCard";
 import TaskForm from "../Components/TaskForm";
 import EmptyState from "../Components/EmptyState";
 
-// =========================================================
-// CUSTOM DROPDOWN
-// =========================================================
+/* =========================================================
+   STYLED DROPDOWN
+========================================================= */
 
 function StyledDropdown({
   value,
@@ -34,7 +50,10 @@ function StyledDropdown({
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
 
     return () => {
       document.removeEventListener(
@@ -45,64 +64,61 @@ function StyledDropdown({
   }, []);
 
   const selectedOption = options.find(
-    (option) => String(option.value) === String(value)
+    (option) =>
+      String(option.value) === String(value)
   );
 
   return (
-    <div ref={dropdownRef} className="relative w-full">
+    <div
+      ref={dropdownRef}
+      className="relative w-full"
+    >
       <button
         type="button"
-        onClick={() => setOpen((previous) => !previous)}
-        className={`
-          flex w-full items-center justify-between
-          rounded-2xl border px-4 py-3 text-left
-          text-xs font-black outline-none transition-all
-          duration-200
-          ${
-            open
-              ? "border-[#765b6b] bg-[#765b6b]/5 shadow-[0_0_0_3px_rgba(118,91,107,0.08)]"
-              : "border-black/10 bg-[#faf9f6] hover:border-black/20 hover:bg-white dark:border-white/10 dark:bg-[#202420] dark:hover:bg-[#252925]"
-          }
-          text-[#292725] dark:text-white
-        `}
+        onClick={() =>
+          setOpen((previous) => !previous)
+        }
+        className={`group flex min-h-[42px] w-full items-center justify-between gap-3 rounded-[10px] border px-3 text-left text-[10px] font-black outline-none transition-all duration-200 ${
+          open
+            ? "border-[#765b6b]/40 bg-[#765b6b]/5 ring-2 ring-[#765b6b]/8"
+            : "border-[#e1dcd4] bg-[#faf9f6] hover:border-[#d1cac1] hover:bg-white dark:border-[#343934] dark:bg-[#202420] dark:hover:border-[#474c47]"
+        }`}
       >
-        <span
-          className={
-            selectedOption?.value === "all"
-              ? "text-black/40 dark:text-white/40"
-              : "text-[#292725] dark:text-white"
-          }
-        >
-          {selectedOption?.label || placeholder}
+        <span className="flex min-w-0 items-center gap-2">
+          {selectedOption?.dot && (
+            <span
+              className={`h-1.5 w-1.5 shrink-0 rounded-full ${selectedOption.dot}`}
+            />
+          )}
+
+          <span
+            className={`truncate ${
+              selectedOption?.value === "all"
+                ? "text-[#99938a] dark:text-[#7c827d]"
+                : "text-[#4f4b46] dark:text-[#d0cdc7]"
+            }`}
+          >
+            {selectedOption?.label || placeholder}
+          </span>
         </span>
 
         <ChevronDown
-          size={16}
-          className={`
-            shrink-0 transition-transform duration-200
-            ${
-              open
-                ? "rotate-180 text-[#765b6b]"
-                : "text-black/30 dark:text-white/30"
-            }
-          `}
+          size={13}
+          className={`shrink-0 text-[#aaa49b] transition-transform duration-200 ${
+            open
+              ? "rotate-180 text-[#765b6b]"
+              : "group-hover:text-[#765b6b]"
+          }`}
         />
       </button>
 
       {open && (
-        <div
-          className="
-            absolute left-0 right-0 top-[calc(100%+8px)] z-50
-            overflow-hidden rounded-2xl border border-black/10
-            bg-white p-1.5 shadow-[0_15px_40px_rgba(0,0,0,0.12)]
-            dark:border-white/10 dark:bg-[#1b1f1c]
-            dark:shadow-[0_15px_40px_rgba(0,0,0,0.35)]
-          "
-        >
-          <div className="max-h-64 overflow-y-auto">
+        <div className="absolute left-0 right-0 top-[calc(100%+7px)] z-[70] overflow-hidden rounded-[13px] border border-[#ddd8d0] bg-[#f8f6f1] p-1.5 shadow-[0_18px_45px_rgba(41,39,37,0.14)] dark:border-[#353a35] dark:bg-[#1d211e] dark:shadow-[0_18px_45px_rgba(0,0,0,0.32)]">
+          <div className="max-h-60 overflow-y-auto">
             {options.map((option) => {
               const selected =
-                String(option.value) === String(value);
+                String(option.value) ===
+                String(value);
 
               return (
                 <button
@@ -112,21 +128,16 @@ function StyledDropdown({
                     onChange(option.value);
                     setOpen(false);
                   }}
-                  className={`
-                    flex w-full items-center justify-between
-                    rounded-xl px-3 py-2.5 text-left text-xs
-                    font-black transition
-                    ${
-                      selected
-                        ? "bg-[#765b6b]/10 text-[#765b6b] dark:bg-[#765b6b]/15 dark:text-[#c4aebe]"
-                        : "text-black/60 hover:bg-black/5 hover:text-[#292725] dark:text-white/55 dark:hover:bg-white/5 dark:hover:text-white"
-                    }
-                  `}
+                  className={`flex w-full items-center justify-between rounded-[8px] px-2.5 py-2.5 text-left text-[10px] font-black transition ${
+                    selected
+                      ? "bg-[#765b6b]/8 text-[#765b6b] dark:bg-[#765b6b]/12 dark:text-[#c9aebe]"
+                      : "text-[#77736b] hover:bg-[#ebe7e0] hover:text-[#292725] dark:text-[#aaa69e] dark:hover:bg-[#292e2a] dark:hover:text-white"
+                  }`}
                 >
                   <span className="flex items-center gap-2">
                     {option.dot && (
                       <span
-                        className={`h-2 w-2 rounded-full ${option.dot}`}
+                        className={`h-1.5 w-1.5 rounded-full ${option.dot}`}
                       />
                     )}
 
@@ -135,8 +146,8 @@ function StyledDropdown({
 
                   {selected && (
                     <Check
-                      size={15}
-                      className="text-[#765b6b] dark:text-[#c4aebe]"
+                      size={13}
+                      className="text-[#765b6b] dark:text-[#c9aebe]"
                     />
                   )}
                 </button>
@@ -149,12 +160,15 @@ function StyledDropdown({
   );
 }
 
-// =========================================================
-// TODOS
-// =========================================================
+/* =========================================================
+   TODOS
+========================================================= */
 
 function Todos() {
   const outletContext = useOutletContext() || {};
+
+  const [searchParams, setSearchParams] =
+    useSearchParams();
 
   const {
     tasks = [],
@@ -168,6 +182,7 @@ function Todos() {
     },
 
     addTask,
+    updateTask,
     toggleTask,
     deleteTask,
     archiveTask,
@@ -206,11 +221,17 @@ function Todos() {
     hasBlockedDependencies,
   } = outletContext;
 
+  /* =========================================================
+     SAFE ARRAYS
+  ========================================================= */
+
   const safeTasks = Array.isArray(tasks)
     ? tasks
     : [];
 
-  const safeFilteredTasks = Array.isArray(filteredTasks)
+  const safeFilteredTasks = Array.isArray(
+    filteredTasks
+  )
     ? filteredTasks
     : [];
 
@@ -218,20 +239,16 @@ function Todos() {
     ? projects
     : [];
 
-  const safeSelectedTasks = Array.isArray(selectedTasks)
+  const safeSelectedTasks = Array.isArray(
+    selectedTasks
+  )
     ? selectedTasks
     : [];
 
-  const categories = [
-    ...new Set(
-      safeTasks
-        .map((task) => task?.category)
-        .filter(Boolean)
-    ),
-  ];
-
   const safeTasksByStatus = {
-    backlog: Array.isArray(tasksByStatus?.backlog)
+    backlog: Array.isArray(
+      tasksByStatus?.backlog
+    )
       ? tasksByStatus.backlog
       : [],
 
@@ -241,7 +258,9 @@ function Todos() {
       ? tasksByStatus["in-progress"]
       : [],
 
-    review: Array.isArray(tasksByStatus?.review)
+    review: Array.isArray(
+      tasksByStatus?.review
+    )
       ? tasksByStatus.review
       : [],
 
@@ -250,9 +269,178 @@ function Todos() {
       : [],
   };
 
-  // =========================================================
-  // DROPDOWN OPTIONS
-  // =========================================================
+  /* =========================================================
+     LOCAL SEARCH
+  ========================================================= */
+
+  const [localSearch, setLocalSearch] =
+    useState("");
+
+  /* =========================================================
+     URL PROJECT / TASK / FILTER HANDLING
+  ========================================================= */
+
+  useEffect(() => {
+    const projectId =
+      searchParams.get("project");
+
+    const taskId =
+      searchParams.get("task");
+
+    const urlFilter =
+      searchParams.get("filter");
+
+    /*
+      Dashboard:
+      /todos?filter=today
+
+      When this URL is opened, activate
+      the Today filter automatically.
+    */
+
+    if (
+      urlFilter === "today" &&
+      typeof setTaskFilter === "function" &&
+      taskFilter !== "today"
+    ) {
+      setTaskFilter("today");
+    }
+
+    if (projectId) {
+      const projectExists = safeProjects.some(
+        (project) =>
+          String(project.id) ===
+          String(projectId)
+      );
+
+      if (
+        projectExists &&
+        typeof setProjectFilter === "function"
+      ) {
+        setProjectFilter(
+          String(projectId)
+        );
+      }
+    }
+
+    if (taskId) {
+      const targetTask = safeTasks.find(
+        (task) =>
+          String(task.id) ===
+          String(taskId)
+      );
+
+      if (targetTask) {
+        if (
+          typeof setTaskFilter === "function"
+        ) {
+          setTaskFilter("all");
+        }
+
+        if (
+          targetTask.projectId != null &&
+          typeof setProjectFilter ===
+            "function"
+        ) {
+          setProjectFilter(
+            String(targetTask.projectId)
+          );
+        }
+      }
+    }
+  }, [
+    searchParams,
+    safeProjects,
+    safeTasks,
+    setProjectFilter,
+    setTaskFilter,
+    taskFilter,
+  ]);
+
+  /* =========================================================
+     URL CLEAR
+  ========================================================= */
+
+  const clearUrlSelection = () => {
+    const nextParams =
+      new URLSearchParams(searchParams);
+
+    nextParams.delete("project");
+    nextParams.delete("task");
+    nextParams.delete("filter");
+
+    setSearchParams(nextParams, {
+      replace: true,
+    });
+  };
+
+  /* =========================================================
+     SEARCH
+  ========================================================= */
+
+  const visibleTasks = useMemo(() => {
+    const query = localSearch
+      .trim()
+      .toLowerCase();
+
+    if (!query) {
+      return safeFilteredTasks;
+    }
+
+    return safeFilteredTasks.filter(
+      (task) => {
+        const title =
+          task?.title?.toLowerCase() || "";
+
+        const description =
+          task?.description?.toLowerCase() ||
+          "";
+
+        const category =
+          task?.category?.toLowerCase() ||
+          "";
+
+        const tags = Array.isArray(
+          task?.tags
+        )
+          ? task.tags
+              .join(" ")
+              .toLowerCase()
+          : "";
+
+        return (
+          title.includes(query) ||
+          description.includes(query) ||
+          category.includes(query) ||
+          tags.includes(query)
+        );
+      }
+    );
+  }, [
+    safeFilteredTasks,
+    localSearch,
+  ]);
+
+  /* =========================================================
+     CATEGORIES
+  ========================================================= */
+
+  const categories = useMemo(
+    () => [
+      ...new Set(
+        safeTasks
+          .map(
+            (task) => task?.category
+          )
+          .filter(Boolean)
+      ),
+    ],
+    [safeTasks]
+  );
+
+  /* =========================================================
+     FILTER OPTIONS
+  ========================================================= */
 
   const priorityOptions = [
     {
@@ -262,17 +450,17 @@ function Todos() {
     {
       value: "High",
       label: "High",
-      dot: "bg-red-500",
+      dot: "bg-[#a85b5b]",
     },
     {
       value: "Medium",
       label: "Medium",
-      dot: "bg-amber-500",
+      dot: "bg-[#b07b4d]",
     },
     {
       value: "Low",
       label: "Low",
-      dot: "bg-emerald-500",
+      dot: "bg-[#627b82]",
     },
   ];
 
@@ -284,17 +472,17 @@ function Todos() {
     {
       value: "High",
       label: "High energy",
-      dot: "bg-orange-500",
+      dot: "bg-[#b07b4d]",
     },
     {
       value: "Medium",
       label: "Medium energy",
-      dot: "bg-yellow-500",
+      dot: "bg-[#c09a55]",
     },
     {
       value: "Low",
       label: "Low energy",
-      dot: "bg-blue-500",
+      dot: "bg-[#627b82]",
     },
   ];
 
@@ -303,6 +491,7 @@ function Todos() {
       value: "all",
       label: "All categories",
     },
+
     ...categories.map((category) => ({
       value: category,
       label: category,
@@ -315,6 +504,7 @@ function Todos() {
       value: "all",
       label: "All projects",
     },
+
     ...safeProjects.map((project) => ({
       value: String(project.id),
       label:
@@ -325,25 +515,169 @@ function Todos() {
     })),
   ];
 
-  // =========================================================
-  // SAFE HANDLERS
-  // =========================================================
+  /* =========================================================
+     STATS
+  ========================================================= */
+
+  const activeCount = safeTasks.filter(
+    (task) =>
+      !task.completed &&
+      !task.archived
+  ).length;
+
+  const completedCount = safeTasks.filter(
+    (task) => task.completed === true
+  ).length;
+
+  const overdueCount = safeTasks.filter(
+    (task) => {
+      if (
+        task.completed ||
+        task.archived ||
+        !task.dueDate
+      ) {
+        return false;
+      }
+
+      return (
+        task.dueDate <
+        new Date()
+          .toISOString()
+          .split("T")[0]
+      );
+    }
+  ).length;
+
+  const completionRate =
+    safeTasks.length > 0
+      ? Math.round(
+          (completedCount /
+            safeTasks.length) *
+            100
+        )
+      : 0;
+
+  /* =========================================================
+     PROJECT CONTEXT
+  ========================================================= */
+
+  const activeProjectId =
+    searchParams.get("project");
+
+  const activeProject =
+    safeProjects.find(
+      (project) =>
+        String(project.id) ===
+        String(activeProjectId)
+    );
+
+  /* =========================================================
+     ACTIVE FILTERS
+  ========================================================= */
+
+  const hasProjectFilter =
+    projectFilter !== "all" &&
+    projectFilter !== null &&
+    projectFilter !== undefined;
+
+  const hasActiveFilters =
+    taskFilter !== "all" ||
+    priorityFilter !== "all" ||
+    categoryFilter !== "all" ||
+    energyFilter !== "all" ||
+    hasProjectFilter ||
+    Boolean(localSearch);
+
+  /* =========================================================
+     CLEAR FILTERS
+  ========================================================= */
+
+  const clearAllFilters = () => {
+    if (
+      typeof setTaskFilter === "function"
+    ) {
+      setTaskFilter("all");
+    }
+
+    if (
+      typeof setPriorityFilter ===
+      "function"
+    ) {
+      setPriorityFilter("all");
+    }
+
+    if (
+      typeof setCategoryFilter ===
+      "function"
+    ) {
+      setCategoryFilter("all");
+    }
+
+    if (
+      typeof setEnergyFilter === "function"
+    ) {
+      setEnergyFilter("all");
+    }
+
+    if (
+      typeof setProjectFilter ===
+      "function"
+    ) {
+      setProjectFilter("all");
+    }
+
+    setLocalSearch("");
+    clearUrlSelection();
+  };
+
+  /* =========================================================
+     VIEW
+  ========================================================= */
 
   const handleTaskView = (view) => {
-    if (typeof setTaskView === "function") {
+    if (
+      typeof setTaskView === "function"
+    ) {
       setTaskView(view);
     }
   };
 
+  /* =========================================================
+     TASK FILTER
+  ========================================================= */
+
   const handleTaskFilter = (filter) => {
-    if (typeof setTaskFilter === "function") {
+    if (
+      typeof setTaskFilter === "function"
+    ) {
       setTaskFilter(filter);
     }
+
+    const nextParams =
+      new URLSearchParams(searchParams);
+
+    /*
+      Manual filter changes remove the
+      dashboard URL filter.
+    */
+
+    nextParams.delete("filter");
+
+    if (
+      searchParams.has("project") &&
+      filter !== taskFilter
+    ) {
+      nextParams.delete("project");
+    }
+
+    setSearchParams(nextParams, {
+      replace: true,
+    });
   };
 
-  // =========================================================
-  // TASK CARD
-  // =========================================================
+  /* =========================================================
+     TASK CARD
+  ========================================================= */
 
   const renderTaskCard = (task) => {
     if (!task) {
@@ -351,12 +685,14 @@ function Todos() {
     }
 
     const dependencies =
-      typeof getTaskDependencies === "function"
+      typeof getTaskDependencies ===
+      "function"
         ? getTaskDependencies(task)
         : [];
 
     const blocked =
-      typeof hasBlockedDependencies === "function"
+      typeof hasBlockedDependencies ===
+      "function"
         ? hasBlockedDependencies(task)
         : false;
 
@@ -370,8 +706,11 @@ function Todos() {
         onArchive={archiveTask}
         onStartFocus={startFocus}
         onSelect={toggleTaskSelection}
+        onUpdate={updateTask}
         selected={safeSelectedTasks.some(
-          (id) => String(id) === String(task.id)
+          (id) =>
+            String(id) ===
+            String(task.id)
         )}
         dependencies={dependencies}
         blocked={blocked}
@@ -379,76 +718,278 @@ function Todos() {
     );
   };
 
-  // =========================================================
-  // RENDER
-  // =========================================================
+  /* =========================================================
+     FILTER BUTTONS
+  ========================================================= */
+
+  const filters = [
+    ["all", "All"],
+    ["active", "Active"],
+    ["today", "Today"],
+    ["overdue", "Overdue"],
+    ["in-progress", "In progress"],
+    ["review", "Review"],
+    ["completed", "Completed"],
+  ];
+
+  /* =========================================================
+     KANBAN FILTER
+  ========================================================= */
+
+  const getBoardTasks = (status) => {
+    const query = localSearch
+      .trim()
+      .toLowerCase();
+
+    return safeTasksByStatus[
+      status
+    ].filter((task) => {
+      if (!query) {
+        return true;
+      }
+
+      const title =
+        task?.title?.toLowerCase() || "";
+
+      const description =
+        task?.description?.toLowerCase() ||
+        "";
+
+      const category =
+        task?.category?.toLowerCase() ||
+        "";
+
+      const tags = Array.isArray(
+        task?.tags
+      )
+        ? task.tags
+            .join(" ")
+            .toLowerCase()
+        : "";
+
+      return (
+        title.includes(query) ||
+        description.includes(query) ||
+        category.includes(query) ||
+        tags.includes(query)
+      );
+    });
+  };
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-[1320px] space-y-5 pb-8">
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
-      {/* HEADER */}
+      <header className="relative overflow-hidden rounded-[20px] border border-[#e3ded6] bg-white px-5 py-5 shadow-[0_5px_22px_rgba(41,39,37,0.035)] dark:border-[#333833] dark:bg-[#1b1f1c] sm:px-6 sm:py-6">
+        <div className="pointer-events-none absolute right-[-70px] top-[-90px] h-52 w-52 rounded-full bg-[#765b6b]/5 blur-3xl" />
 
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-[#765b6b]">
-            Task Management
-          </p>
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#765b6b]" />
 
-          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-            Your tasks
-          </h1>
+              <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#765b6b] dark:text-[#c9aebe]">
+                Task workspace
+              </p>
+            </div>
 
-          <p className="mt-2 text-sm text-black/40 dark:text-white/35">
-            Plan, prioritize and execute your work.
-          </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2.5">
+              <h1 className="text-[30px] font-black tracking-[-0.04em] text-[#292725] dark:text-white sm:text-[36px]">
+                Your tasks
+              </h1>
+
+              {activeProject && (
+                <>
+                  <span className="text-[#c1bbb2]">
+                    /
+                  </span>
+
+                  <span className="flex max-w-full items-center gap-1.5 rounded-[8px] bg-[#765b6b]/8 px-2.5 py-1.5 text-[9px] font-black text-[#765b6b] dark:bg-[#765b6b]/12 dark:text-[#c9aebe]">
+                    <FolderKanban size={11} />
+
+                    <span className="max-w-[180px] truncate">
+                      {activeProject.name ||
+                        activeProject.title ||
+                        "Project"}
+                    </span>
+                  </span>
+                </>
+              )}
+            </div>
+
+            <p className="mt-1.5 max-w-xl text-[12px] leading-5 text-[#8c867e] dark:text-[#858b86]">
+              Keep the work visible, focused, and moving.
+            </p>
+          </div>
+
+          <div className="shrink-0">
+            <TaskForm
+              onAdd={addTask}
+              projects={safeProjects}
+              tasks={safeTasks}
+            />
+          </div>
         </div>
+      </header>
 
-        <TaskForm
-          onAdd={addTask}
-          projects={safeProjects}
-          tasks={safeTasks}
+      {/* =====================================================
+          PROJECT CONTEXT
+      ===================================================== */}
+
+      {activeProject && (
+        <section className="flex flex-col gap-3 rounded-[15px] border border-[#765b6b]/15 bg-[#765b6b]/[0.035] px-4 py-3.5 dark:border-[#765b6b]/20 dark:bg-[#765b6b]/[0.06] sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-[#765b6b]/10 text-[#765b6b] dark:bg-[#765b6b]/15 dark:text-[#c9aebe]">
+              <CircleDot size={14} />
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-[8px] font-black uppercase tracking-[0.16em] text-[#765b6b] dark:text-[#c9aebe]">
+                Project filter
+              </p>
+
+              <p className="truncate text-[11px] font-black text-[#4f4b46] dark:text-[#d0cdc7]">
+                Showing tasks from{" "}
+                {activeProject.name ||
+                  activeProject.title ||
+                  "this project"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (
+                typeof setProjectFilter ===
+                "function"
+              ) {
+                setProjectFilter("all");
+              }
+
+              const nextParams =
+                new URLSearchParams(
+                  searchParams
+                );
+
+              nextParams.delete("project");
+
+              setSearchParams(
+                nextParams,
+                {
+                  replace: true,
+                }
+              );
+            }}
+            className="flex shrink-0 items-center justify-center gap-1.5 rounded-[8px] border border-[#d8cdd3] bg-white px-3 py-2 text-[9px] font-black text-[#765b6b] transition hover:border-[#765b6b]/30 hover:bg-[#faf7f9] dark:border-[#4a3d45] dark:bg-[#202420] dark:text-[#c9aebe] dark:hover:bg-[#292e2a]"
+          >
+            <X size={11} />
+            Clear project
+          </button>
+        </section>
+      )}
+
+      {/* =====================================================
+          QUICK STATS
+      ===================================================== */}
+
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <MiniStat
+          label="Total"
+          value={safeTasks.length}
+        />
+
+        <MiniStat
+          label="Active"
+          value={activeCount}
+          accent
+        />
+
+        <MiniStat
+          label="Overdue"
+          value={overdueCount}
+          warning={overdueCount > 0}
+        />
+
+        <MiniStat
+          label="Completed"
+          value={`${completionRate}%`}
+          success
         />
       </div>
 
-      {/* FILTER BAR */}
+      {/* =====================================================
+          FILTER WORKSPACE
+      ===================================================== */}
 
-      <div
-        className="
-          rounded-[28px] border border-black/5 bg-white
-          p-4 shadow-sm dark:border-white/10
-          dark:bg-[#171a17]
-        "
-      >
-        <div className="flex flex-wrap gap-2">
-          {[
-            ["all", "All"],
-            ["active", "Active"],
-            ["today", "Today"],
-            ["overdue", "Overdue"],
-            ["in-progress", "In Progress"],
-            ["review", "Review"],
-            ["completed", "Completed"],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => handleTaskFilter(value)}
-              className={`
-                rounded-xl px-3.5 py-2 text-xs font-black
-                transition-all duration-200
-                ${
-                  taskFilter === value
-                    ? "bg-[#765b6b] text-white shadow-md shadow-[#765b6b]/20"
-                    : "bg-black/5 text-black/50 hover:bg-black/10 dark:bg-white/5 dark:text-white/40 dark:hover:bg-white/10"
+      <section className="overflow-visible rounded-[18px] border border-[#e1dcd4] bg-white shadow-[0_5px_20px_rgba(41,39,37,0.035)] dark:border-[#333833] dark:bg-[#1b1f1c]">
+        <div className="flex flex-col gap-3 border-b border-[#ebe7e0] p-3.5 dark:border-[#303530] lg:flex-row lg:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+            <div className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-[#f0ede8] text-[#77736b] dark:bg-[#292e2a] dark:text-[#aaa69e]">
+              <ListFilter size={14} />
+            </div>
+
+            {filters.map(
+              ([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() =>
+                    handleTaskFilter(value)
+                  }
+                  className={`shrink-0 rounded-[9px] px-3 py-2 text-[10px] font-black transition-all duration-200 ${
+                    taskFilter === value
+                      ? "bg-[#765b6b] text-white shadow-[0_4px_12px_rgba(118,91,107,0.16)]"
+                      : "text-[#8b857d] hover:bg-[#f1eee9] hover:text-[#292725] dark:text-[#858b86] dark:hover:bg-[#292e2a] dark:hover:text-white"
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            )}
+          </div>
+
+          <div className="relative flex shrink-0 items-center">
+            <Search
+              size={13}
+              className="absolute left-3 text-[#aaa49b]"
+            />
+
+            <input
+              value={localSearch}
+              onChange={(event) =>
+                setLocalSearch(
+                  event.target.value
+                )
+              }
+              placeholder="Search tasks..."
+              className="h-9 w-full rounded-[10px] border border-[#e1dcd4] bg-[#faf9f6] pl-8 pr-8 text-[10px] font-bold text-[#292725] outline-none transition placeholder:text-[#aaa49b] focus:border-[#765b6b] focus:ring-2 focus:ring-[#765b6b]/10 dark:border-[#353a35] dark:bg-[#202420] dark:text-white dark:placeholder:text-[#686d68] sm:w-[205px]"
+            />
+
+            {localSearch && (
+              <button
+                type="button"
+                onClick={() =>
+                  setLocalSearch("")
                 }
-              `}
-            >
-              {label}
-            </button>
-          ))}
+                className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full text-[#aaa49b] hover:bg-black/5 dark:hover:bg-white/5"
+                aria-label="Clear search"
+              >
+                <X size={11} />
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {/* FILTER CONTROLS */}
+
+        <div className="grid gap-2.5 p-3.5 sm:grid-cols-2 lg:grid-cols-4">
           <StyledDropdown
             value={priorityFilter}
             onChange={setPriorityFilter}
@@ -481,155 +1022,211 @@ function Todos() {
             placeholder="All projects"
           />
         </div>
-      </div>
 
-      {/* COUNT */}
+        {/* FILTER STATUS */}
 
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-black uppercase tracking-widest text-black/30 dark:text-white/30">
-          {safeFilteredTasks.length}{" "}
-          {safeFilteredTasks.length === 1
-            ? "task"
-            : "tasks"}
-        </p>
+        {hasActiveFilters && (
+          <div className="flex flex-col gap-2 border-t border-[#ebe7e0] px-3.5 py-2.5 dark:border-[#303530] sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-[9px] font-bold text-[#99938a] dark:text-[#686d68]">
+              <SlidersHorizontal size={11} />
+              Filters are active
+            </div>
 
-        {safeProjects.length > 0 && (
-          <p className="text-xs font-bold text-black/30 dark:text-white/30">
-            {safeProjects.length}{" "}
-            {safeProjects.length === 1
-              ? "project"
-              : "projects"}
-          </p>
-        )}
-      </div>
-
-      {/* BULK ACTIONS */}
-
-      {safeFilteredTasks.length > 0 && (
-        <div
-          className="
-            flex flex-wrap items-center gap-2 rounded-2xl
-            border border-black/5 bg-white p-3
-            dark:border-white/10 dark:bg-[#171a17]
-          "
-        >
-          <button
-            type="button"
-            onClick={selectAllVisibleTasks}
-            className="
-              rounded-xl px-3 py-2 text-xs font-black
-              transition hover:bg-black/5 dark:hover:bg-white/10
-            "
-          >
-            Select all
-          </button>
-
-          {safeSelectedTasks.length > 0 && (
-            <>
-              <span className="text-xs font-bold text-black/30 dark:text-white/30">
-                {safeSelectedTasks.length} selected
-              </span>
-
-              <button
-                type="button"
-                onClick={completeSelectedTasks}
-                className="
-                  rounded-xl bg-[#765b6b]/10 px-3 py-2
-                  text-xs font-black text-[#765b6b]
-                  transition hover:bg-[#765b6b]/15
-                "
-              >
-                Complete
-              </button>
-
-              <button
-                type="button"
-                onClick={archiveSelectedTasks}
-                className="
-                  rounded-xl bg-black/5 px-3 py-2 text-xs
-                  font-black transition hover:bg-black/10
-                  dark:bg-white/10 dark:hover:bg-white/15
-                "
-              >
-                Archive
-              </button>
-
-              <button
-                type="button"
-                onClick={deleteSelectedTasks}
-                className="
-                  rounded-xl bg-red-500/10 px-3 py-2
-                  text-xs font-black text-red-500
-                  transition hover:bg-red-500/15
-                "
-              >
-                Delete
-              </button>
-
-              <button
-                type="button"
-                onClick={clearTaskSelection}
-                className="
-                  rounded-xl px-3 py-2 text-xs font-black
-                  text-black/40 hover:bg-black/5
-                  dark:text-white/40 dark:hover:bg-white/5
-                "
-              >
-                Clear
-              </button>
-            </>
-          )}
-
-          {/* VIEW */}
-
-          <div className="ml-auto flex gap-1 rounded-xl bg-black/5 p-1 dark:bg-white/5">
             <button
               type="button"
-              onClick={() => handleTaskView("list")}
-              className={`
-                rounded-lg p-2 transition
-                ${
-                  taskView === "list"
-                    ? "bg-white text-[#765b6b] shadow-sm dark:bg-[#252925]"
-                    : "text-black/30 dark:text-white/30"
-                }
-              `}
+              onClick={clearAllFilters}
+              className="self-start text-[9px] font-black text-[#765b6b] transition hover:underline dark:text-[#c9aebe] sm:self-auto"
             >
-              <LayoutList size={17} />
+              Clear all
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* =====================================================
+          RESULT TOOLBAR
+      ===================================================== */}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-[#765b6b]/8 text-[#765b6b] dark:bg-[#765b6b]/12 dark:text-[#c9aebe]">
+            <CircleDot size={12} />
+          </div>
+
+          <div>
+            <p className="text-[10px] font-black text-[#55514c] dark:text-[#d0cdc7]">
+              {visibleTasks.length}{" "}
+              {visibleTasks.length === 1
+                ? "task"
+                : "tasks"}
+            </p>
+
+            {localSearch && (
+              <p className="max-w-[220px] truncate text-[8px] font-bold text-[#aaa49b]">
+                Matching “{localSearch}”
+              </p>
+            )}
+
+            {taskFilter === "today" &&
+              !localSearch && (
+                <p className="text-[8px] font-bold text-[#765b6b] dark:text-[#c9aebe]">
+                  Tasks due today
+                </p>
+              )}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 sm:justify-end">
+          {safeProjects.length > 0 && (
+            <p className="text-[9px] font-bold text-[#aaa49b] dark:text-[#686d68]">
+              {safeProjects.length}{" "}
+              {safeProjects.length === 1
+                ? "project"
+                : "projects"}
+            </p>
+          )}
+
+          <div className="flex items-center gap-1 rounded-[10px] border border-[#e1dcd4] bg-[#faf9f6] p-1 dark:border-[#353a35] dark:bg-[#202420]">
+            <button
+              type="button"
+              onClick={() =>
+                handleTaskView("list")
+              }
+              className={`flex h-7 w-8 items-center justify-center rounded-[7px] transition ${
+                taskView === "list"
+                  ? "bg-white text-[#765b6b] shadow-sm dark:bg-[#292e2a] dark:text-[#c9aebe]"
+                  : "text-[#aaa49b] hover:text-[#55514c] dark:hover:text-white"
+              }`}
+              title="List view"
+              aria-label="List view"
+            >
+              <LayoutList size={14} />
             </button>
 
             <button
               type="button"
-              onClick={() => handleTaskView("board")}
-              className={`
-                rounded-lg p-2 transition
-                ${
-                  taskView === "board"
-                    ? "bg-white text-[#765b6b] shadow-sm dark:bg-[#252925]"
-                    : "text-black/30 dark:text-white/30"
-                }
-              `}
+              onClick={() =>
+                handleTaskView("board")
+              }
+              className={`flex h-7 w-8 items-center justify-center rounded-[7px] transition ${
+                taskView === "board"
+                  ? "bg-white text-[#765b6b] shadow-sm dark:bg-[#292e2a] dark:text-[#c9aebe]"
+                  : "text-[#aaa49b] hover:text-[#55514c] dark:hover:text-white"
+              }`}
+              title="Board view"
+              aria-label="Board view"
             >
-              <Columns3 size={17} />
+              <Columns3 size={14} />
             </button>
           </div>
         </div>
+      </div>
+
+      {/* =====================================================
+          BULK ACTIONS
+      ===================================================== */}
+
+      {visibleTasks.length > 0 && (
+        <section
+          className={`rounded-[15px] border p-3 transition ${
+            safeSelectedTasks.length > 0
+              ? "border-[#765b6b]/15 bg-[#765b6b]/[0.035] dark:border-[#765b6b]/20 dark:bg-[#765b6b]/[0.06]"
+              : "border-[#e3ded6] bg-white dark:border-[#333833] dark:bg-[#1b1f1c]"
+          }`}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={
+                selectAllVisibleTasks
+              }
+              className="flex items-center gap-1.5 rounded-[9px] border border-[#e1dcd4] bg-[#faf9f6] px-3 py-2 text-[9px] font-black text-[#77736b] transition hover:border-[#d4cec5] hover:text-[#292725] dark:border-[#353a35] dark:bg-[#202420] dark:text-[#aaa69e] dark:hover:text-white"
+            >
+              <CheckCheck size={12} />
+              Select all
+            </button>
+
+            {safeSelectedTasks.length >
+              0 && (
+              <>
+                <span className="text-[9px] font-black uppercase tracking-[0.12em] text-[#765b6b] dark:text-[#c9aebe]">
+                  {safeSelectedTasks.length}{" "}
+                  selected
+                </span>
+
+                <div className="hidden h-4 w-px bg-[#ddd8d0] dark:bg-[#353a35] sm:block" />
+
+                <button
+                  type="button"
+                  onClick={
+                    completeSelectedTasks
+                  }
+                  className="flex items-center gap-1.5 rounded-[9px] bg-[#557a62]/9 px-3 py-2 text-[9px] font-black text-[#557a62] transition hover:bg-[#557a62]/14 dark:bg-[#557a62]/12 dark:text-[#8faf91]"
+                >
+                  <Check size={12} />
+                  Complete
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    archiveSelectedTasks
+                  }
+                  className="flex items-center gap-1.5 rounded-[9px] bg-[#627b82]/9 px-3 py-2 text-[9px] font-black text-[#627b82] transition hover:bg-[#627b82]/14 dark:bg-[#627b82]/12 dark:text-[#9bb4ba]"
+                >
+                  <Archive size={12} />
+                  Archive
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    deleteSelectedTasks
+                  }
+                  className="flex items-center gap-1.5 rounded-[9px] bg-[#a85b5b]/8 px-3 py-2 text-[9px] font-black text-[#a85b5b] transition hover:bg-[#a85b5b]/13 dark:bg-[#d88989]/10 dark:text-[#d88989]"
+                >
+                  <Trash2 size={12} />
+                  Delete
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    clearTaskSelection
+                  }
+                  className="flex items-center gap-1.5 rounded-[9px] px-3 py-2 text-[9px] font-black text-[#99938a] transition hover:bg-black/5 hover:text-[#55514c] dark:hover:bg-white/5 dark:hover:text-white"
+                >
+                  <X size={12} />
+                  Clear
+                </button>
+              </>
+            )}
+          </div>
+        </section>
       )}
 
-      {/* TASKS */}
+      {/* =====================================================
+          EMPTY / LIST
+      ===================================================== */}
 
       {taskView === "list" ? (
-        safeFilteredTasks.length === 0 ? (
+        visibleTasks.length === 0 ? (
           <EmptyState
             title={
-              safeTasks.length === 0
-                ? "No tasks yet"
-                : "No tasks found"
+              taskFilter === "today"
+                ? "No tasks for today"
+                : safeTasks.length === 0
+                  ? "No tasks yet"
+                  : "No tasks found"
             }
             description={
-              safeTasks.length === 0
-                ? "Create your first task to get started."
-                : "Try changing your filters or create a new task."
+              taskFilter === "today"
+                ? "You don't have any tasks due today."
+                : safeTasks.length === 0
+                  ? "Create your first task and give your day somewhere to start."
+                  : localSearch
+                    ? "Nothing matches your search. Try another term."
+                    : "Try changing your filters or create a new task."
             }
             action={
               <TaskForm
@@ -641,50 +1238,161 @@ function Todos() {
           />
         ) : (
           <div className="space-y-3">
-            {safeFilteredTasks.map(renderTaskCard)}
+            {visibleTasks.map(
+              renderTaskCard
+            )}
           </div>
         )
       ) : (
-        /* KANBAN */
+        /* =====================================================
+           KANBAN
+        ===================================================== */
 
-        <div className="grid gap-4 xl:grid-cols-4">
+        <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
           {[
-            ["backlog", "Backlog"],
-            ["in-progress", "In Progress"],
-            ["review", "Review"],
-            ["done", "Done"],
-          ].map(([status, title]) => (
-            <div
-              key={status}
-              className="
-                min-h-[400px] rounded-3xl bg-black/[0.025]
-                p-3 dark:bg-white/[0.025]
-              "
-            >
-              <div className="mb-3 flex items-center justify-between px-2">
-                <h3 className="text-sm font-black">
-                  {title}
-                </h3>
+            {
+              status: "backlog",
+              title: "Backlog",
+              subtitle: "Waiting to start",
+              icon: CircleDot,
+            },
+            {
+              status: "in-progress",
+              title: "In progress",
+              subtitle: "Currently working",
+              icon: Sparkles,
+            },
+            {
+              status: "review",
+              title: "Review",
+              subtitle: "Needs attention",
+              icon: ArrowDownUp,
+            },
+            {
+              status: "done",
+              title: "Done",
+              subtitle: "Completed work",
+              icon: Check,
+            },
+          ].map(
+            ({
+              status,
+              title,
+              subtitle,
+              icon: Icon,
+            }) => {
+              const columnTasks =
+                getBoardTasks(status);
 
-                <span
-                  className="
-                    rounded-full bg-black/5 px-2 py-1
-                    text-[10px] font-black dark:bg-white/10
-                  "
+              return (
+                <section
+                  key={status}
+                  className="min-h-[330px] overflow-hidden rounded-[17px] border border-[#e3ded6] bg-[#f3f0eb] dark:border-[#303530] dark:bg-[#202420]"
                 >
-                  {safeTasksByStatus[status].length}
-                </span>
-              </div>
+                  <div className="border-b border-[#ded8cf] px-3.5 py-3 dark:border-[#343934]">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-white shadow-sm dark:bg-[#292e2a]">
+                          <Icon
+                            size={12}
+                            className={
+                              status === "done"
+                                ? "text-[#557a62]"
+                                : status ===
+                                    "in-progress"
+                                  ? "text-[#627b82]"
+                                  : status ===
+                                      "review"
+                                    ? "text-[#765b6b]"
+                                    : "text-[#77736b]"
+                            }
+                          />
+                        </div>
 
-              <div className="space-y-3">
-                {safeTasksByStatus[status].map(
-                  renderTaskCard
-                )}
-              </div>
-            </div>
-          ))}
+                        <div>
+                          <h3 className="text-[10px] font-black text-[#55514c] dark:text-[#d0cdc7]">
+                            {title}
+                          </h3>
+
+                          <p className="mt-0.5 text-[8px] font-bold text-[#aaa49b] dark:text-[#686d68]">
+                            {subtitle}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="flex h-6 min-w-6 items-center justify-center rounded-[7px] bg-white px-1.5 text-[8px] font-black text-[#89837b] shadow-sm dark:bg-[#292e2a] dark:text-[#aaa69e]">
+                        {columnTasks.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5 p-2.5">
+                    {columnTasks.length > 0 ? (
+                      columnTasks.map(
+                        renderTaskCard
+                      )
+                    ) : (
+                      <div className="flex min-h-[145px] flex-col items-center justify-center rounded-[12px] border border-dashed border-[#d9d3ca] bg-white/35 px-4 text-center dark:border-[#383e39] dark:bg-black/5">
+                        <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-[8px] bg-white/70 text-[#aaa49b] dark:bg-[#292e2a] dark:text-[#686d68]">
+                          <CircleDot size={12} />
+                        </div>
+
+                        <p className="text-[9px] font-bold text-[#aaa49b] dark:text-[#686d68]">
+                          Nothing here yet
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              );
+            }
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+/* =============================================================
+   MINI STAT
+============================================================= */
+
+function MiniStat({
+  label,
+  value,
+  accent = false,
+  warning = false,
+  success = false,
+}) {
+  let valueClass =
+    "text-[#292725] dark:text-white";
+
+  if (accent) {
+    valueClass =
+      "text-[#765b6b] dark:text-[#c9aebe]";
+  }
+
+  if (warning) {
+    valueClass =
+      "text-[#a85b5b] dark:text-[#d88989]";
+  }
+
+  if (success) {
+    valueClass =
+      "text-[#557a62] dark:text-[#8faf91]";
+  }
+
+  return (
+    <div className="group flex items-center justify-between rounded-[13px] border border-[#e3ded6] bg-white px-3.5 py-3 transition-all duration-200 hover:-translate-y-[1px] hover:border-[#d6d0c8] hover:shadow-[0_6px_18px_rgba(41,39,37,0.045)] dark:border-[#333833] dark:bg-[#1b1f1c] dark:hover:border-[#424742]">
+      <p className="text-[8px] font-black uppercase tracking-[0.14em] text-[#aaa49b] dark:text-[#686d68]">
+        {label}
+      </p>
+
+      <p
+        className={`text-[15px] font-black tracking-[-0.02em] ${valueClass}`}
+      >
+        {value}
+      </p>
     </div>
   );
 }

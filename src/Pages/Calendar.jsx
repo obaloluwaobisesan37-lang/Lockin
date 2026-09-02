@@ -1,354 +1,331 @@
 import React, { useMemo, useState } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
+  AlertTriangle,
   CalendarDays,
   CheckCircle2,
-  Clock3,
+  ChevronLeft,
+  ChevronRight,
   Circle,
-  AlertTriangle,
+  Clock3,
   FolderKanban,
-  Zap,
   ListTodo,
   Target,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 
 function Calendar() {
   const context = useOutletContext() || {};
 
-  const { tasks = [], projects = [], toggleTask, updateTask } = context;
+  const {
+    tasks = [],
+    projects = [],
+    toggleTask,
+    updateTask,
+  } = context;
+
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeProjects = Array.isArray(projects) ? projects : [];
 
   const [currentDate, setCurrentDate] = useState(new Date());
-
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const [selectedView, setSelectedView] = useState("month");
-
-  // =========================================================
-  // DATE HELPERS
-  // =========================================================
-
   const formatDateKey = (date) => {
-    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
 
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-      2,
-      "0",
-    )}-${String(date.getDate()).padStart(2, "0")}`;
+    return `${year}-${month}-${day}`;
   };
 
   const parseDate = (dateString) => {
     if (!dateString) return null;
 
-    const parts = dateString.split("-");
+    const date = new Date(`${dateString}T00:00:00`);
 
-    if (parts.length !== 3) return null;
-
-    const year = Number(parts[0]);
-    const month = Number(parts[1]) - 1;
-    const day = Number(parts[2]);
-
-    return new Date(year, month, day);
+    return Number.isNaN(date.getTime()) ? null : date;
   };
-
-  const addDays = (date, amount) => {
-    const result = new Date(date);
-    result.setDate(result.getDate() + amount);
-    return result;
-  };
-
-  const todayKey = formatDateKey(new Date());
-
-  const selectedDateKey = formatDateKey(selectedDate);
-
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-
-  const monthName = currentDate.toLocaleDateString("default", {
-    month: "long",
-    year: "numeric",
-  });
-
-  const selectedDateLabel = selectedDate.toLocaleDateString("default", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-
-  // =========================================================
-  // PROJECT HELPERS
-  // =========================================================
 
   const getProject = (projectId) => {
     if (!projectId) return null;
 
-    return projects.find((project) => project.id === projectId);
+    return (
+      safeProjects.find(
+        (project) => String(project.id) === String(projectId),
+      ) || null
+    );
   };
 
   const getProjectName = (projectId) => {
     const project = getProject(projectId);
 
-    return project?.name || project?.title || "No project";
+    return project?.name || "No project";
   };
 
   const getProjectColor = (projectId) => {
     const project = getProject(projectId);
 
-    if (project?.color && typeof project.color === "string") {
-      if (project.color.startsWith("#")) {
+    if (project?.color) {
+      if (project.color.startsWith?.("#")) {
         return project.color;
       }
 
-      const colors = {
+      const colorMap = {
         sage: "#6f9473",
-        blue: "#3b82f6",
-        purple: "#a855f7",
-        orange: "#f97316",
-        rose: "#f43f5e",
-        cyan: "#06b6d4",
+        blue: "#627b82",
+        purple: "#765b6b",
+        orange: "#b07b4d",
+        rose: "#a85b5b",
+        cyan: "#627b82",
       };
 
-      return colors[project.color] || "#6f9473";
+      return colorMap[project.color] || "#765b6b";
     }
 
-    return "#6f9473";
+    return "#765b6b";
   };
 
-  // =========================================================
-  // TASK HELPERS
-  // =========================================================
+  const todayKey = formatDateKey(new Date());
+  const selectedDateKey = formatDateKey(selectedDate);
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const monthName = currentDate.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  const selectedDateLabel = selectedDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   const getTasksForDate = (dateKey) => {
-    if (!dateKey) return [];
+    return safeTasks
+      .filter(
+        (task) =>
+          !task.archived &&
+          task.dueDate &&
+          task.dueDate === dateKey,
+      )
+      .sort((a, b) => {
+        if (Boolean(a.completed) !== Boolean(b.completed)) {
+          return a.completed ? 1 : -1;
+        }
 
-    return tasks.filter((task) => !task.archived && task.dueDate === dateKey);
+        return String(a.dueTime || "").localeCompare(
+          String(b.dueTime || ""),
+        );
+      });
   };
 
   const isOverdue = (task) => {
-    if (!task?.dueDate) return false;
+    if (task.completed || !task.dueDate) return false;
 
-    return !task.completed && task.dueDate < todayKey;
+    return task.dueDate < todayKey;
   };
 
-  const getPriorityClass = (priority) => {
-    switch (priority) {
-      case "High":
-        return "bg-rose-500/10 text-rose-600 dark:text-rose-400";
+  const getPriorityStyle = (priority) => {
+    const styles = {
+      high: {
+        label: "High",
+        className:
+          "border-[#a85b5b]/20 bg-[#a85b5b]/10 text-[#8e4b4b] dark:text-[#d99a9a]",
+      },
+      medium: {
+        label: "Medium",
+        className:
+          "border-[#b07b4d]/20 bg-[#b07b4d]/10 text-[#98683f] dark:text-[#d8aa7e]",
+      },
+      low: {
+        label: "Low",
+        className:
+          "border-[#627b82]/20 bg-[#627b82]/10 text-[#526a70] dark:text-[#9bb1b7]",
+      },
+    };
 
-      case "Medium":
-        return "bg-orange-500/10 text-orange-600 dark:text-orange-400";
-
-      case "Low":
-        return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
-
-      default:
-        return "bg-black/5 text-black/50 dark:bg-white/10 dark:text-white/50";
-    }
+    return (
+      styles[String(priority || "medium").toLowerCase()] ||
+      styles.medium
+    );
   };
 
-  const getEnergyClass = (energy) => {
-    switch (energy) {
-      case "High":
-        return "text-rose-500";
+  const getEnergyStyle = (energy) => {
+    const styles = {
+      high: {
+        label: "High energy",
+        className:
+          "border-[#765b6b]/20 bg-[#765b6b]/10 text-[#765b6b] dark:text-[#c7aebe]",
+      },
+      medium: {
+        label: "Medium energy",
+        className:
+          "border-[#b07b4d]/20 bg-[#b07b4d]/10 text-[#98683f] dark:text-[#d8aa7e]",
+      },
+      low: {
+        label: "Low energy",
+        className:
+          "border-[#627b82]/20 bg-[#627b82]/10 text-[#526a70] dark:text-[#9bb1b7]",
+      },
+    };
 
-      case "Medium":
-        return "text-orange-500";
-
-      case "Low":
-        return "text-emerald-500";
-
-      default:
-        return "text-black/40 dark:text-white/40";
-    }
+    return (
+      styles[String(energy || "medium").toLowerCase()] ||
+      styles.medium
+    );
   };
 
   const getStatusLabel = (task) => {
-    if (task.completed) {
-      return "Completed";
-    }
+    if (task.completed) return "Completed";
 
-    switch (task.status) {
-      case "in-progress":
-        return "In Progress";
+    if (isOverdue(task)) return "Overdue";
 
-      case "review":
-        return "Review";
-
-      case "done":
-        return "Done";
-
-      case "backlog":
-      default:
-        return "Backlog";
-    }
+    return "Pending";
   };
 
-  const getStatusClass = (task) => {
+  const getStatusStyle = (task) => {
     if (task.completed) {
-      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+      return "border-[#557a62]/20 bg-[#557a62]/10 text-[#557a62] dark:text-[#91b49b]";
     }
 
-    switch (task.status) {
-      case "in-progress":
-        return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
-
-      case "review":
-        return "bg-purple-500/10 text-purple-600 dark:text-purple-400";
-
-      default:
-        return "bg-black/5 text-black/50 dark:bg-white/10 dark:text-white/50";
+    if (isOverdue(task)) {
+      return "border-[#a85b5b]/20 bg-[#a85b5b]/10 text-[#8e4b4b] dark:text-[#d99a9a]";
     }
+
+    return "border-[#627b82]/20 bg-[#627b82]/10 text-[#526a70] dark:text-[#9bb1b7]";
   };
 
-  // =========================================================
-  // CALENDAR DAYS
-  // =========================================================
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
 
-  const days = useMemo(() => {
-    const firstDay = new Date(year, month, 1).getDay();
+    const startingDay = firstDay.getDay();
+    const totalDays = lastDay.getDate();
 
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days = [];
 
-    const result = [];
-
-    for (let index = 0; index < firstDay; index++) {
-      result.push(null);
+    for (let index = 0; index < startingDay; index += 1) {
+      days.push(null);
     }
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      result.push(day);
+    for (let day = 1; day <= totalDays; day += 1) {
+      days.push(new Date(year, month, day));
     }
 
-    return result;
+    while (days.length % 7 !== 0) {
+      days.push(null);
+    }
+
+    return days;
   }, [year, month]);
 
-  // =========================================================
-  // SELECTED DATE TASKS
-  // =========================================================
-
-  const selectedDateTasks = useMemo(() => {
-    return getTasksForDate(selectedDateKey).sort((a, b) => {
-      if (a.completed !== b.completed) {
-        return a.completed ? 1 : -1;
-      }
-
-      if (a.dueTime && b.dueTime) {
-        return a.dueTime.localeCompare(b.dueTime);
-      }
-
-      if (a.dueTime) return -1;
-      if (b.dueTime) return 1;
-
-      return 0;
-    });
-  }, [tasks, selectedDateKey]);
-
-  // =========================================================
-  // MONTH TASKS
-  // =========================================================
+  const selectedDateTasks = useMemo(
+    () => getTasksForDate(selectedDateKey),
+    [safeTasks, selectedDateKey],
+  );
 
   const monthTasks = useMemo(() => {
-    return tasks.filter((task) => {
-      if (task.archived || !task.dueDate) {
-        return false;
-      }
+    return safeTasks.filter((task) => {
+      if (task.archived || !task.dueDate) return false;
 
       const date = parseDate(task.dueDate);
 
       if (!date) return false;
 
-      return date.getFullYear() === year && date.getMonth() === month;
+      return (
+        date.getFullYear() === year &&
+        date.getMonth() === month
+      );
     });
-  }, [tasks, year, month]);
+  }, [safeTasks, year, month]);
 
-  const monthCompleted = monthTasks.filter((task) => task.completed).length;
+  const monthCompleted = monthTasks.filter(
+    (task) => task.completed,
+  ).length;
 
-  const monthPending = monthTasks.length - monthCompleted;
+  const monthPending = monthTasks.filter(
+    (task) => !task.completed,
+  ).length;
 
-  const monthOverdue = monthTasks.filter((task) => isOverdue(task)).length;
+  const monthOverdue = monthTasks.filter(
+    (task) => isOverdue(task),
+  ).length;
 
-  // =========================================================
-  // TODAY TASKS
-  // =========================================================
+  const todayTasks = getTasksForDate(todayKey);
 
-  const todayTasks = useMemo(() => {
-    return getTasksForDate(todayKey);
-  }, [tasks, todayKey]);
+  const todayCompleted = todayTasks.filter(
+    (task) => task.completed,
+  ).length;
 
-  const todayCompleted = todayTasks.filter((task) => task.completed).length;
-
-  const todayPending = todayTasks.length - todayCompleted;
-
-  // =========================================================
-  // UPCOMING DEADLINES
-  // =========================================================
+  const todayPending = todayTasks.filter(
+    (task) => !task.completed,
+  ).length;
 
   const upcomingTasks = useMemo(() => {
-    return tasks
-      .filter((task) => !task.archived && !task.completed && task.dueDate)
+    return safeTasks
+      .filter(
+        (task) =>
+          !task.archived &&
+          !task.completed &&
+          task.dueDate &&
+          task.dueDate >= todayKey,
+      )
       .sort((a, b) => {
-        const dateA = parseDate(a.dueDate);
+        const first = `${a.dueDate} ${a.dueTime || ""}`;
+        const second = `${b.dueDate} ${b.dueTime || ""}`;
 
-        const dateB = parseDate(b.dueDate);
-
-        if (!dateA || !dateB) {
-          return 0;
-        }
-
-        const dateDifference = dateA - dateB;
-
-        if (dateDifference !== 0) {
-          return dateDifference;
-        }
-
-        return (a.dueTime || "").localeCompare(b.dueTime || "");
+        return first.localeCompare(second);
       })
       .slice(0, 8);
-  }, [tasks]);
-
-  // =========================================================
-  // TASK LOAD
-  // =========================================================
+  }, [safeTasks, todayKey]);
 
   const busiestDay = useMemo(() => {
-    if (monthTasks.length === 0) {
-      return null;
-    }
+    if (!monthTasks.length) return null;
 
     const counts = {};
 
     monthTasks.forEach((task) => {
-      counts[task.dueDate] = (counts[task.dueDate] || 0) + 1;
+      counts[task.dueDate] =
+        (counts[task.dueDate] || 0) + 1;
     });
 
-    let highestDate = null;
-    let highestCount = 0;
+    const busiest = Object.entries(counts).sort(
+      (a, b) => b[1] - a[1],
+    )[0];
 
-    Object.entries(counts).forEach(([date, count]) => {
-      if (count > highestCount) {
-        highestDate = date;
-        highestCount = count;
-      }
-    });
+    if (!busiest) return null;
+
+    const date = parseDate(busiest[0]);
 
     return {
-      date: highestDate,
-      count: highestCount,
+      date,
+      count: busiest[1],
     };
   }, [monthTasks]);
 
-  // =========================================================
-  // MONTH NAVIGATION
-  // =========================================================
-
   const previousMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
+    setCurrentDate(
+      (previous) =>
+        new Date(
+          previous.getFullYear(),
+          previous.getMonth() - 1,
+          1,
+        ),
+    );
   };
 
   const nextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
+    setCurrentDate(
+      (previous) =>
+        new Date(
+          previous.getFullYear(),
+          previous.getMonth() + 1,
+          1,
+        ),
+    );
   };
 
   const goToday = () => {
@@ -358,21 +335,11 @@ function Calendar() {
     setSelectedDate(today);
   };
 
-  // =========================================================
-  // SELECT DATE
-  // =========================================================
-
   const handleSelectDate = (day) => {
     if (!day) return;
 
-    const clickedDate = new Date(year, month, day);
-
-    setSelectedDate(clickedDate);
+    setSelectedDate(day);
   };
-
-  // =========================================================
-  // COMPLETE TASK
-  // =========================================================
 
   const handleToggleTask = (taskId) => {
     if (typeof toggleTask === "function") {
@@ -380,660 +347,712 @@ function Calendar() {
     }
   };
 
-  // =========================================================
-  // MOVE TASK TO TODAY
-  // =========================================================
-
   const moveTaskToToday = (task) => {
-    if (typeof updateTask !== "function" || !task) {
+    if (
+      !task ||
+      typeof updateTask !== "function"
+    ) {
       return;
     }
 
     updateTask(task.id, {
       dueDate: todayKey,
     });
+
+    setSelectedDate(new Date());
+    setCurrentDate(new Date());
   };
 
-  // =========================================================
-  // RENDER
-  // =========================================================
+  const formatTaskDate = (dateString) => {
+    const date = parseDate(dateString);
+
+    if (!date) return "No date";
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const formatWeekday = (dateString) => {
+    const date = parseDate(dateString);
+
+    if (!date) return "";
+
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+    });
+  };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-7">
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+    <div className="mx-auto w-full max-w-7xl space-y-6 pb-10">
+      {/* HEADER */}
+      <section className="relative overflow-hidden rounded-[24px] border border-[#e2ddd5] bg-[#f6f4ef] p-6 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c] sm:p-8">
+        <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#765b6b]/10 blur-3xl dark:bg-[#765b6b]/15" />
 
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-[#6f9473]">
-            Planning & Scheduling
-          </p>
-
-          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-            Calendar
-          </h1>
-
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-black/40 dark:text-white/40">
-            Plan deadlines, understand your workload, and keep track of what
-            needs to get done.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={goToday}
-            className="rounded-2xl border border-black/5 bg-white px-5 py-3 text-sm font-black shadow-sm transition hover:bg-black/5 dark:border-white/10 dark:bg-[#171a17] dark:hover:bg-white/5"
-          >
-            Today
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedDate(new Date())}
-            className="rounded-2xl bg-[#4f6f52] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#4f6f52]/20 transition hover:-translate-y-0.5 hover:bg-[#3f5d43]"
-          >
-            Plan Today
-          </button>
-        </div>
-      </div>
-
-      {/* =====================================================
-          OVERVIEW
-      ===================================================== */}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#171a17]">
-          <div className="flex items-center justify-between">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#6f9473]/10 text-[#6f9473]">
-              <CalendarDays size={21} />
+        <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div className="max-w-2xl">
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-[#765b6b] dark:text-[#c7aebe]">
+              <CalendarDays size={15} />
+              Planning & Scheduling
             </div>
 
-            <span className="text-[10px] font-black uppercase tracking-wider text-black/30 dark:text-white/30">
-              This month
-            </span>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-[#292725] dark:text-white sm:text-4xl">
+              Calendar
+            </h1>
+
+            <p className="mt-2 max-w-xl text-sm leading-6 text-[#777169] dark:text-[#aaa69e]">
+              See your workload clearly, plan around deadlines,
+              and keep your day moving without losing track of
+              the bigger picture.
+            </p>
           </div>
 
-          <p className="mt-5 text-3xl font-black">{monthTasks.length}</p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={goToday}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#ded9d1] bg-white px-4 py-2.5 text-sm font-black text-[#292725] transition hover:-translate-y-0.5 hover:border-[#765b6b]/30 hover:text-[#765b6b] dark:border-[#343934] dark:bg-[#202420] dark:text-white dark:hover:text-[#c7aebe]"
+            >
+              <CalendarDays size={16} />
+              Today
+            </button>
 
-          <p className="mt-1 text-xs font-bold text-black/40 dark:text-white/40">
+            <button
+              type="button"
+              onClick={goToday}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#765b6b] px-4 py-2.5 text-sm font-black text-white shadow-[0_4px_0_#594451] transition hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <Target size={16} />
+              View Today
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* OVERVIEW */}
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-[#e2ddd5] bg-white p-5 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-[#918b82]">
+              This month
+            </span>
+
+            <ListTodo
+              size={20}
+              className="text-[#765b6b]"
+            />
+          </div>
+
+          <p className="mt-5 text-3xl font-black text-[#292725] dark:text-white">
+            {monthTasks.length}
+          </p>
+
+          <p className="mt-1 text-xs text-[#918b82] dark:text-[#888f88]">
             Scheduled tasks
           </p>
         </div>
 
-        <div className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#171a17]">
+        <div className="rounded-2xl border border-[#e2ddd5] bg-white p-5 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
           <div className="flex items-center justify-between">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-500">
-              <ListTodo size={21} />
-            </div>
-
-            <span className="text-[10px] font-black uppercase tracking-wider text-black/30 dark:text-white/30">
+            <span className="text-xs font-black uppercase tracking-wider text-[#918b82]">
               Remaining
             </span>
+
+            <Clock3
+              size={20}
+              className="text-[#627b82]"
+            />
           </div>
 
-          <p className="mt-5 text-3xl font-black">{monthPending}</p>
+          <p className="mt-5 text-3xl font-black text-[#292725] dark:text-white">
+            {monthPending}
+          </p>
 
-          <p className="mt-1 text-xs font-bold text-black/40 dark:text-white/40">
+          <p className="mt-1 text-xs text-[#918b82] dark:text-[#888f88]">
             Tasks to complete
           </p>
         </div>
 
-        <div className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#171a17]">
+        <div className="rounded-2xl border border-[#e2ddd5] bg-white p-5 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
           <div className="flex items-center justify-between">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
-              <CheckCircle2 size={21} />
-            </div>
-
-            <span className="text-[10px] font-black uppercase tracking-wider text-black/30 dark:text-white/30">
+            <span className="text-xs font-black uppercase tracking-wider text-[#918b82]">
               Completed
             </span>
+
+            <CheckCircle2
+              size={20}
+              className="text-[#557a62]"
+            />
           </div>
 
-          <p className="mt-5 text-3xl font-black">{monthCompleted}</p>
+          <p className="mt-5 text-3xl font-black text-[#292725] dark:text-white">
+            {monthCompleted}
+          </p>
 
-          <p className="mt-1 text-xs font-bold text-black/40 dark:text-white/40">
+          <p className="mt-1 text-xs text-[#918b82] dark:text-[#888f88]">
             Finished this month
           </p>
         </div>
 
-        <div className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#171a17]">
+        <div className="rounded-2xl border border-[#e2ddd5] bg-white p-5 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
           <div className="flex items-center justify-between">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-500">
-              <AlertTriangle size={21} />
-            </div>
-
-            <span className="text-[10px] font-black uppercase tracking-wider text-black/30 dark:text-white/30">
+            <span className="text-xs font-black uppercase tracking-wider text-[#918b82]">
               Attention
             </span>
-          </div>
 
-          <p className="mt-5 text-3xl font-black">{monthOverdue}</p>
-
-          <p className="mt-1 text-xs font-bold text-black/40 dark:text-white/40">
-            Overdue tasks
-          </p>
-        </div>
-      </div>
-
-      {/* =====================================================
-          CALENDAR
-      ===================================================== */}
-
-      <div className="overflow-hidden rounded-[32px] border border-black/5 bg-white shadow-sm dark:border-white/10 dark:bg-[#171a17]">
-        {/* MONTH HEADER */}
-
-        <div className="flex flex-col gap-4 border-b border-black/5 p-5 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={previousMonth}
-              className="flex h-10 w-10 items-center justify-center rounded-xl transition hover:bg-black/5 dark:hover:bg-white/5"
-              aria-label="Previous month"
-            >
-              <ChevronLeft size={20} />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <CalendarDays size={20} className="text-[#6f9473]" />
-
-              <h2 className="text-lg font-black sm:text-xl">{monthName}</h2>
-            </div>
-
-            <button
-              type="button"
-              onClick={nextMonth}
-              className="flex h-10 w-10 items-center justify-center rounded-xl transition hover:bg-black/5 dark:hover:bg-white/5"
-              aria-label="Next month"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-black/30 dark:text-white/30">
-              {monthTasks.length} tasks
-            </span>
-          </div>
-        </div>
-
-        {/* WEEK DAYS */}
-
-        <div className="grid grid-cols-7 border-b border-black/5 dark:border-white/10">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-            <div
-              key={day}
-              className="p-3 text-center text-[10px] font-black uppercase tracking-wider text-black/35 dark:text-white/35 sm:p-4"
-            >
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* DAYS */}
-
-        <div className="grid grid-cols-7">
-          {days.map((day, index) => {
-            const key = day
-              ? `${year}-${String(month + 1).padStart(2, "0")}-${String(
-                  day,
-                ).padStart(2, "0")}`
-              : "";
-
-            const dayTasks = getTasksForDate(key);
-
-            const completedCount = dayTasks.filter(
-              (task) => task.completed,
-            ).length;
-
-            const overdueCount = dayTasks.filter((task) =>
-              isOverdue(task),
-            ).length;
-
-            const isToday = key === todayKey;
-
-            const isSelected = key === selectedDateKey;
-
-            return (
-              <button
-                key={index}
-                type="button"
-                disabled={!day}
-                onClick={() => handleSelectDate(day)}
-                className={`relative min-h-[125px] border-b border-r border-black/5 p-2 text-left transition dark:border-white/10 sm:min-h-[155px] sm:p-3 ${
-                  !day
-                    ? "cursor-default"
-                    : "cursor-pointer hover:bg-[#6f9473]/5"
-                } ${isSelected ? "bg-[#6f9473]/10" : ""}`}
-              >
-                {day && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black ${
-                          isToday
-                            ? "bg-[#4f6f52] text-white"
-                            : isSelected
-                              ? "bg-[#6f9473] text-white"
-                              : "text-black/50 dark:text-white/50"
-                        }`}
-                      >
-                        {day}
-                      </span>
-
-                      {dayTasks.length > 0 && (
-                        <span className="rounded-lg bg-[#6f9473]/10 px-1.5 py-1 text-[10px] font-black text-[#4f6f52] dark:text-[#9fbea2]">
-                          {dayTasks.length}
-                        </span>
-                      )}
-                    </div>
-
-                    {dayTasks.length > 0 && (
-                      <div className="mt-2 space-y-1.5">
-                        {dayTasks.slice(0, 3).map((task) => {
-                          const projectColor = getProjectColor(task.projectId);
-
-                          return (
-                            <span
-                              key={task.id}
-                              className={`block w-full truncate rounded-xl border-l-2 px-2 py-1.5 text-[10px] font-black ${
-                                task.completed
-                                  ? "bg-emerald-500/10 text-emerald-600 line-through"
-                                  : isOverdue(task)
-                                    ? "bg-rose-500/10 text-rose-600"
-                                    : "bg-[#6f9473]/10 text-[#4f6f52] dark:text-[#9fbea2]"
-                              }`}
-                              style={{
-                                borderLeftColor: projectColor,
-                              }}
-                              title={task.title}
-                            >
-                              {task.dueTime && (
-                                <span className="mr-1 opacity-60">
-                                  {task.dueTime}
-                                </span>
-                              )}
-                              {task.title}
-                            </span>
-                          );
-                        })}
-
-                        {dayTasks.length > 3 && (
-                          <p className="px-2 text-[9px] font-bold text-black/30 dark:text-white/30">
-                            +{dayTasks.length - 3} more
-                          </p>
-                        )}
-
-                        <div className="flex gap-1 px-1 pt-1">
-                          {completedCount > 0 && (
-                            <span className="text-[9px] font-black text-emerald-500">
-                              {completedCount} done
-                            </span>
-                          )}
-
-                          {overdueCount > 0 && (
-                            <span className="text-[9px] font-black text-rose-500">
-                              {overdueCount} late
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* =====================================================
-          WORKLOAD SUMMARY
-      ===================================================== */}
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#171a17]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#6f9473]/10 text-[#6f9473]">
-              <Target size={20} />
-            </div>
-
-            <div>
-              <p className="text-xs font-black uppercase tracking-wider text-[#6f9473]">
-                Today
-              </p>
-
-              <p className="text-sm font-black">{todayPending} remaining</p>
-            </div>
-          </div>
-
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-            <div
-              className="h-full rounded-full bg-[#6f9473] transition-all"
-              style={{
-                width: `${
-                  todayTasks.length === 0
-                    ? 0
-                    : Math.min(100, (todayCompleted / todayTasks.length) * 100)
-                }%`,
-              }}
+            <AlertTriangle
+              size={20}
+              className="text-[#a85b5b]"
             />
           </div>
 
-          <p className="mt-2 text-xs font-bold text-black/35 dark:text-white/35">
-            {todayCompleted} of {todayTasks.length} completed
+          <p className="mt-5 text-3xl font-black text-[#292725] dark:text-white">
+            {monthOverdue}
+          </p>
+
+          <p className="mt-1 text-xs text-[#918b82] dark:text-[#888f88]">
+            Overdue tasks
           </p>
         </div>
+      </section>
 
-        <div className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#171a17]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-500">
-              <Clock3 size={20} />
+      {/* CALENDAR + SIDEBAR */}
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        {/* CALENDAR */}
+        <div className="overflow-hidden rounded-[24px] border border-[#e2ddd5] bg-white shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
+          <div className="flex flex-col gap-4 border-b border-[#eeeae4] p-5 dark:border-[#30352f] sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#918b82]">
+                Monthly view
+              </p>
+
+              <h2 className="mt-1 text-xl font-black text-[#292725] dark:text-white">
+                {monthName}
+              </h2>
             </div>
 
-            <div>
-              <p className="text-xs font-black uppercase tracking-wider text-orange-500">
-                Busiest day
-              </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={previousMonth}
+                aria-label="Previous month"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#ded9d1] bg-[#faf9f6] text-[#777169] transition hover:-translate-y-0.5 hover:border-[#765b6b]/30 hover:text-[#765b6b] dark:border-[#343934] dark:bg-[#151815] dark:text-[#aaa69e]"
+              >
+                <ChevronLeft size={18} />
+              </button>
 
-              <p className="text-sm font-black">
-                {busiestDay ? `${busiestDay.count} tasks` : "No scheduled work"}
-              </p>
+              <button
+                type="button"
+                onClick={goToday}
+                className="rounded-xl border border-[#ded9d1] bg-[#faf9f6] px-4 py-2 text-xs font-black text-[#777169] transition hover:border-[#765b6b]/30 hover:text-[#765b6b] dark:border-[#343934] dark:bg-[#151815] dark:text-[#aaa69e]"
+              >
+                Current
+              </button>
+
+              <button
+                type="button"
+                onClick={nextMonth}
+                aria-label="Next month"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#ded9d1] bg-[#faf9f6] text-[#777169] transition hover:-translate-y-0.5 hover:border-[#765b6b]/30 hover:text-[#765b6b] dark:border-[#343934] dark:bg-[#151815] dark:text-[#aaa69e]"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
           </div>
 
-          <p className="mt-4 text-xs font-bold text-black/35 dark:text-white/35">
-            {busiestDay ? busiestDay.date : "Add deadlines to see workload"}
-          </p>
+          <div className="grid grid-cols-7 border-b border-[#eeeae4] dark:border-[#30352f]">
+            {[
+              "Sun",
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+            ].map((day) => (
+              <div
+                key={day}
+                className="px-2 py-3 text-center text-[10px] font-black uppercase tracking-wider text-[#918b82]"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7">
+            {calendarDays.map((day, index) => {
+              if (!day) {
+                return (
+                  <div
+                    key={`empty-${index}`}
+                    className="min-h-[112px] border-b border-r border-[#eeeae4] bg-[#faf9f6]/60 dark:border-[#30352f] dark:bg-[#151815]/40 sm:min-h-[130px]"
+                  />
+                );
+              }
+
+              const dateKey = formatDateKey(day);
+              const dayTasks = getTasksForDate(dateKey);
+              const isToday = dateKey === todayKey;
+              const isSelected =
+                dateKey === selectedDateKey;
+
+              const completedCount = dayTasks.filter(
+                (task) => task.completed,
+              ).length;
+
+              const overdueCount = dayTasks.filter(
+                (task) => isOverdue(task),
+              ).length;
+
+              return (
+                <button
+                  type="button"
+                  key={dateKey}
+                  onClick={() => handleSelectDate(day)}
+                  className={[
+                    "group min-h-[112px] border-b border-r border-[#eeeae4] p-2 text-left align-top transition dark:border-[#30352f] sm:min-h-[130px] sm:p-3",
+                    isSelected
+                      ? "bg-[#765b6b]/[0.06] dark:bg-[#765b6b]/10"
+                      : "hover:bg-[#faf9f6] dark:hover:bg-[#202420]",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={[
+                        "flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black",
+                        isToday
+                          ? "bg-[#765b6b] text-white"
+                          : isSelected
+                            ? "bg-[#765b6b]/10 text-[#765b6b] dark:text-[#c7aebe]"
+                            : "text-[#777169] dark:text-[#aaa69e]",
+                      ].join(" ")}
+                    >
+                      {day.getDate()}
+                    </span>
+
+                    {dayTasks.length > 0 && (
+                      <span className="text-[10px] font-black text-[#918b82]">
+                        {dayTasks.length}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-2 space-y-1.5">
+                    {dayTasks.slice(0, 3).map((task) => (
+                      <div
+                        key={task.id}
+                        className={[
+                          "truncate rounded-md border px-1.5 py-1 text-[9px] font-bold",
+                          task.completed
+                            ? "border-[#557a62]/15 bg-[#557a62]/10 text-[#557a62] line-through dark:text-[#91b49b]"
+                            : isOverdue(task)
+                              ? "border-[#a85b5b]/15 bg-[#a85b5b]/10 text-[#8e4b4b] dark:text-[#d99a9a]"
+                              : "border-[#765b6b]/10 bg-[#765b6b]/[0.06] text-[#765b6b] dark:text-[#c7aebe]",
+                        ].join(" ")}
+                      >
+                        {task.title}
+                      </div>
+                    ))}
+
+                    {dayTasks.length > 3 && (
+                      <div className="px-1 text-[9px] font-black text-[#918b82]">
+                        +{dayTasks.length - 3} more
+                      </div>
+                    )}
+                  </div>
+
+                  {(completedCount > 0 ||
+                    overdueCount > 0) && (
+                    <div className="mt-2 flex items-center gap-2 text-[9px] font-bold text-[#918b82]">
+                      {completedCount > 0 && (
+                        <span className="flex items-center gap-1 text-[#557a62]">
+                          <CheckCircle2 size={10} />
+                          {completedCount}
+                        </span>
+                      )}
+
+                      {overdueCount > 0 && (
+                        <span className="flex items-center gap-1 text-[#a85b5b]">
+                          <AlertTriangle size={10} />
+                          {overdueCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#171a17]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-500">
-              <Zap size={20} />
+        {/* SIDE SUMMARY */}
+        <div className="space-y-4">
+          <div className="rounded-[24px] border border-[#e2ddd5] bg-white p-5 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#918b82]">
+                  Today
+                </p>
+
+                <h3 className="mt-1 text-lg font-black text-[#292725] dark:text-white">
+                  {todayPending} remaining
+                </h3>
+              </div>
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#557a62]/10 text-[#557a62]">
+                <CheckCircle2 size={19} />
+              </div>
             </div>
 
-            <div>
-              <p className="text-xs font-black uppercase tracking-wider text-blue-500">
-                Planning
-              </p>
+            <div className="mt-5 h-2 overflow-hidden rounded-full bg-[#ebe7e0] dark:bg-[#292e2a]">
+              <div
+                className="h-full rounded-full bg-[#557a62] transition-all"
+                style={{
+                  width:
+                    todayTasks.length > 0
+                      ? `${(todayCompleted / todayTasks.length) * 100}%`
+                      : "0%",
+                }}
+              />
+            </div>
 
-              <p className="text-sm font-black">
-                {upcomingTasks.length} upcoming
-              </p>
+            <div className="mt-2 flex justify-between text-[10px] font-bold text-[#918b82]">
+              <span>{todayCompleted} completed</span>
+              <span>{todayTasks.length} scheduled</span>
             </div>
           </div>
 
-          <p className="mt-4 text-xs font-bold text-black/35 dark:text-white/35">
-            Next scheduled deadlines
-          </p>
+          <div className="rounded-[24px] border border-[#e2ddd5] bg-white p-5 shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#b07b4d]/10 text-[#b07b4d]">
+                <TrendingUp size={19} />
+              </div>
+
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#918b82]">
+                  Busiest day
+                </p>
+
+                <p className="mt-1 text-sm font-black text-[#292725] dark:text-white">
+                  {busiestDay?.date
+                    ? busiestDay.date.toLocaleDateString(
+                        "en-US",
+                        {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )
+                    : "No scheduled work"}
+                </p>
+              </div>
+            </div>
+
+            {busiestDay && (
+              <p className="mt-4 text-xs text-[#777169] dark:text-[#aaa69e]">
+                {busiestDay.count} scheduled{" "}
+                {busiestDay.count === 1 ? "task" : "tasks"} on
+                this day.
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-[24px] border border-[#e2ddd5] bg-[#f6f4ef] p-5 shadow-sm dark:border-[#343934] dark:bg-[#202420]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#765b6b]/10 text-[#765b6b] dark:text-[#c7aebe]">
+                <Target size={19} />
+              </div>
+
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#918b82]">
+                  Planning
+                </p>
+
+                <p className="mt-1 text-sm font-black text-[#292725] dark:text-white">
+                  {upcomingTasks.length} upcoming
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs leading-5 text-[#777169] dark:text-[#aaa69e]">
+              Stay ahead by checking the next few deadlines
+              before starting your day.
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* =====================================================
-          SELECTED DATE
-      ===================================================== */}
+      {/* SELECTED DATE */}
+      <section className="rounded-[24px] border border-[#e2ddd5] bg-white shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
+        <div className="flex flex-col gap-4 border-b border-[#eeeae4] p-5 dark:border-[#30352f] sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#918b82]">
+              Selected date
+            </p>
 
-      <div className="rounded-[30px] border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#171a17]">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#6f9473]/10 text-[#6f9473]">
-              <CalendarDays size={20} />
-            </div>
-
-            <div>
-              <p className="text-xs font-black uppercase tracking-wider text-[#6f9473]">
-                Selected date
-              </p>
-
-              <h2 className="mt-1 font-black">{selectedDateLabel}</h2>
-            </div>
+            <h2 className="mt-1 text-xl font-black text-[#292725] dark:text-white">
+              {selectedDateLabel}
+            </h2>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-bold text-black/40 dark:text-white/40">
-            <span>{selectedDateTasks.length}</span>
-            <span>scheduled</span>
-          </div>
+          <span className="rounded-full border border-[#765b6b]/15 bg-[#765b6b]/10 px-3 py-1.5 text-xs font-black text-[#765b6b] dark:text-[#c7aebe]">
+            {selectedDateTasks.length}{" "}
+            {selectedDateTasks.length === 1
+              ? "task"
+              : "tasks"}
+          </span>
         </div>
 
-        {selectedDateTasks.length > 0 ? (
-          <div className="mt-6 space-y-3">
+        {selectedDateTasks.length === 0 ? (
+          <div className="p-10 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#627b82]/10 text-[#627b82]">
+              <CalendarDays size={22} />
+            </div>
+
+            <h3 className="mt-4 text-base font-black text-[#292725] dark:text-white">
+              Nothing scheduled
+            </h3>
+
+            <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[#918b82]">
+              This date is clear. Use the extra space to focus
+              on important work or schedule something new.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#eeeae4] dark:divide-[#30352f]">
             {selectedDateTasks.map((task) => {
-              const project = getProject(task.projectId);
-
-              const projectColor = getProjectColor(task.projectId);
+              const priority = getPriorityStyle(task.priority);
+              const energy = getEnergyStyle(task.energy);
 
               return (
                 <div
                   key={task.id}
-                  className={`rounded-2xl border p-4 transition ${
-                    isOverdue(task)
-                      ? "border-rose-500/20 bg-rose-500/[0.03]"
-                      : "border-black/5 bg-black/[0.03] dark:border-white/10 dark:bg-white/[0.04]"
-                  }`}
+                  className="group flex flex-col gap-4 p-5 transition hover:bg-[#faf9f6] dark:hover:bg-[#202420] lg:flex-row lg:items-center"
                 >
-                  <div className="flex items-start gap-4">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleTask(task.id)}
-                      className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
-                        task.completed
-                          ? "bg-emerald-500 text-white"
-                          : "bg-white text-black/25 shadow-sm hover:bg-emerald-500/10 hover:text-emerald-500 dark:bg-[#202420] dark:text-white/25"
-                      }`}
-                      aria-label={
-                        task.completed
-                          ? "Mark task incomplete"
-                          : "Complete task"
-                      }
-                    >
-                      {task.completed ? (
-                        <CheckCircle2 size={19} />
-                      ) : (
-                        <Circle size={19} />
-                      )}
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleToggleTask(task.id)
+                    }
+                    className={[
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition",
+                      task.completed
+                        ? "border-[#557a62] bg-[#557a62] text-white"
+                        : "border-[#d7d1c8] bg-white text-transparent hover:border-[#765b6b] dark:border-[#444a45] dark:bg-[#151815]",
+                    ].join(" ")}
+                    aria-label={
+                      task.completed
+                        ? "Mark task incomplete"
+                        : "Complete task"
+                    }
+                  >
+                    {task.completed ? (
+                      <CheckCircle2 size={18} />
+                    ) : (
+                      <Circle
+                        size={18}
+                        className="text-[#aaa39a]"
+                      />
+                    )}
+                  </button>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p
-                            className={`text-sm font-black ${
-                              task.completed
-                                ? "text-black/40 line-through dark:text-white/40"
-                                : ""
-                            }`}
-                          >
-                            {task.title}
-                          </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3
+                        className={[
+                          "text-sm font-black",
+                          task.completed
+                            ? "text-[#918b82] line-through"
+                            : "text-[#292725] dark:text-white",
+                        ].join(" ")}
+                      >
+                        {task.title}
+                      </h3>
 
-                          {task.description && (
-                            <p className="mt-1 line-clamp-2 text-xs font-medium text-black/40 dark:text-white/40">
-                              {task.description}
-                            </p>
-                          )}
-                        </div>
+                      <span
+                        className={[
+                          "rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider",
+                          getStatusStyle(task),
+                        ].join(" ")}
+                      >
+                        {getStatusLabel(task)}
+                      </span>
+                    </div>
 
-                        {isOverdue(task) && (
-                          <span className="flex shrink-0 items-center gap-1 rounded-full bg-rose-500/10 px-2.5 py-1 text-[10px] font-black text-rose-600 dark:text-rose-400">
-                            <AlertTriangle size={12} />
-                            Overdue
-                          </span>
-                        )}
-                      </div>
+                    {task.description && (
+                      <p className="mt-1 line-clamp-1 text-xs text-[#918b82]">
+                        {task.description}
+                      </p>
+                    )}
 
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        {task.dueTime && (
-                          <span className="flex items-center gap-1 rounded-full bg-black/5 px-2.5 py-1 text-[10px] font-black dark:bg-white/10">
-                            <Clock3 size={11} />
-                            {task.dueTime}
-                          </span>
-                        )}
-
-                        {task.priority && (
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-[10px] font-black ${getPriorityClass(
-                              task.priority,
-                            )}`}
-                          >
-                            {task.priority}
-                          </span>
-                        )}
-
-                        {task.energy && (
-                          <span
-                            className={`flex items-center gap-1 rounded-full bg-black/5 px-2.5 py-1 text-[10px] font-black dark:bg-white/10 ${getEnergyClass(
-                              task.energy,
-                            )}`}
-                          >
-                            <Zap size={11} />
-                            {task.energy}
-                          </span>
-                        )}
-
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-black ${getStatusClass(
-                            task,
-                          )}`}
-                        >
-                          {getStatusLabel(task)}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {task.dueTime && (
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-[#777169] dark:text-[#aaa69e]">
+                          <Clock3 size={12} />
+                          {task.dueTime}
                         </span>
+                      )}
 
-                        {task.projectId && (
+                      <span
+                        className={[
+                          "rounded-full border px-2 py-1 text-[9px] font-black",
+                          priority.className,
+                        ].join(" ")}
+                      >
+                        {priority.label}
+                      </span>
+
+                      <span
+                        className={[
+                          "flex items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-black",
+                          energy.className,
+                        ].join(" ")}
+                      >
+                        <Zap size={10} />
+                        {energy.label}
+                      </span>
+
+                      {task.projectId && (
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-[#777169] dark:text-[#aaa69e]">
                           <span
-                            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black"
+                            className="h-2 w-2 rounded-full"
                             style={{
-                              backgroundColor: `${projectColor}18`,
-                              color: projectColor,
+                              backgroundColor:
+                                getProjectColor(
+                                  task.projectId,
+                                ),
                             }}
-                          >
-                            <FolderKanban size={11} />
-                            {project?.name || project?.title || "Project"}
-                          </span>
-                        )}
-                      </div>
-
-                      {!task.completed && updateTask && (
-                        <button
-                          type="button"
-                          onClick={() => moveTaskToToday(task)}
-                          className="mt-3 text-[10px] font-black text-[#6f9473] transition hover:underline"
-                        >
-                          Move to today
-                        </button>
+                          />
+                          {getProjectName(task.projectId)}
+                        </span>
                       )}
                     </div>
+                  </div>
+
+                  {!task.completed &&
+                    selectedDateKey !== todayKey && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          moveTaskToToday(task)
+                        }
+                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[#ded9d1] bg-white px-3 py-2 text-xs font-black text-[#777169] transition hover:-translate-y-0.5 hover:border-[#765b6b]/30 hover:text-[#765b6b] dark:border-[#343934] dark:bg-[#202420] dark:text-[#aaa69e]"
+                      >
+                        Move to today
+                      </button>
+                    )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* UPCOMING */}
+      <section className="rounded-[24px] border border-[#e2ddd5] bg-white shadow-sm dark:border-[#343934] dark:bg-[#1b1f1c]">
+        <div className="border-b border-[#eeeae4] p-5 dark:border-[#30352f]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#627b82]/10 text-[#627b82] dark:text-[#9bb1b7]">
+              <Clock3 size={19} />
+            </div>
+
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#918b82]">
+                Upcoming deadlines
+              </p>
+
+              <h2 className="mt-1 text-xl font-black text-[#292725] dark:text-white">
+                What's coming next
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        {upcomingTasks.length === 0 ? (
+          <div className="p-10 text-center">
+            <p className="text-sm font-bold text-[#777169] dark:text-[#aaa69e]">
+              No upcoming deadlines.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#eeeae4] dark:divide-[#30352f]">
+            {upcomingTasks.map((task) => {
+              const priority = getPriorityStyle(
+                task.priority,
+              );
+
+              return (
+                <div
+                  key={task.id}
+                  className="flex flex-col gap-4 p-5 transition hover:bg-[#faf9f6] dark:hover:bg-[#202420] sm:flex-row sm:items-center"
+                >
+                  <div
+                    className="h-12 w-1 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: getProjectColor(
+                        task.projectId,
+                      ),
+                    }}
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-sm font-black text-[#292725] dark:text-white">
+                      {task.title}
+                    </h3>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] font-bold text-[#918b82]">
+                      <span className="flex items-center gap-1.5">
+                        <CalendarDays size={12} />
+                        {formatWeekday(task.dueDate)},{" "}
+                        {formatTaskDate(task.dueDate)}
+                      </span>
+
+                      {task.dueTime && (
+                        <span className="flex items-center gap-1.5">
+                          <Clock3 size={12} />
+                          {task.dueTime}
+                        </span>
+                      )}
+
+                      {task.projectId && (
+                        <span className="flex items-center gap-1.5">
+                          <FolderKanban size={12} />
+                          {getProjectName(
+                            task.projectId,
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={[
+                        "rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-wider",
+                        priority.className,
+                      ].join(" ")}
+                    >
+                      {priority.label}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleToggleTask(task.id)
+                      }
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#ded9d1] bg-white text-[#777169] transition hover:-translate-y-0.5 hover:border-[#557a62]/30 hover:text-[#557a62] dark:border-[#343934] dark:bg-[#202420] dark:text-[#aaa69e]"
+                      aria-label="Complete task"
+                    >
+                      <CheckCircle2 size={17} />
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
-        ) : (
-          <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-black/[0.02] px-5 py-10 text-center dark:border-white/10 dark:bg-white/[0.02]">
-            <CalendarDays
-              size={30}
-              className="mx-auto text-black/20 dark:text-white/20"
-            />
-
-            <p className="mt-3 text-sm font-black text-black/50 dark:text-white/50">
-              No tasks scheduled for this day.
-            </p>
-
-            <p className="mt-1 text-xs font-bold text-black/30 dark:text-white/30">
-              Select another date to see its tasks.
-            </p>
-          </div>
         )}
-      </div>
-
-      {/* =====================================================
-          UPCOMING DEADLINES
-      ===================================================== */}
-
-      <div className="rounded-[30px] border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#171a17]">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#6f9473]/10 text-[#6f9473]">
-              <Clock3 size={20} />
-            </div>
-
-            <div>
-              <h2 className="font-black">Upcoming deadlines</h2>
-
-              <p className="text-xs font-bold text-black/35 dark:text-white/35">
-                Your next scheduled tasks
-              </p>
-            </div>
-          </div>
-
-          <span className="hidden rounded-full bg-black/5 px-3 py-1 text-[10px] font-black dark:bg-white/10 sm:block">
-            Next 8
-          </span>
-        </div>
-
-        <div className="mt-6 space-y-3">
-          {upcomingTasks.map((task) => {
-            const projectColor = getProjectColor(task.projectId);
-
-            return (
-              <div
-                key={task.id}
-                className="flex items-center gap-4 rounded-2xl bg-black/[0.03] p-4 dark:bg-white/[0.04]"
-              >
-                <div
-                  className="h-10 w-1 shrink-0 rounded-full"
-                  style={{
-                    backgroundColor: projectColor,
-                  }}
-                />
-
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black">{task.title}</p>
-
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="text-xs font-bold text-black/35 dark:text-white/35">
-                      Due {task.dueDate}
-                      {task.dueTime ? ` · ${task.dueTime}` : ""}
-                    </span>
-
-                    {task.priority && (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[9px] font-black ${getPriorityClass(
-                          task.priority,
-                        )}`}
-                      >
-                        {task.priority}
-                      </span>
-                    )}
-
-                    {task.projectId && (
-                      <span className="text-[10px] font-black text-black/30 dark:text-white/30">
-                        {getProjectName(task.projectId)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleToggleTask(task.id)}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-black/30 transition hover:bg-emerald-500/10 hover:text-emerald-500 dark:text-white/30"
-                  aria-label="Complete task"
-                >
-                  <CheckCircle2 size={18} />
-                </button>
-              </div>
-            );
-          })}
-
-          {upcomingTasks.length === 0 && (
-            <p className="py-8 text-center text-sm font-bold text-black/35 dark:text-white/35">
-              No upcoming deadlines.
-            </p>
-          )}
-        </div>
-      </div>
+      </section>
     </div>
   );
 }
