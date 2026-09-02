@@ -45,8 +45,9 @@ function App() {
         localStorage.getItem("lockin_sound") !== "false";
 
       const notificationsEnabled =
-        localStorage.getItem("lockin_notifications_enabled") !==
-        "false";
+        localStorage.getItem(
+          "lockin_notifications_enabled"
+        ) !== "false";
 
       if (!soundEnabled || !notificationsEnabled) {
         return;
@@ -170,17 +171,23 @@ function App() {
 
   const [focusMode, setFocusMode] = useState(false);
 
-  const [focusSeconds, setFocusSeconds] = useState(25 * 60);
+  const [focusSeconds, setFocusSeconds] = useState(
+    25 * 60
+  );
 
   const [focusPaused, setFocusPaused] = useState(false);
 
-  const [focusDuration, setFocusDuration] = useState(25 * 60);
+  const [focusDuration, setFocusDuration] = useState(
+    25 * 60
+  );
 
-  const [customFocusMinutes, setCustomFocusMinutes] = useState(25);
+  const [customFocusMinutes, setCustomFocusMinutes] =
+    useState(25);
 
   const [focusTask, setFocusTask] = useState(null);
 
-  const [miniFocusVisible, setMiniFocusVisible] = useState(false);
+  const [miniFocusVisible, setMiniFocusVisible] =
+    useState(false);
 
   // =========================================================
   // THEME
@@ -188,31 +195,43 @@ function App() {
   // =========================================================
 
   const [theme, setTheme] = useState(() => {
-    const savedTheme = localStorage.getItem("lockin_theme");
+    try {
+      const savedTheme =
+        localStorage.getItem("lockin_theme");
 
-    if (
-      savedTheme === "light" ||
-      savedTheme === "dark" ||
-      savedTheme === "system"
-    ) {
-      return savedTheme;
+      if (
+        savedTheme === "light" ||
+        savedTheme === "dark" ||
+        savedTheme === "system"
+      ) {
+        return savedTheme;
+      }
+    } catch {
+      // Ignore localStorage errors.
     }
 
     return "system";
   });
 
   const [darkMode, setDarkModeState] = useState(() => {
-    const savedTheme = localStorage.getItem("lockin_theme");
+    try {
+      const savedTheme =
+        localStorage.getItem("lockin_theme");
 
-    if (savedTheme === "dark") {
-      return true;
+      if (savedTheme === "dark") {
+        return true;
+      }
+
+      if (savedTheme === "light") {
+        return false;
+      }
+    } catch {
+      // Ignore localStorage errors.
     }
 
-    if (savedTheme === "light") {
-      return false;
-    }
-
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
   });
 
   // =========================================================
@@ -225,15 +244,9 @@ function App() {
     );
 
     const applyTheme = () => {
-      let isDark = false;
-
-      if (theme === "dark") {
-        isDark = true;
-      } else if (theme === "light") {
-        isDark = false;
-      } else {
-        isDark = mediaQuery.matches;
-      }
+      const isDark =
+        theme === "dark" ||
+        (theme === "system" && mediaQuery.matches);
 
       setDarkModeState(isDark);
 
@@ -242,12 +255,19 @@ function App() {
         isDark
       );
 
-      localStorage.setItem("lockin_theme", theme);
+      try {
+        localStorage.setItem(
+          "lockin_theme",
+          theme
+        );
 
-      localStorage.setItem(
-        "lockin_dark_mode",
-        JSON.stringify(isDark)
-      );
+        localStorage.setItem(
+          "lockin_dark_mode",
+          JSON.stringify(isDark)
+        );
+      } catch {
+        // Ignore localStorage errors.
+      }
     };
 
     applyTheme();
@@ -266,13 +286,20 @@ function App() {
         isDark
       );
 
-      localStorage.setItem(
-        "lockin_dark_mode",
-        JSON.stringify(isDark)
-      );
+      try {
+        localStorage.setItem(
+          "lockin_dark_mode",
+          JSON.stringify(isDark)
+        );
+      } catch {
+        // Ignore localStorage errors.
+      }
     };
 
-    mediaQuery.addEventListener("change", handleSystemTheme);
+    mediaQuery.addEventListener(
+      "change",
+      handleSystemTheme
+    );
 
     return () => {
       mediaQuery.removeEventListener(
@@ -287,15 +314,11 @@ function App() {
   // =========================================================
 
   const changeTheme = (newTheme) => {
-    if (newTheme !== undefined) {
-      if (
-        newTheme !== "light" &&
-        newTheme !== "dark" &&
-        newTheme !== "system"
-      ) {
-        return;
-      }
-
+    if (
+      newTheme === "light" ||
+      newTheme === "dark" ||
+      newTheme === "system"
+    ) {
       setTheme(newTheme);
       return;
     }
@@ -323,7 +346,6 @@ function App() {
     const nextValue = Boolean(value);
 
     setDarkModeState(nextValue);
-
     setTheme(nextValue ? "dark" : "light");
   };
 
@@ -337,9 +359,10 @@ function App() {
   // NOTIFICATIONS
   // =========================================================
 
-  const [notificationsList, setNotificationsList] = useState(() =>
-    getStorage("lockin_notifications", [])
-  );
+  const [notificationsList, setNotificationsList] =
+    useState(() =>
+      getStorage("lockin_notifications", [])
+    );
 
   // =========================================================
   // ACTIVITY
@@ -354,7 +377,10 @@ function App() {
   // =========================================================
 
   const [missionDate, setMissionDate] = useState(() =>
-    getStorage("lockin_mission_date", getToday())
+    getStorage(
+      "lockin_mission_date",
+      getToday()
+    )
   );
 
   // =========================================================
@@ -365,13 +391,17 @@ function App() {
 
   const [taskFilter, setTaskFilter] = useState("all");
 
-  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] =
+    useState("all");
 
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] =
+    useState("all");
 
-  const [energyFilter, setEnergyFilter] = useState("all");
+  const [energyFilter, setEnergyFilter] =
+    useState("all");
 
-  const [projectFilter, setProjectFilter] = useState("all");
+  const [projectFilter, setProjectFilter] =
+    useState("all");
 
   // =========================================================
   // TASK SELECTION
@@ -384,7 +414,10 @@ function App() {
   // =========================================================
 
   useEffect(() => {
-    localStorage.setItem("lockin_tasks", JSON.stringify(tasks));
+    localStorage.setItem(
+      "lockin_tasks",
+      JSON.stringify(tasks)
+    );
   }, [tasks]);
 
   useEffect(() => {
@@ -395,7 +428,10 @@ function App() {
   }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem("lockin_xp", JSON.stringify(xp));
+    localStorage.setItem(
+      "lockin_xp",
+      JSON.stringify(xp)
+    );
   }, [xp]);
 
   useEffect(() => {
@@ -444,7 +480,10 @@ function App() {
   // NOTIFICATIONS
   // =========================================================
 
-  const addNotification = (message, type = "info") => {
+  const addNotification = (
+    message,
+    type = "info"
+  ) => {
     const notificationsEnabled =
       localStorage.getItem(
         "lockin_notifications_enabled"
@@ -499,7 +538,8 @@ function App() {
   const deleteNotification = (id) => {
     setNotificationsList((previous) =>
       previous.filter(
-        (notification) => notification.id !== id
+        (notification) =>
+          notification.id !== id
       )
     );
   };
@@ -516,7 +556,10 @@ function App() {
   // ACTIVITY
   // =========================================================
 
-  const addActivity = (message, type = "info") => {
+  const addActivity = (
+    message,
+    type = "info"
+  ) => {
     const item = {
       id: makeId(),
       message,
@@ -563,11 +606,14 @@ function App() {
     const today = getToday();
 
     setStreak((previous) => {
-      if (previous.lastCompletedDate === today) {
+      if (
+        previous.lastCompletedDate === today
+      ) {
         return previous;
       }
 
-      let current = previous.current || 0;
+      let current =
+        previous.current || 0;
 
       if (!previous.lastCompletedDate) {
         current = 1;
@@ -621,45 +667,59 @@ function App() {
 
       title,
 
-      description: taskData.description || "",
+      description:
+        taskData.description || "",
 
-      priority: taskData.priority || "Medium",
+      priority:
+        taskData.priority || "Medium",
 
-      dueDate: taskData.dueDate || "",
+      dueDate:
+        taskData.dueDate || "",
 
-      dueTime: taskData.dueTime || "",
+      dueTime:
+        taskData.dueTime || "",
 
       tags: Array.isArray(taskData.tags)
         ? taskData.tags
         : [],
 
-      recurring: taskData.recurring || "None",
+      recurring:
+        taskData.recurring || "None",
 
-      energy: taskData.energy || "Medium",
+      energy:
+        taskData.energy || "Medium",
 
-      progress: Number(taskData.progress) || 0,
+      progress:
+        Number(taskData.progress) || 0,
 
-      subtasks: Array.isArray(taskData.subtasks)
-        ? taskData.subtasks
-        : [],
+      subtasks:
+        Array.isArray(taskData.subtasks)
+          ? taskData.subtasks
+          : [],
 
-      projectId: taskData.projectId || null,
+      projectId:
+        taskData.projectId || null,
 
-      category: taskData.category || "",
+      category:
+        taskData.category || "",
 
-      status: taskData.status || "backlog",
+      status:
+        taskData.status || "backlog",
 
-      dependencies: Array.isArray(
-        taskData.dependencies
-      )
-        ? taskData.dependencies
-        : [],
+      dependencies:
+        Array.isArray(
+          taskData.dependencies
+        )
+          ? taskData.dependencies
+          : [],
 
-      archived: taskData.archived === true,
+      archived:
+        taskData.archived === true,
 
       completed: false,
 
-      createdAt: new Date().toISOString(),
+      createdAt:
+        new Date().toISOString(),
 
       completedAt: null,
     };
@@ -891,11 +951,10 @@ function App() {
       return [];
     }
 
-    const dependencyIds = Array.isArray(
-      task.dependencies
-    )
-      ? task.dependencies
-      : [];
+    const dependencyIds =
+      Array.isArray(task.dependencies)
+        ? task.dependencies
+        : [];
 
     return dependencyIds
       .map((id) =>
@@ -906,7 +965,9 @@ function App() {
       .filter(Boolean);
   };
 
-  const hasBlockedDependencies = (task) => {
+  const hasBlockedDependencies = (
+    task
+  ) => {
     const dependencies =
       getTaskDependencies(task);
 
@@ -973,7 +1034,9 @@ function App() {
         return false;
       }
 
-      if (taskFilter === "overdue") {
+      if (
+        taskFilter === "overdue"
+      ) {
         if (
           !task.dueDate ||
           task.dueDate >= today ||
@@ -999,28 +1062,32 @@ function App() {
 
       if (
         priorityFilter !== "all" &&
-        task.priority !== priorityFilter
+        task.priority !==
+          priorityFilter
       ) {
         return false;
       }
 
       if (
         categoryFilter !== "all" &&
-        task.category !== categoryFilter
+        task.category !==
+          categoryFilter
       ) {
         return false;
       }
 
       if (
         energyFilter !== "all" &&
-        task.energy !== energyFilter
+        task.energy !==
+          energyFilter
       ) {
         return false;
       }
 
       if (
         projectFilter !== "all" &&
-        task.projectId !== projectFilter
+        task.projectId !==
+          projectFilter
       ) {
         return false;
       }
@@ -1041,7 +1108,9 @@ function App() {
   // TASK SELECTION
   // =========================================================
 
-  const toggleTaskSelection = (taskId) => {
+  const toggleTaskSelection = (
+    taskId
+  ) => {
     setSelectedTasks((previous) =>
       previous.includes(taskId)
         ? previous.filter(
@@ -1052,9 +1121,10 @@ function App() {
   };
 
   const selectAllVisibleTasks = () => {
-    const visibleIds = filteredTasks.map(
-      (task) => task.id
-    );
+    const visibleIds =
+      filteredTasks.map(
+        (task) => task.id
+      );
 
     setSelectedTasks((previous) => {
       const allSelected =
@@ -1097,7 +1167,9 @@ function App() {
     setTasks((previous) =>
       previous.map((task) => {
         if (
-          selectedTasks.includes(task.id) &&
+          selectedTasks.includes(
+            task.id
+          ) &&
           !task.completed
         ) {
           completedCount += 1;
@@ -1124,20 +1196,25 @@ function App() {
       setEnergy((previous) =>
         Math.min(
           100,
-          previous + completedCount * 5
+          previous +
+            completedCount * 5
         )
       );
 
       addActivity(
         `Completed ${completedCount} selected task${
-          completedCount === 1 ? "" : "s"
+          completedCount === 1
+            ? ""
+            : "s"
         }`,
         "success"
       );
 
       addNotification(
         `Completed ${completedCount} selected task${
-          completedCount === 1 ? "" : "s"
+          completedCount === 1
+            ? ""
+            : "s"
         }.`,
         "success"
       );
@@ -1157,7 +1234,9 @@ function App() {
 
     setTasks((previous) =>
       previous.map((task) =>
-        selectedTasks.includes(task.id)
+        selectedTasks.includes(
+          task.id
+        )
           ? {
               ...task,
               archived: true,
@@ -1190,7 +1269,9 @@ function App() {
     setTasks((previous) =>
       previous.filter(
         (task) =>
-          !selectedTasks.includes(task.id)
+          !selectedTasks.includes(
+            task.id
+          )
       )
     );
 
@@ -1210,7 +1291,9 @@ function App() {
   // PROJECTS
   // =========================================================
 
-  const addProject = (projectData = {}) => {
+  const addProject = (
+    projectData = {}
+  ) => {
     const newProject = {
       id: makeId(),
 
@@ -1220,7 +1303,8 @@ function App() {
         "New Project",
 
       description:
-        projectData.description || "",
+        projectData.description ||
+        "",
 
       status:
         projectData.status ||
@@ -1231,10 +1315,12 @@ function App() {
         "Medium",
 
       dueDate:
-        projectData.dueDate || "",
+        projectData.dueDate ||
+        "",
 
       color:
-        projectData.color || "#765b6b",
+        projectData.color ||
+        "#765b6b",
 
       createdAt:
         new Date().toISOString(),
@@ -1274,7 +1360,9 @@ function App() {
     );
   };
 
-  const deleteProject = (projectId) => {
+  const deleteProject = (
+    projectId
+  ) => {
     const project = projects.find(
       (item) => item.id === projectId
     );
@@ -1303,7 +1391,9 @@ function App() {
       );
     }
 
-    if (projectFilter === projectId) {
+    if (
+      projectFilter === projectId
+    ) {
       setProjectFilter("all");
     }
   };
@@ -1316,30 +1406,37 @@ function App() {
     const today = getToday();
 
     return projects.map((project) => {
-      const projectTasks = tasks.filter(
-        (task) =>
-          task.projectId === project.id &&
-          !task.archived
-      );
+      const projectTasks =
+        tasks.filter(
+          (task) =>
+            task.projectId ===
+              project.id &&
+            !task.archived
+        );
 
-      const total = projectTasks.length;
+      const total =
+        projectTasks.length;
 
-      const completed = projectTasks.filter(
-        (task) => task.completed
-      ).length;
+      const completed =
+        projectTasks.filter(
+          (task) =>
+            task.completed
+        ).length;
 
-      const overdue = projectTasks.filter(
-        (task) =>
-          task.dueDate &&
-          task.dueDate < today &&
-          !task.completed
-      ).length;
+      const overdue =
+        projectTasks.filter(
+          (task) =>
+            task.dueDate &&
+            task.dueDate < today &&
+            !task.completed
+        ).length;
 
       const progress =
         total === 0
           ? 0
           : Math.round(
-              (completed / total) * 100
+              (completed / total) *
+                100
             );
 
       return {
@@ -1356,7 +1453,9 @@ function App() {
   // FOCUS HELPERS
   // =========================================================
 
-  const formatFocusTime = (seconds) => {
+  const formatFocusTime = (
+    seconds
+  ) => {
     const safeSeconds = Math.max(
       0,
       Number(seconds) || 0
@@ -1369,13 +1468,11 @@ function App() {
     const remainingSeconds =
       safeSeconds % 60;
 
-    return `${String(minutes).padStart(
-      2,
-      "0"
-    )}:${String(remainingSeconds).padStart(
-      2,
-      "0"
-    )}`;
+    return `${String(
+      minutes
+    ).padStart(2, "0")}:${String(
+      remainingSeconds
+    ).padStart(2, "0")}`;
   };
 
   // =========================================================
@@ -1393,9 +1490,13 @@ function App() {
         ? focusDuration
         : 25 * 60;
 
-    setFocusDuration(selectedDuration);
+    setFocusDuration(
+      selectedDuration
+    );
 
-    setFocusSeconds(selectedDuration);
+    setFocusSeconds(
+      selectedDuration
+    );
 
     setFocusTask(task || null);
 
@@ -1523,8 +1624,11 @@ function App() {
   // CHANGE FOCUS DURATION
   // =========================================================
 
-  const chooseFocusDuration = (minutes) => {
-    const seconds = Number(minutes) * 60;
+  const chooseFocusDuration = (
+    minutes
+  ) => {
+    const seconds =
+      Number(minutes) * 60;
 
     if (
       !Number.isFinite(seconds) ||
@@ -1537,7 +1641,9 @@ function App() {
 
     setFocusSeconds(seconds);
 
-    setCustomFocusMinutes(Number(minutes));
+    setCustomFocusMinutes(
+      Number(minutes)
+    );
 
     setFocusPaused(false);
   };
@@ -1551,7 +1657,8 @@ function App() {
       180,
       Math.max(
         1,
-        Number(customFocusMinutes) || 25
+        Number(customFocusMinutes) ||
+          25
       )
     );
 
@@ -1564,7 +1671,8 @@ function App() {
 
   useEffect(() => {
     if (
-      (!focusMode && !miniFocusVisible) ||
+      (!focusMode &&
+        !miniFocusVisible) ||
       focusPaused
     ) {
       return undefined;
@@ -1575,12 +1683,14 @@ function App() {
     }
 
     const timer = setInterval(() => {
-      setFocusSeconds((previous) =>
-        Math.max(0, previous - 1)
+      setFocusSeconds(
+        (previous) =>
+          Math.max(0, previous - 1)
       );
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () =>
+      clearInterval(timer);
   }, [
     focusMode,
     miniFocusVisible,
@@ -1594,7 +1704,8 @@ function App() {
   useEffect(() => {
     if (
       focusSeconds === 0 &&
-      (focusMode || miniFocusVisible) &&
+      (focusMode ||
+        miniFocusVisible) &&
       !focusPaused
     ) {
       completeFocus();
@@ -1606,39 +1717,48 @@ function App() {
     focusPaused,
   ]);
 
-  const formattedFocusTime = useMemo(
-    () => formatFocusTime(focusSeconds),
-    [focusSeconds]
-  );
+  const formattedFocusTime =
+    useMemo(
+      () =>
+        formatFocusTime(
+          focusSeconds
+        ),
+      [focusSeconds]
+    );
 
   // =========================================================
   // STATUS
   // =========================================================
 
-  const tasksByStatus = useMemo(() => {
-    const result = {
-      backlog: [],
-      "in-progress": [],
-      review: [],
-      done: [],
-    };
+  const tasksByStatus = useMemo(
+    () => {
+      const result = {
+        backlog: [],
+        "in-progress": [],
+        review: [],
+        done: [],
+      };
 
-    filteredTasks.forEach((task) => {
-      let status = task.status;
+      filteredTasks.forEach(
+        (task) => {
+          let status = task.status;
 
-      if (task.completed) {
-        status = "done";
-      }
+          if (task.completed) {
+            status = "done";
+          }
 
-      if (!result[status]) {
-        status = "backlog";
-      }
+          if (!result[status]) {
+            status = "backlog";
+          }
 
-      result[status].push(task);
-    });
+          result[status].push(task);
+        }
+      );
 
-    return result;
-  }, [filteredTasks]);
+      return result;
+    },
+    [filteredTasks]
+  );
 
   // =========================================================
   // STATS
@@ -1647,26 +1767,30 @@ function App() {
   const stats = useMemo(() => {
     const today = getToday();
 
-    const completed = tasks.filter(
-      (task) => task.completed
-    );
+    const completed =
+      tasks.filter(
+        (task) => task.completed
+      );
 
-    const pending = tasks.filter(
-      (task) => !task.completed
-    );
+    const pending =
+      tasks.filter(
+        (task) => !task.completed
+      );
 
-    const todayTasks = tasks.filter(
-      (task) =>
-        task.dueDate === today &&
-        !task.completed
-    );
+    const todayTasks =
+      tasks.filter(
+        (task) =>
+          task.dueDate === today &&
+          !task.completed
+      );
 
-    const overdueTasks = tasks.filter(
-      (task) =>
-        task.dueDate &&
-        task.dueDate < today &&
-        !task.completed
-    );
+    const overdueTasks =
+      tasks.filter(
+        (task) =>
+          task.dueDate &&
+          task.dueDate < today &&
+          !task.completed
+      );
 
     const highPriorityTasks =
       tasks.filter(
@@ -1678,13 +1802,17 @@ function App() {
     return {
       total: tasks.length,
 
-      completed: completed.length,
+      completed:
+        completed.length,
 
-      pending: pending.length,
+      pending:
+        pending.length,
 
-      today: todayTasks.length,
+      today:
+        todayTasks.length,
 
-      overdue: overdueTasks.length,
+      overdue:
+        overdueTasks.length,
 
       highPriority:
         highPriorityTasks.length,
@@ -1735,16 +1863,15 @@ function App() {
     setFocusPaused(false);
 
     setFocusSeconds(25 * 60);
-
     setFocusDuration(25 * 60);
-
     setCustomFocusMinutes(25);
-
     setFocusTask(null);
 
     setMissionDate(getToday());
 
-    // ALWAYS RESET THEME TO SYSTEM
+    // =======================================================
+    // RESET THEME TO SYSTEM
+    // =======================================================
 
     setTheme("system");
 
@@ -1778,8 +1905,7 @@ function App() {
       localStorage.removeItem(key);
     });
 
-    // Restore settings defaults
-
+    // Restore defaults
     localStorage.setItem(
       "lockin_theme",
       "system"
@@ -1929,12 +2055,7 @@ function App() {
     markNotificationRead,
     markAllNotificationsRead,
 
-    // INDIVIDUAL DELETE
-
     deleteNotification,
-
-    // CLEAR ALL
-
     clearNotifications,
 
     // ACTIVITY
@@ -2011,7 +2132,9 @@ function App() {
             changeTheme={changeTheme}
             globalSearch={globalSearch}
             setGlobalSearch={setGlobalSearch}
-            notificationsList={notificationsList}
+            notificationsList={
+              notificationsList
+            }
             markNotificationRead={
               markNotificationRead
             }
@@ -2052,7 +2175,9 @@ function App() {
                 min-w-0
               "
             >
-              <Outlet context={outletContext} />
+              <Outlet
+                context={outletContext}
+              />
             </div>
           </main>
         </div>
@@ -2062,143 +2187,144 @@ function App() {
           FLOATING MINI FOCUS COUNTDOWN
       ===================================================== */}
 
-      {miniFocusVisible && !focusMode && (
-        <div
-          className="
-            fixed
-            bottom-3
-            left-3
-            right-3
-            z-[90]
-            sm:left-auto
-            sm:right-5
-            sm:bottom-5
-            md:right-6
-          "
-        >
+      {miniFocusVisible &&
+        !focusMode && (
           <div
             className="
-              mx-auto
-              flex
-              w-full
-              max-w-sm
-              items-center
-              gap-3
-              rounded-2xl
-              border
-              border-[#765b6b]/20
-              bg-white/95
-              p-3
-              shadow-2xl
-              backdrop-blur-xl
-              dark:border-white/10
-              dark:bg-[#1b1f1c]/95
-              sm:w-[360px]
+              fixed
+              bottom-3
+              left-3
+              right-3
+              z-[90]
+              sm:left-auto
+              sm:right-5
+              sm:bottom-5
+              md:right-6
             "
           >
-            <button
-              type="button"
-              onClick={resumeFocus}
+            <div
               className="
-                min-w-0
-                flex-1
-                text-left
+                mx-auto
+                flex
+                w-full
+                max-w-sm
+                items-center
+                gap-3
+                rounded-2xl
+                border
+                border-[#765b6b]/20
+                bg-white/95
+                p-3
+                shadow-2xl
+                backdrop-blur-xl
+                dark:border-white/10
+                dark:bg-[#1b1f1c]/95
+                sm:w-[360px]
               "
             >
-              <p
+              <button
+                type="button"
+                onClick={resumeFocus}
                 className="
-                  text-[9px]
-                  font-black
-                  uppercase
-                  tracking-[0.18em]
-                  text-[#765b6b]
-                  dark:text-[#c4aebe]
-                "
-              >
-                Focus running
-              </p>
-
-              <div
-                className="
-                  mt-0.5
-                  flex
                   min-w-0
-                  items-center
-                  gap-2
+                  flex-1
+                  text-left
                 "
               >
-                <span
+                <p
                   className="
-                    text-xl
+                    text-[9px]
                     font-black
-                    tracking-tight
-                    text-[#292725]
-                    dark:text-white
+                    uppercase
+                    tracking-[0.18em]
+                    text-[#765b6b]
+                    dark:text-[#c4aebe]
                   "
                 >
-                  {formattedFocusTime}
-                </span>
+                  Focus running
+                </p>
 
-                {focusTask && (
+                <div
+                  className="
+                    mt-0.5
+                    flex
+                    min-w-0
+                    items-center
+                    gap-2
+                  "
+                >
                   <span
                     className="
-                      hidden
-                      truncate
-                      text-xs
-                      font-bold
-                      text-black/40
-                      sm:block
-                      dark:text-white/40
+                      text-xl
+                      font-black
+                      tracking-tight
+                      text-[#292725]
+                      dark:text-white
                     "
                   >
-                    {focusTask.title}
+                    {formattedFocusTime}
                   </span>
-                )}
-              </div>
-            </button>
 
-            <button
-              type="button"
-              onClick={resumeFocus}
-              className="
-                shrink-0
-                rounded-xl
-                bg-[#765b6b]
-                px-3
-                py-2.5
-                text-[10px]
-                font-black
-                text-white
-                transition
-                hover:bg-[#674e5e]
-                sm:px-4
-              "
-            >
-              Resume
-            </button>
+                  {focusTask && (
+                    <span
+                      className="
+                        hidden
+                        truncate
+                        text-xs
+                        font-bold
+                        text-black/40
+                        sm:block
+                        dark:text-white/40
+                      "
+                    >
+                      {focusTask.title}
+                    </span>
+                  )}
+                </div>
+              </button>
 
-            <button
-              type="button"
-              onClick={cancelMiniFocus}
-              className="
-                shrink-0
-                rounded-xl
-                bg-black/5
-                p-2.5
-                text-black/40
-                transition
-                hover:bg-red-500/10
-                hover:text-red-500
-                dark:bg-white/5
-                dark:text-white/40
-              "
-              title="Cancel countdown"
-            >
-              ×
-            </button>
+              <button
+                type="button"
+                onClick={resumeFocus}
+                className="
+                  shrink-0
+                  rounded-xl
+                  bg-[#765b6b]
+                  px-3
+                  py-2.5
+                  text-[10px]
+                  font-black
+                  text-white
+                  transition
+                  hover:bg-[#674e5e]
+                  sm:px-4
+                "
+              >
+                Resume
+              </button>
+
+              <button
+                type="button"
+                onClick={cancelMiniFocus}
+                className="
+                  shrink-0
+                  rounded-xl
+                  bg-black/5
+                  p-2.5
+                  text-black/40
+                  transition
+                  hover:bg-red-500/10
+                  hover:text-red-500
+                  dark:bg-white/5
+                  dark:text-white/40
+                "
+                title="Cancel countdown"
+              >
+                ×
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* =====================================================
           FOCUS MODE
