@@ -36,7 +36,7 @@ function TaskCard({
     priority: task.priority || "Medium",
     dueDate: task.dueDate || "",
     dueTime: task.dueTime || "",
-    category: task.category || "",
+    category: task.category || "General",
     energy: task.energy || "Medium",
     projectId: task.projectId || "",
     status: task.status || "backlog",
@@ -50,7 +50,7 @@ function TaskCard({
       priority: task.priority || "Medium",
       dueDate: task.dueDate || "",
       dueTime: task.dueTime || "",
-      category: task.category || "",
+      category: task.category || "General",
       energy: task.energy || "Medium",
       projectId: task.projectId || "",
       status: task.status || "backlog",
@@ -58,23 +58,83 @@ function TaskCard({
     });
   }, [task]);
 
+  /* =========================================================
+     STYLES
+  ========================================================= */
+
   const priorityStyles = {
     High: "border-[#a85b5b]/20 bg-[#a85b5b]/8 text-[#a85b5b] dark:border-[#d88989]/20 dark:bg-[#d88989]/10 dark:text-[#d88989]",
+
     Medium:
       "border-[#b07b4d]/20 bg-[#b07b4d]/8 text-[#a66d3d] dark:border-[#d9a575]/20 dark:bg-[#d9a575]/10 dark:text-[#d9a575]",
+
     Low: "border-[#627b82]/20 bg-[#627b82]/8 text-[#627b82] dark:border-[#8ea8af]/20 dark:bg-[#8ea8af]/10 dark:text-[#9bb4ba]",
+  };
+
+  const energyStyles = {
+    High: "bg-[#a85b5b]/8 text-[#a85b5b] dark:bg-[#d88989]/10 dark:text-[#d88989]",
+
+    Medium:
+      "bg-[#b07b4d]/8 text-[#a66d3d] dark:bg-[#d9a575]/10 dark:text-[#d9a575]",
+
+    Low: "bg-[#627b82]/8 text-[#627b82] dark:bg-[#627b82]/12 dark:text-[#9bb4ba]",
   };
 
   const statusStyles = {
     backlog:
       "bg-[#ece9e3] text-[#77736b] dark:bg-[#292e2a] dark:text-[#aaa69e]",
+
     "in-progress":
       "bg-[#627b82]/10 text-[#627b82] dark:bg-[#627b82]/15 dark:text-[#9bb4ba]",
+
     review:
       "bg-[#765b6b]/10 text-[#765b6b] dark:bg-[#765b6b]/15 dark:text-[#c9aebe]",
+
     done:
       "bg-[#557a62]/10 text-[#557a62] dark:bg-[#557a62]/15 dark:text-[#8faf91]",
   };
+
+  const categoryStyles = {
+    General:
+      "bg-[#f0ede8] text-[#77736b] dark:bg-[#292e2a] dark:text-[#aaa69e]",
+
+    School:
+      "bg-[#627b82]/10 text-[#627b82] dark:bg-[#627b82]/15 dark:text-[#9bb4ba]",
+
+    Coding:
+      "bg-[#765b6b]/10 text-[#765b6b] dark:bg-[#765b6b]/15 dark:text-[#c9aebe]",
+
+    Work:
+      "bg-[#b07b4d]/8 text-[#a66d3d] dark:bg-[#d9a575]/10 dark:text-[#d9a575]",
+
+    Finance:
+      "bg-[#b07b4d]/8 text-[#a66d3d] dark:bg-[#d9a575]/10 dark:text-[#d9a575]",
+
+    Personal:
+      "bg-[#a85b5b]/8 text-[#a85b5b] dark:bg-[#d88989]/10 dark:text-[#d88989]",
+
+    Health:
+      "bg-[#557a62]/10 text-[#557a62] dark:bg-[#557a62]/15 dark:text-[#8faf91]",
+
+    Fitness:
+      "bg-[#627b82]/10 text-[#627b82] dark:bg-[#627b82]/15 dark:text-[#9bb4ba]",
+
+    Project:
+      "bg-[#765b6b]/10 text-[#765b6b] dark:bg-[#765b6b]/15 dark:text-[#c9aebe]",
+
+    Other:
+      "bg-[#f0ede8] text-[#77736b] dark:bg-[#292e2a] dark:text-[#aaa69e]",
+  };
+
+  const labelClass =
+    "mb-1.5 block text-[9px] font-black uppercase tracking-[0.16em] text-[#938d84]";
+
+  const inputClass =
+    "w-full rounded-[13px] border border-[#ded9d1] bg-[#faf9f6] px-3.5 py-3 text-sm font-semibold text-[#292725] outline-none transition placeholder:text-[#aaa49b] focus:border-[#765b6b] focus:ring-2 focus:ring-[#765b6b]/10 dark:border-[#353a35] dark:bg-[#202420] dark:text-white dark:placeholder:text-[#716f69]";
+
+  /* =========================================================
+     HELPERS
+  ========================================================= */
 
   const formatStatus = (status) =>
     status
@@ -110,7 +170,7 @@ function TaskCard({
       priority: form.priority,
       dueDate: form.dueDate,
       dueTime: form.dueTime,
-      category: form.category.trim(),
+      category: form.category || "General",
       energy: form.energy,
       projectId: form.projectId || null,
       status,
@@ -131,11 +191,131 @@ function TaskCard({
     (item) => item.id === task.projectId
   );
 
-  const inputClass =
-    "w-full rounded-[13px] border border-[#ded9d1] bg-[#faf9f6] px-3.5 py-3 text-sm font-semibold text-[#292725] outline-none transition placeholder:text-[#aaa49b] focus:border-[#765b6b] focus:ring-2 focus:ring-[#765b6b]/10 dark:border-[#353a35] dark:bg-[#202420] dark:text-white dark:placeholder:text-[#716f69]";
+  /* =========================================================
+     STYLED EDIT DROPDOWN
+  ========================================================= */
 
-  const labelClass =
-    "mb-1.5 block text-[9px] font-black uppercase tracking-[0.16em] text-[#938d84]";
+  function EditDropdown({
+    label,
+    value,
+    onChange,
+    options = [],
+    displayValue,
+    optionStyles = {},
+    formatValue,
+  }) {
+    const [open, setOpen] = useState(false);
+
+    const selectedLabel =
+      displayValue?.(value) ||
+      formatValue?.(value) ||
+      value ||
+      "Select";
+
+    const selectedStyle =
+      optionStyles[value] ||
+      "bg-[#f0ede8] text-[#77736b] dark:bg-[#292e2a] dark:text-[#aaa69e]";
+
+    return (
+      <div className="relative">
+        <label className={labelClass}>{label}</label>
+
+        <button
+          type="button"
+          onClick={() => setOpen((current) => !current)}
+          className="flex min-h-[46px] w-full items-center justify-between gap-2 rounded-[13px] border border-[#ded9d1] bg-[#faf9f6] px-3 transition-all duration-200 hover:border-[#765b6b] dark:border-[#353a35] dark:bg-[#202420]"
+        >
+          <span
+            className={`max-w-[85%] truncate rounded-[8px] px-2 py-1 text-[9px] font-black uppercase tracking-wide ${selectedStyle}`}
+          >
+            {selectedLabel}
+          </span>
+
+          <ChevronRight
+            size={14}
+            className={`shrink-0 text-[#aaa49b] transition-transform duration-200 ${
+              open ? "rotate-90" : ""
+            }`}
+          />
+        </button>
+
+        {open && (
+          <>
+            <button
+              type="button"
+              aria-label={`Close ${label} dropdown`}
+              className="fixed inset-0 z-[120] cursor-default"
+              onClick={() => setOpen(false)}
+            />
+
+            <div className="absolute left-0 right-0 top-full z-[130] mt-2 max-h-[260px] overflow-y-auto overflow-x-hidden rounded-[16px] border border-[#ddd8d0] bg-[#f8f6f1] p-1.5 shadow-[0_16px_45px_rgba(0,0,0,0.15)] dark:border-[#353a35] dark:bg-[#1d211e] dark:shadow-[0_18px_45px_rgba(0,0,0,0.35)]">
+              {options.map((option) => {
+                const optionLabel =
+                  displayValue?.(option) ||
+                  formatValue?.(option) ||
+                  option;
+
+                const optionStyle =
+                  optionStyles[option] ||
+                  "bg-[#f0ede8] text-[#77736b] dark:bg-[#292e2a] dark:text-[#aaa69e]";
+
+                const isSelected = value === option;
+
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      onChange(option);
+                      setOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between gap-2 rounded-[10px] px-2 py-2 text-left transition-all duration-150 ${
+                      isSelected
+                        ? "bg-[#ebe7e0] dark:bg-[#292e2a]"
+                        : "hover:bg-[#ebe7e0] dark:hover:bg-[#292e2a]"
+                    }`}
+                  >
+                    <span
+                      className={`truncate rounded-[8px] px-2 py-1 text-[9px] font-black uppercase tracking-wide ${optionStyle}`}
+                    >
+                      {optionLabel}
+                    </span>
+
+                    {isSelected && (
+                      <Check
+                        size={14}
+                        strokeWidth={2.8}
+                        className="shrink-0 text-[#765b6b] dark:text-[#c9aebe]"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  /* =========================================================
+     PROJECT OPTIONS
+  ========================================================= */
+
+  const projectOptions = [
+    "",
+    ...projects.map((item) => item.id),
+  ];
+
+  const projectStyles = {
+    "":
+      "bg-[#f0ede8] text-[#77736b] dark:bg-[#292e2a] dark:text-[#aaa69e]",
+  };
+
+  projects.forEach((item) => {
+    projectStyles[item.id] =
+      "bg-[#765b6b]/10 text-[#765b6b] dark:bg-[#765b6b]/15 dark:text-[#c9aebe]";
+  });
 
   /* =========================================================
      EDIT MODE
@@ -143,7 +323,8 @@ function TaskCard({
 
   if (editing) {
     return (
-      <div className="overflow-hidden rounded-[22px] border border-[#ded9d1] bg-white shadow-[0_10px_35px_rgba(41,39,37,0.07)] dark:border-[#353a35] dark:bg-[#1b1f1c]">
+      <div className="overflow-visible rounded-[22px] border border-[#ded9d1] bg-white shadow-[0_10px_35px_rgba(41,39,37,0.07)] dark:border-[#353a35] dark:bg-[#1b1f1c]">
+        {/* HEADER */}
         <div className="border-b border-[#e8e3db] px-5 py-4 dark:border-[#303530]">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -173,8 +354,10 @@ function TaskCard({
           </div>
         </div>
 
+        {/* FORM */}
         <div className="p-5">
           <div className="grid gap-4">
+            {/* TITLE */}
             <div>
               <label className={labelClass}>Title</label>
 
@@ -189,13 +372,17 @@ function TaskCard({
               />
             </div>
 
+            {/* DESCRIPTION */}
             <div>
               <label className={labelClass}>Description</label>
 
               <textarea
                 value={form.description}
                 onChange={(event) =>
-                  handleChange("description", event.target.value)
+                  handleChange(
+                    "description",
+                    event.target.value
+                  )
                 }
                 rows={3}
                 className={`${inputClass} resize-none`}
@@ -203,40 +390,33 @@ function TaskCard({
               />
             </div>
 
+            {/* PRIORITY + ENERGY */}
             <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className={labelClass}>Priority</label>
+              <EditDropdown
+                label="Priority"
+                value={form.priority}
+                onChange={(value) =>
+                  handleChange("priority", value)
+                }
+                options={["High", "Medium", "Low"]}
+                optionStyles={priorityStyles}
+              />
 
-                <select
-                  value={form.priority}
-                  onChange={(event) =>
-                    handleChange("priority", event.target.value)
-                  }
-                  className={inputClass}
-                >
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={labelClass}>Energy</label>
-
-                <select
-                  value={form.energy}
-                  onChange={(event) =>
-                    handleChange("energy", event.target.value)
-                  }
-                  className={inputClass}
-                >
-                  <option value="High">High energy</option>
-                  <option value="Medium">Medium energy</option>
-                  <option value="Low">Low energy</option>
-                </select>
-              </div>
+              <EditDropdown
+                label="Energy"
+                value={form.energy}
+                onChange={(value) =>
+                  handleChange("energy", value)
+                }
+                options={["High", "Medium", "Low"]}
+                displayValue={(value) =>
+                  value ? `${value} energy` : "Select"
+                }
+                optionStyles={energyStyles}
+              />
             </div>
 
+            {/* DATE + TIME */}
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className={labelClass}>Due date</label>
@@ -245,7 +425,10 @@ function TaskCard({
                   type="date"
                   value={form.dueDate}
                   onChange={(event) =>
-                    handleChange("dueDate", event.target.value)
+                    handleChange(
+                      "dueDate",
+                      event.target.value
+                    )
                   }
                   className={inputClass}
                 />
@@ -258,71 +441,86 @@ function TaskCard({
                   type="time"
                   value={form.dueTime}
                   onChange={(event) =>
-                    handleChange("dueTime", event.target.value)
+                    handleChange(
+                      "dueTime",
+                      event.target.value
+                    )
                   }
                   className={inputClass}
                 />
               </div>
             </div>
 
+            {/* CATEGORY + PROJECT */}
             <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className={labelClass}>Category</label>
+              <EditDropdown
+                label="Category"
+                value={form.category || "General"}
+                onChange={(value) =>
+                  handleChange("category", value)
+                }
+                options={[
+                  "General",
+                  "School",
+                  "Coding",
+                  "Work",
+                  "Finance",
+                  "Personal",
+                  "Health",
+                  "Fitness",
+                  "Project",
+                  "Other",
+                ]}
+                optionStyles={categoryStyles}
+              />
 
-                <input
-                  value={form.category}
-                  onChange={(event) =>
-                    handleChange("category", event.target.value)
-                  }
-                  className={inputClass}
-                  placeholder="e.g. School"
-                />
-              </div>
+              <EditDropdown
+                label="Project"
+                value={form.projectId}
+                onChange={(value) =>
+                  handleChange("projectId", value)
+                }
+                options={projectOptions}
+                displayValue={(value) => {
+                  if (!value) return "No project";
 
-              <div>
-                <label className={labelClass}>Project</label>
+                  const selectedProject = projects.find(
+                    (item) => item.id === value
+                  );
 
-                <select
-                  value={form.projectId}
-                  onChange={(event) =>
-                    handleChange("projectId", event.target.value)
-                  }
-                  className={inputClass}
-                >
-                  <option value="">No project</option>
-
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name ||
-                        project.title ||
-                        "Untitled Project"}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  return (
+                    selectedProject?.name ||
+                    selectedProject?.title ||
+                    "Untitled project"
+                  );
+                }}
+                optionStyles={projectStyles}
+              />
             </div>
 
+            {/* STATUS + PROGRESS */}
             <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className={labelClass}>Status</label>
-
-                <select
-                  value={form.status}
-                  onChange={(event) =>
-                    handleChange("status", event.target.value)
-                  }
-                  className={inputClass}
-                >
-                  <option value="backlog">Backlog</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="review">Review</option>
-                  <option value="done">Done</option>
-                </select>
-              </div>
+              <EditDropdown
+                label="Status"
+                value={form.status}
+                onChange={(value) =>
+                  handleChange("status", value)
+                }
+                options={[
+                  "backlog",
+                  "in-progress",
+                  "review",
+                  "done",
+                ]}
+                formatValue={formatStatus}
+                optionStyles={statusStyles}
+              />
 
               <div>
                 <div className="flex items-center justify-between">
-                  <label className={labelClass}>Progress</label>
+                  <label className={labelClass}>
+                    Progress
+                  </label>
 
                   <span className="text-[11px] font-black text-[#765b6b] dark:text-[#c9aebe]">
                     {form.progress}%
@@ -335,7 +533,10 @@ function TaskCard({
                   max="100"
                   value={form.progress}
                   onChange={(event) =>
-                    handleChange("progress", event.target.value)
+                    handleChange(
+                      "progress",
+                      event.target.value
+                    )
                   }
                   className="mt-3 w-full accent-[#765b6b]"
                 />
@@ -343,6 +544,7 @@ function TaskCard({
             </div>
           </div>
 
+          {/* BUTTONS */}
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button
               type="button"
@@ -379,14 +581,13 @@ function TaskCard({
           : "border-[#e2ddd5] bg-white hover:-translate-y-[1px] hover:border-[#d5cec5] hover:shadow-[0_10px_30px_rgba(41,39,37,0.06)] dark:border-[#333833] dark:bg-[#1b1f1c] dark:hover:border-[#414741] dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
       }`}
     >
-      {/* Selected indicator */}
       {selected && (
         <div className="absolute left-0 top-0 h-full w-1 bg-[#765b6b]" />
       )}
 
       <div className="p-4 sm:p-5">
         <div className="flex gap-3.5">
-          {/* Selection */}
+          {/* SELECTION */}
           <div className="pt-1">
             <input
               type="checkbox"
@@ -397,7 +598,7 @@ function TaskCard({
             />
           </div>
 
-          {/* Completion */}
+          {/* COMPLETION */}
           <button
             type="button"
             onClick={() => onToggle?.(task.id)}
@@ -417,11 +618,15 @@ function TaskCard({
                   : "Complete task"
             }
           >
-            {blocked ? <Lock size={13} /> : <Check size={15} strokeWidth={2.8} />}
+            {blocked ? (
+              <Lock size={13} />
+            ) : (
+              <Check size={15} strokeWidth={2.8} />
+            )}
           </button>
 
           <div className="min-w-0 flex-1">
-            {/* Header */}
+            {/* HEADER */}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -450,7 +655,7 @@ function TaskCard({
                 )}
               </div>
 
-              {/* Actions */}
+              {/* ACTIONS */}
               <div className="flex shrink-0 items-center gap-0.5 opacity-100 sm:opacity-70 sm:transition-opacity sm:group-hover:opacity-100">
                 <button
                   type="button"
@@ -495,12 +700,13 @@ function TaskCard({
               </div>
             </div>
 
-            {/* Metadata */}
+            {/* METADATA */}
             <div className="mt-3.5 flex flex-wrap items-center gap-1.5">
               {task.priority && (
                 <span
                   className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-wide ${
-                    priorityStyles[task.priority] || priorityStyles.Low
+                    priorityStyles[task.priority] ||
+                    priorityStyles.Low
                   }`}
                 >
                   {task.priority}
@@ -519,7 +725,12 @@ function TaskCard({
               )}
 
               {task.category && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#f0ede8] px-2.5 py-1 text-[9px] font-bold text-[#77736b] dark:bg-[#292e2a] dark:text-[#aaa69e]">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-bold ${
+                    categoryStyles[task.category] ||
+                    categoryStyles.General
+                  }`}
+                >
                   <Tag size={10} />
                   {task.category}
                 </span>
@@ -534,14 +745,17 @@ function TaskCard({
               {project && (
                 <span className="inline-flex max-w-[180px] items-center gap-1 rounded-full bg-[#765b6b]/8 px-2.5 py-1 text-[9px] font-bold text-[#765b6b] dark:bg-[#765b6b]/12 dark:text-[#c9aebe]">
                   <FolderKanban size={10} />
+
                   <span className="truncate">
-                    {project.name || project.title || "Project"}
+                    {project.name ||
+                      project.title ||
+                      "Project"}
                   </span>
                 </span>
               )}
             </div>
 
-            {/* Progress */}
+            {/* PROGRESS */}
             {Number(task.progress) > 0 && !task.completed && (
               <div className="mt-4">
                 <div className="mb-1.5 flex items-center justify-between">
@@ -572,7 +786,7 @@ function TaskCard({
               </div>
             )}
 
-            {/* Bottom metadata */}
+            {/* BOTTOM METADATA */}
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] font-bold text-[#98928a] dark:text-[#747a75]">
               {task.dueDate && (
                 <span
@@ -583,17 +797,25 @@ function TaskCard({
                   }`}
                 >
                   <Clock3 size={12} />
+
                   {task.dueDate}
-                  {task.dueTime ? ` • ${task.dueTime}` : ""}
+
+                  {task.dueTime
+                    ? ` • ${task.dueTime}`
+                    : ""}
                 </span>
               )}
 
               {task.estimatedMinutes > 0 && (
-                <span>Est. {task.estimatedMinutes}m</span>
+                <span>
+                  Est. {task.estimatedMinutes}m
+                </span>
               )}
 
               {task.timeSpent > 0 && (
-                <span>Spent {task.timeSpent}m</span>
+                <span>
+                  Spent {task.timeSpent}m
+                </span>
               )}
 
               {dependencies.length > 0 && (
@@ -611,6 +833,7 @@ function TaskCard({
                   )}
 
                   {dependencies.length}{" "}
+
                   {dependencies.length === 1
                     ? "dependency"
                     : "dependencies"}
@@ -618,23 +841,24 @@ function TaskCard({
               )}
             </div>
 
-            {/* Tags */}
-            {Array.isArray(task.tags) && task.tags.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {task.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-[7px] bg-[#f3f0eb] px-2 py-1 text-[9px] font-bold text-[#89837b] dark:bg-[#252a26] dark:text-[#7e847f]"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
+            {/* TAGS */}
+            {Array.isArray(task.tags) &&
+              task.tags.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {task.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-[7px] bg-[#f3f0eb] px-2 py-1 text-[9px] font-bold text-[#89837b] dark:bg-[#252a26] dark:text-[#7e847f]"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
           </div>
         </div>
 
-        {/* Completed state */}
+        {/* COMPLETED STATE */}
         {task.completed && (
           <div className="mt-4 flex items-center justify-between gap-3 rounded-[12px] border border-[#557a62]/10 bg-[#557a62]/7 px-3 py-2.5 dark:border-[#557a62]/15 dark:bg-[#557a62]/10">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wide text-[#557a62] dark:text-[#8faf91]">
