@@ -48,7 +48,7 @@ const getProjectTasks = (tasks, projectId) =>
 const formatDate = (dateString) => {
   if (!dateString) return "No deadline";
 
-  const date = new Date(dateString);
+  const date = new Date(`${dateString}T00:00:00`);
 
   if (Number.isNaN(date.getTime())) {
     return dateString;
@@ -267,7 +267,6 @@ export default function ProjectManager() {
     if (editingProject) {
       if (typeof updateProject === "function") {
         updateProject(editingProject.id, {
-          ...editingProject,
           name,
           description: form.description.trim(),
           priority: form.priority,
@@ -309,7 +308,6 @@ export default function ProjectManager() {
     setOpenMenu(null);
     setShowProjectFilter(false);
     setShowSortMenu(false);
-
     setDeleteTarget(project);
   };
 
@@ -828,9 +826,7 @@ export default function ProjectManager() {
                       </div>
                     </button>
 
-                    {/* =================================================
-                        THREE DOT MENU
-                    ================================================= */}
+                    {/* THREE DOT MENU */}
 
                     <div className="relative z-[1000] shrink-0">
                       <button
@@ -874,14 +870,10 @@ export default function ProjectManager() {
                             event.stopPropagation()
                           }
                         >
-                          {/* OPEN PROJECT */}
+                          {/* OPEN */}
 
                           <button
                             type="button"
-                            onPointerDown={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }}
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -906,14 +898,10 @@ export default function ProjectManager() {
                             </span>
                           </button>
 
-                          {/* EDIT PROJECT */}
+                          {/* EDIT */}
 
                           <button
                             type="button"
-                            onPointerDown={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }}
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -936,28 +924,15 @@ export default function ProjectManager() {
                             </span>
                           </button>
 
-                          {/* DELETE PROJECT */}
+                          {/* DELETE */}
 
                           <button
                             type="button"
-                            onPointerDown={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }}
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
 
-                              setOpenMenu(null);
-                              setShowProjectFilter(
-                                false
-                              );
-                              setShowSortMenu(
-                                false
-                              );
-                              setDeleteTarget(
-                                project
-                              );
+                              confirmDelete(project);
                             }}
                             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-red-500 transition hover:bg-red-500/10"
                           >
@@ -1293,7 +1268,7 @@ export default function ProjectManager() {
       </div>
 
       {/* =====================================================
-          CREATE / EDIT
+          CREATE / EDIT MODAL
       ===================================================== */}
 
       {showForm && (
@@ -1308,7 +1283,7 @@ export default function ProjectManager() {
       )}
 
       {/* =====================================================
-          DELETE CONFIRMATION
+          DELETE MODAL
       ===================================================== */}
 
       {deleteTarget && (
@@ -1335,360 +1310,515 @@ function ProjectModal({
   onClose,
   onSubmit,
 }) {
-  const [showPriority, setShowPriority] =
-    useState(false);
-
-  const [showStatus, setShowStatus] =
-    useState(false);
-
   const [showCalendar, setShowCalendar] =
     useState(false);
+
+  const [error, setError] = useState("");
+
+  /* =========================================================
+     ESC + BODY SCROLL LOCK
+  ========================================================= */
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    const previousOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+
+      document.body.style.overflow =
+        previousOverflow;
+    };
+  }, [onClose]);
+
+  /* =========================================================
+     THEME
+  ========================================================= */
 
   const modalBg = darkMode
     ? "border-white/10 bg-[#151515] text-white"
     : "border-black/10 bg-white text-black";
 
   const fieldBg = darkMode
-    ? "border-white/10 bg-white/[0.04] text-white"
-    : "border-black/10 bg-black/[0.025] text-black";
+    ? "border-white/10 bg-white/[0.04] text-white placeholder:text-white/30"
+    : "border-black/10 bg-black/[0.025] text-black placeholder:text-black/35";
+
+  const subtleBg = darkMode
+    ? "bg-white/[0.025]"
+    : "bg-black/[0.02]";
+
+  const borderColor = darkMode
+    ? "border-white/[0.08]"
+    : "border-black/[0.08]";
+
+  /* =========================================================
+     SUBMIT
+  ========================================================= */
+
+  const handleLocalSubmit = (event) => {
+    event.preventDefault();
+
+    if (!form.name.trim()) {
+      setError("Project name is required.");
+      return;
+    }
+
+    setError("");
+    onSubmit(event);
+  };
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[2000] overflow-y-auto bg-black/70 p-3 backdrop-blur-md sm:p-6"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
+        if (
+          event.target === event.currentTarget
+        ) {
           onClose();
         }
       }}
     >
-      <div
-        className={`relative max-h-[90vh] w-full max-w-lg overflow-visible rounded-2xl border shadow-2xl ${modalBg}`}
-      >
-        {/* HEADER */}
-
+      <div className="flex min-h-full items-center justify-center">
         <div
-          className={`flex items-center justify-between border-b p-5 ${
-            darkMode
-              ? "border-white/10"
-              : "border-black/10"
-          }`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="project-modal-title"
+          onMouseDown={(event) =>
+            event.stopPropagation()
+          }
+          className={`flex w-full max-w-xl flex-col overflow-hidden rounded-3xl border shadow-[0_25px_80px_rgba(0,0,0,0.35)] ${modalBg}`}
+          style={{
+            maxHeight:
+              "calc(100vh - 2rem)",
+          }}
         >
-          <div>
-            <h2 className="text-lg font-bold">
-              {editingProject
-                ? "Edit Project"
-                : "Create Project"}
-            </h2>
+          {/* =================================================
+              HEADER
+          ================================================= */}
 
-            <p
-              className={`mt-1 text-xs ${
-                darkMode
-                  ? "text-white/45"
-                  : "text-black/45"
-              }`}
-            >
-              {editingProject
-                ? "Update your project details."
-                : "Create a new project for your work."}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-              darkMode
-                ? "hover:bg-white/[0.08]"
-                : "hover:bg-black/[0.05]"
-            }`}
+          <div
+            className={`flex shrink-0 items-center justify-between border-b px-5 py-4 sm:px-6 ${borderColor}`}
           >
-            <X size={17} />
-          </button>
-        </div>
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#765b6b]/10 text-[#765b6b]">
+                <FolderKanban size={19} />
+              </div>
 
-        <form
-          onSubmit={onSubmit}
-          className="space-y-4 p-5"
-        >
-          {/* NAME */}
+              <div className="min-w-0">
+                <h2
+                  id="project-modal-title"
+                  className="truncate text-base font-bold sm:text-lg"
+                >
+                  {editingProject
+                    ? "Edit Project"
+                    : "Create New Project"}
+                </h2>
 
-          <div>
-            <label className="mb-2 block text-xs font-semibold">
-              Project name
-            </label>
-
-            <input
-              autoFocus
-              value={form.name}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  name: event.target.value,
-                })
-              }
-              placeholder="e.g. Portfolio Website"
-              className={`h-11 w-full rounded-xl border px-3 text-sm outline-none focus:border-[#765b6b] ${fieldBg}`}
-            />
-          </div>
-
-          {/* DESCRIPTION */}
-
-          <div>
-            <label className="mb-2 block text-xs font-semibold">
-              Description
-            </label>
-
-            <textarea
-              value={form.description}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  description:
-                    event.target.value,
-                })
-              }
-              placeholder="What is this project about?"
-              rows={3}
-              className={`w-full resize-none rounded-xl border px-3 py-3 text-sm outline-none focus:border-[#765b6b] ${fieldBg}`}
-            />
-          </div>
-
-          {/* PRIORITY + STATUS */}
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {/* PRIORITY */}
-
-            <div className="relative">
-              <label className="mb-2 block text-xs font-semibold">
-                Priority
-              </label>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPriority(
-                    (current) => !current
-                  );
-                  setShowStatus(false);
-                  setShowCalendar(false);
-                }}
-                className={`flex h-11 w-full items-center justify-between rounded-xl border px-3 text-sm ${fieldBg}`}
-              >
-                <span>{form.priority}</span>
-
-                <ChevronDown size={15} />
-              </button>
-
-              {showPriority && (
-                <SelectMenu
-                  darkMode={darkMode}
-                  options={[
-                    "High",
-                    "Medium",
-                    "Low",
-                  ]}
-                  value={form.priority}
-                  onChange={(value) => {
-                    setForm({
-                      ...form,
-                      priority: value,
-                    });
-
-                    setShowPriority(false);
-                  }}
-                />
-              )}
+                <p
+                  className={`mt-0.5 text-xs ${
+                    darkMode
+                      ? "text-white/40"
+                      : "text-black/45"
+                  }`}
+                >
+                  {editingProject
+                    ? "Update the details of this project."
+                    : "Set up your project and start organizing your work."}
+                </p>
+              </div>
             </div>
 
-            {/* STATUS */}
-
-            <div className="relative">
-              <label className="mb-2 block text-xs font-semibold">
-                Status
-              </label>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowStatus(
-                    (current) => !current
-                  );
-                  setShowPriority(false);
-                  setShowCalendar(false);
-                }}
-                className={`flex h-11 w-full items-center justify-between rounded-xl border px-3 text-sm ${fieldBg}`}
-              >
-                <span>
-                  {formatModalStatus(
-                    form.status
-                  )}
-                </span>
-
-                <ChevronDown size={15} />
-              </button>
-
-              {showStatus && (
-                <SelectMenu
-                  darkMode={darkMode}
-                  options={[
-                    {
-                      value: "active",
-                      label: "Active",
-                    },
-                    {
-                      value: "paused",
-                      label: "Paused",
-                    },
-                    {
-                      value: "completed",
-                      label: "Completed",
-                    },
-                  ]}
-                  value={form.status}
-                  onChange={(value) => {
-                    setForm({
-                      ...form,
-                      status: value,
-                    });
-
-                    setShowStatus(false);
-                  }}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* DEADLINE */}
-
-          <div className="relative">
-            <label className="mb-2 block text-xs font-semibold">
-              Deadline
-            </label>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowCalendar(
-                  (current) => !current
-                );
-                setShowPriority(false);
-                setShowStatus(false);
-              }}
-              className={`flex h-11 w-full items-center justify-between rounded-xl border px-3 text-sm ${fieldBg}`}
-            >
-              <span
-                className={
-                  form.deadline
-                    ? ""
-                    : darkMode
-                    ? "text-white/35"
-                    : "text-black/35"
-                }
-              >
-                {form.deadline
-                  ? formatDateValue(
-                      form.deadline
-                    )
-                  : "Select deadline"}
-              </span>
-
-              <CalendarDays size={16} />
-            </button>
-
-            {showCalendar && (
-              <CustomCalendar
-                darkMode={darkMode}
-                value={form.deadline}
-                onChange={(date) => {
-                  setForm({
-                    ...form,
-                    deadline: date,
-                  });
-
-                  setShowCalendar(false);
-                }}
-              />
-            )}
-          </div>
-
-          {/* BUTTONS */}
-
-          <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${
+              aria-label="Close project modal"
+              className={`ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition ${
                 darkMode
-                  ? "hover:bg-white/[0.07]"
-                  : "hover:bg-black/[0.05]"
+                  ? "text-white/55 hover:bg-white/[0.08] hover:text-white"
+                  : "text-black/45 hover:bg-black/[0.05] hover:text-black"
               }`}
             >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              className="rounded-xl bg-[#765b6b] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-            >
-              {editingProject
-                ? "Save changes"
-                : "Create project"}
+              <X size={18} />
             </button>
           </div>
-        </form>
+
+          {/* =================================================
+              FORM SCROLL AREA
+          ================================================= */}
+
+          <form
+            onSubmit={handleLocalSubmit}
+            className="min-h-0 flex-1 overflow-y-auto"
+          >
+            <div className="space-y-5 p-5 sm:p-6">
+
+              {/* =================================================
+                  NAME
+              ================================================= */}
+
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <label
+                    htmlFor="project-name"
+                    className="text-xs font-bold"
+                  >
+                    Project name
+                  </label>
+
+                  <span
+                    className={`text-[10px] ${darkMode ? "text-white/30" : "text-black/30"}`}
+                  >
+                    Required
+                  </span>
+                </div>
+
+                <input
+                  id="project-name"
+                  autoFocus
+                  value={form.name}
+                  onChange={(event) => {
+                    setForm({
+                      ...form,
+                      name: event.target.value,
+                    });
+
+                    if (error) {
+                      setError("");
+                    }
+                  }}
+                  placeholder="e.g. Portfolio Website"
+                  className={`h-12 w-full rounded-xl border px-3.5 text-sm outline-none transition focus:border-[#765b6b] focus:ring-2 focus:ring-[#765b6b]/10 ${fieldBg}`}
+                />
+
+                {error && (
+                  <p className="mt-2 text-xs font-medium text-red-500">
+                    {error}
+                  </p>
+                )}
+              </div>
+
+              {/* =================================================
+                  DESCRIPTION
+              ================================================= */}
+
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <label
+                    htmlFor="project-description"
+                    className="text-xs font-bold"
+                  >
+                    Description
+                  </label>
+
+                  <span
+                    className={`text-[10px] ${darkMode ? "text-white/30" : "text-black/30"}`}
+                  >
+                    Optional
+                  </span>
+                </div>
+
+                <textarea
+                  id="project-description"
+                  value={form.description}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      description:
+                        event.target.value,
+                    })
+                  }
+                  placeholder="What is this project about?"
+                  rows={4}
+                  className={`w-full resize-none rounded-xl border px-3.5 py-3 text-sm leading-6 outline-none transition focus:border-[#765b6b] focus:ring-2 focus:ring-[#765b6b]/10 ${fieldBg}`}
+                />
+              </div>
+
+              {/* =================================================
+                  SETTINGS
+              ================================================= */}
+
+              <div
+                className={`rounded-2xl border p-3.5 ${borderColor} ${subtleBg}`}
+              >
+                <div className="mb-3">
+                  <p className="text-xs font-bold">
+                    Project settings
+                  </p>
+
+                  <p
+                    className={`mt-0.5 text-[11px] ${darkMode ? "text-white/35" : "text-black/40"}`}
+                  >
+                    Choose how this project should be organized.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+                  {/* PRIORITY */}
+
+                  <ProjectSelect
+                    darkMode={darkMode}
+                    label="Priority"
+                    value={form.priority}
+                    options={[
+                      {
+                        value: "High",
+                        label: "High",
+                      },
+                      {
+                        value: "Medium",
+                        label: "Medium",
+                      },
+                      {
+                        value: "Low",
+                        label: "Low",
+                      },
+                    ]}
+                    onChange={(value) =>
+                      setForm({
+                        ...form,
+                        priority: value,
+                      })
+                    }
+                  />
+
+                  {/* STATUS */}
+
+                  <ProjectSelect
+                    darkMode={darkMode}
+                    label="Status"
+                    value={form.status}
+                    options={[
+                      {
+                        value: "active",
+                        label: "Active",
+                      },
+                      {
+                        value: "paused",
+                        label: "Paused",
+                      },
+                      {
+                        value: "completed",
+                        label: "Completed",
+                      },
+                    ]}
+                    onChange={(value) =>
+                      setForm({
+                        ...form,
+                        status: value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* =================================================
+                  DEADLINE
+              ================================================= */}
+
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-xs font-bold">
+                    Deadline
+                  </label>
+
+                  <span
+                    className={`text-[10px] ${darkMode ? "text-white/30" : "text-black/30"}`}
+                  >
+                    Optional
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowCalendar(
+                      (current) => !current
+                    )
+                  }
+                  className={`flex h-12 w-full items-center justify-between rounded-xl border px-3.5 text-left text-sm outline-none transition focus:border-[#765b6b] ${fieldBg}`}
+                >
+                  <span
+                    className={
+                      form.deadline
+                        ? "font-medium"
+                        : darkMode
+                        ? "text-white/35"
+                        : "text-black/35"
+                    }
+                  >
+                    {form.deadline
+                      ? formatDateValue(
+                          form.deadline
+                        )
+                      : "Select a deadline"}
+                  </span>
+
+                  <CalendarDays
+                    size={17}
+                    className={
+                      form.deadline
+                        ? "text-[#765b6b]"
+                        : darkMode
+                        ? "text-white/40"
+                        : "text-black/40"
+                    }
+                  />
+                </button>
+
+                {showCalendar && (
+                  <div className="mt-2">
+                    <CustomCalendar
+                      darkMode={darkMode}
+                      value={form.deadline}
+                      onChange={(date) => {
+                        setForm({
+                          ...form,
+                          deadline: date,
+                        });
+
+                        setShowCalendar(false);
+                      }}
+                    />
+                  </div>
+                )}
+
+                {form.deadline && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        deadline: "",
+                      })
+                    }
+                    className={`mt-2 text-xs font-medium ${
+                      darkMode
+                        ? "text-white/40 hover:text-white"
+                        : "text-black/45 hover:text-black"
+                    }`}
+                  >
+                    Clear deadline
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* =================================================
+                FOOTER
+            ================================================= */}
+
+            <div
+              className={`sticky bottom-0 flex shrink-0 items-center justify-between gap-3 border-t px-5 py-4 backdrop-blur-xl sm:px-6 ${borderColor} ${
+                darkMode
+                  ? "bg-[#151515]/95"
+                  : "bg-white/95"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={onClose}
+                className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                  darkMode
+                    ? "text-white/65 hover:bg-white/[0.07] hover:text-white"
+                    : "text-black/55 hover:bg-black/[0.05] hover:text-black"
+                }`}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                disabled={!form.name.trim()}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#765b6b] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Check size={16} />
+
+                {editingProject
+                  ? "Save changes"
+                  : "Create project"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
 }
 
 /* =========================================================
-   SELECT MENU
+   PROJECT SELECT
 ========================================================= */
 
-function SelectMenu({
+function ProjectSelect({
   darkMode,
-  options,
+  label,
   value,
+  options,
   onChange,
 }) {
-  const bg = darkMode
-    ? "border-white/10 bg-[#1a1a1a] text-white"
-    : "border-black/10 bg-white text-black";
+  const fieldBg = darkMode
+    ? "border-white/10 bg-white/[0.04] text-white"
+    : "border-black/10 bg-black/[0.025] text-black";
 
   return (
-    <div
-      className={`absolute left-0 right-0 top-[76px] z-[1100] rounded-xl border p-1.5 shadow-2xl ${bg}`}
-    >
-      {options.map((option) => {
-        const item =
-          typeof option === "string"
-            ? {
-                value: option,
-                label: option,
+    <div>
+      <label className="mb-2 block text-[11px] font-semibold">
+        {label}
+      </label>
+
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(event) =>
+            onChange(event.target.value)
+          }
+          className={`h-11 w-full appearance-none rounded-xl border px-3 pr-9 text-sm outline-none transition focus:border-[#765b6b] focus:ring-2 focus:ring-[#765b6b]/10 ${fieldBg}`}
+        >
+          {options.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+              className={
+                darkMode
+                  ? "bg-[#171717] text-white"
+                  : "bg-white text-black"
               }
-            : option;
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
 
-        return (
-          <button
-            key={item.value}
-            type="button"
-            onClick={() =>
-              onChange(item.value)
-            }
-            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm ${
-              darkMode
-                ? "hover:bg-white/[0.07]"
-                : "hover:bg-black/[0.05]"
-            }`}
-          >
-            <span>{item.label}</span>
-
-            {value === item.value && (
-              <Check size={15} />
-            )}
-          </button>
-        );
-      })}
+        <ChevronDown
+          size={15}
+          className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${
+            darkMode
+              ? "text-white/40"
+              : "text-black/40"
+          }`}
+        />
+      </div>
     </div>
   );
 }
@@ -1707,7 +1837,11 @@ function CustomCalendar({
     : new Date();
 
   const [currentDate, setCurrentDate] =
-    useState(initialDate);
+    useState(
+      Number.isNaN(initialDate.getTime())
+        ? new Date()
+        : initialDate
+    );
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -1783,25 +1917,28 @@ function CustomCalendar({
 
   return (
     <div
-      className={`absolute left-0 right-0 top-[76px] z-[1100] rounded-xl border p-3 shadow-2xl ${
+      className={`w-full rounded-2xl border p-4 ${
         darkMode
-          ? "border-white/10 bg-[#181818] text-white"
-          : "border-black/10 bg-white text-black"
+          ? "border-white/10 bg-[#181818]"
+          : "border-black/10 bg-white"
       }`}
     >
-      <div className="mb-3 flex items-center justify-between">
+      {/* CALENDAR HEADER */}
+
+      <div className="mb-4 flex items-center justify-between">
         <button
           type="button"
           onClick={() =>
             changeMonth(-1)
           }
-          className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+          className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
             darkMode
               ? "hover:bg-white/[0.08]"
               : "hover:bg-black/[0.05]"
           }`}
+          aria-label="Previous month"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={17} />
         </button>
 
         <span className="text-sm font-bold">
@@ -1819,15 +1956,18 @@ function CustomCalendar({
           onClick={() =>
             changeMonth(1)
           }
-          className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+          className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
             darkMode
               ? "hover:bg-white/[0.08]"
               : "hover:bg-black/[0.05]"
           }`}
+          aria-label="Next month"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={17} />
         </button>
       </div>
+
+      {/* DAYS */}
 
       <div className="mb-2 grid grid-cols-7 text-center">
         {[
@@ -1841,9 +1981,9 @@ function CustomCalendar({
         ].map((day, index) => (
           <span
             key={`${day}-${index}`}
-            className={`py-1 text-[10px] font-bold ${
+            className={`py-1.5 text-[10px] font-bold ${
               darkMode
-                ? "text-white/35"
+                ? "text-white/30"
                 : "text-black/35"
             }`}
           >
@@ -1851,6 +1991,8 @@ function CustomCalendar({
           </span>
         ))}
       </div>
+
+      {/* DATE GRID */}
 
       <div className="grid grid-cols-7 gap-1">
         {cells.map((cell, index) => {
@@ -1872,7 +2014,7 @@ function CustomCalendar({
               onClick={() =>
                 selectDay(cell)
               }
-              className={`flex h-8 items-center justify-center rounded-lg text-xs transition ${
+              className={`flex h-9 items-center justify-center rounded-lg text-xs transition ${
                 selected
                   ? "bg-[#765b6b] font-bold text-white"
                   : cell.currentMonth
@@ -1880,7 +2022,7 @@ function CustomCalendar({
                     ? "hover:bg-white/[0.08]"
                     : "hover:bg-black/[0.06]"
                   : darkMode
-                  ? "text-white/15"
+                  ? "text-white/10"
                   : "text-black/15"
               }`}
             >
@@ -1903,20 +2045,44 @@ function DeleteProjectModal({
   onCancel,
   onDelete,
 }) {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onCancel();
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, [onCancel]);
+
   const bg = darkMode
     ? "border-white/10 bg-[#171717] text-white"
     : "border-black/10 bg-white text-black";
 
   return (
     <div
-      className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[2200] flex items-center justify-center bg-black/65 p-4 backdrop-blur-md"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
+        if (
+          event.target === event.currentTarget
+        ) {
           onCancel();
         }
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
         className={`w-full max-w-md rounded-2xl border p-5 shadow-2xl ${bg}`}
         onMouseDown={(event) =>
           event.stopPropagation()
@@ -2022,12 +2188,15 @@ function EmptyProjects({
       <button
         type="button"
         data-project-create-button="true"
+        onPointerDown={(event) => {
+          event.stopPropagation();
+        }}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
           onCreate();
         }}
-        className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#765b6b] px-4 py-2.5 text-sm font-semibold text-white"
+        className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#765b6b] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
       >
         <Plus size={16} />
         New project
